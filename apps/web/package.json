@@ -1,0 +1,27 @@
+{
+  "name": "@fpp/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fpp/auth": "workspace:*",
+    "@fpp/config": "workspace:*",
+    "@fpp/i18n": "workspace:*",
+    "@fpp/validation": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "next": "16.2.10",
+    "postgres": "3.4.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwindcss": "4.3.3",
+    "zod": "4.4.3"
+  }
+}

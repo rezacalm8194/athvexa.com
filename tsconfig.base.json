@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@fpp/auth": ["packages/auth/src/index.ts"],
+      "@fpp/calendar": ["packages/calendar/src/index.ts"],
+      "@fpp/config": ["packages/config/src/index.ts"],
+      "@fpp/database": ["packages/database/src/index.ts"],
+      "@fpp/i18n": ["packages/i18n/src/index.ts"],
+      "@fpp/notifications": ["packages/notifications/src/index.ts"],
+      "@fpp/offline": ["packages/offline/src/index.ts"],
+      "@fpp/ui": ["packages/ui/src/index.ts"],
+      "@fpp/validation": ["packages/validation/src/index.ts"]
+    }
+  },
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist"]
+}
