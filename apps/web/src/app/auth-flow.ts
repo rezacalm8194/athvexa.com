@@ -17,6 +17,43 @@ import { getDatabase } from "./auth-db";
 
 type AuthDatabase = ReturnType<typeof getDatabase>;
 type AuthTransaction = Parameters<Parameters<AuthDatabase["transaction"]>[0]>[0];
+type AuthFlowName = "login" | "signup";
+
+function getErrorDetail(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message
+    };
+  }
+
+  return {
+    name: "UnknownError",
+    message: "Unknown authentication error."
+  };
+}
+
+function getDatabaseErrorCode(error: unknown) {
+  if (typeof error === "object" && error && "code" in error) {
+    const code = (error as { code?: unknown }).code;
+
+    return typeof code === "string" ? code : undefined;
+  }
+
+  return undefined;
+}
+
+function logAuthError(flow: AuthFlowName, stage: string, error: unknown) {
+  const detail = getErrorDetail(error);
+
+  console.error("[auth]", {
+    flow,
+    stage,
+    errorName: detail.name,
+    errorMessage: detail.message,
+    databaseCode: getDatabaseErrorCode(error)
+  });
+}
 
 export function formString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -108,9 +145,11 @@ export async function signupWithPassword(formData: FormData, headersList: Header
   const ipHash = hashHeaderValue(getClientIp(headersList));
   const userAgent = headersList.get("user-agent");
 
+  let stage = "database_connect";
+
   try {
     const db = getDatabase();
-
+    stage = "signup_transaction";
     await db.transaction(async (tx) => {
       const [user] = await tx
         .insert(users)
@@ -181,7 +220,9 @@ export async function signupWithPassword(formData: FormData, headersList: Header
         userAgent
       });
     });
-  } catch {
+  } catch (error) {
+    logAuthError("signup", stage, error);
+
     return { ok: false as const, error: "signup_failed" as const };
   }
 
@@ -208,10 +249,12 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
   const now = new Date();
   const ipHash = hashHeaderValue(getClientIp(headersList));
   const userAgent = headersList.get("user-agent");
+  let stage = "database_connect";
 
   try {
     const db = getDatabase();
 
+    stage = "user_lookup";
     const [user] = await db
       .select()
       .from(users)
@@ -224,6 +267,7 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
       ? await verifyPassword(parsed.data.password, user.passwordHash)
       : false;
 
+    stage = "login_attempt_insert";
     await db.insert(loginAttempts).values({
       emailNormalized: parsed.data.email,
       userId: user?.id,
@@ -237,6 +281,7 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
       return { ok: false as const, error: "login_failed" as const };
     }
 
+    stage = "device_insert";
     const sessionToken = createSessionToken();
     const expiresAt = getSessionExpiry(now, parsed.data.rememberMe);
     const [device] = await db
@@ -248,6 +293,7 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
       })
       .returning();
 
+    stage = "session_insert";
     await db.insert(sessions).values({
       userId: user.id,
       deviceId: device.id,
@@ -264,7 +310,9 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
       expiresAt,
       returnTo: parsed.data.returnTo
     };
-  } catch {
+  } catch (error) {
+    logAuthError("login", stage, error);
+
     return { ok: false as const, error: "server" as const };
   }
 }
