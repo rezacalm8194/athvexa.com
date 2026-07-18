@@ -69,7 +69,8 @@ Acceptance notes:
 - Invitation can be revoked.
 - Existing accounts attach invitation to their account.
 - New accounts see player-specific signup.
-- Stage 10 adds the local invitation schema, migration, validation contract, owner invitation UI, and backend invitation creation route with active membership and member-management checks.
+- Stage 10 adds the local invitation schema, migration, validation contract, owner invitation UI, backend invitation creation route with active membership and member-management checks, and invitation acceptance for logged-in or newly created invited accounts.
+- Invitation acceptance rejects expired, revoked, over-used, and wrong-email tokens before membership creation.
 - Player invitations remain single-use.
 - Team selection is deferred until teams exist in Stage 11.
 

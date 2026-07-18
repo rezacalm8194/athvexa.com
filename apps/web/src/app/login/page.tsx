@@ -4,9 +4,13 @@ import { getAuthErrorMessage } from "../auth-errors";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string | string[] }>;
+  searchParams: Promise<{ error?: string | string[]; returnTo?: string | string[] }>;
 }) {
-  const errorMessage = getAuthErrorMessage((await searchParams).error);
+  const resolvedSearchParams = await searchParams;
+  const errorMessage = getAuthErrorMessage(resolvedSearchParams.error);
+  const returnTo = Array.isArray(resolvedSearchParams.returnTo)
+    ? resolvedSearchParams.returnTo[0]
+    : resolvedSearchParams.returnTo;
 
   return (
     <AuthShell
@@ -21,6 +25,7 @@ export default async function LoginPage({
       title="Log in"
     >
       <form action="/api/auth/login" className="auth-form" method="post">
+        {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
         {errorMessage ? (
           <p className="ui-alert" role="alert">
             {errorMessage}
