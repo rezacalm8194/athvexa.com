@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { sessionCookieName } from "@fpp/auth";
+import { getPublicAppUrl } from "@fpp/config";
 import { getDirection, resolveLocale, type SupportedLocale } from "@fpp/i18n";
 import { MarketingHeader } from "./marketing-header";
 
@@ -213,7 +214,7 @@ export async function getMarketingContext(searchParams: MarketingSearchParams) {
   const copy = pageCopy[locale];
   const cookieStore = await cookies();
   const hasSession = Boolean(cookieStore.get(sessionCookieName));
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "/onboarding";
+  const appUrl = getPublicAppUrl();
 
   return {
     locale,

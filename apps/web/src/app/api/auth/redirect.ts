@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 import { sessionCookieName } from "@fpp/auth";
+import { buildSafeRedirectUrl } from "@fpp/config";
 
 function getRedirectUrl(request: Request, path: string) {
-  const url = new URL(path, request.url);
-
-  if (url.hostname === "0.0.0.0" || url.hostname === "[::]") {
-    url.hostname = "localhost";
-  }
-
-  return url;
+  return buildSafeRedirectUrl(request.url, path);
 }
 
 export function redirectTo(request: Request, path: string) {

@@ -18,7 +18,17 @@ export const safePathSchema = z
       return "/onboarding";
     }
 
-    return value;
+    try {
+      const url = new URL(value, "https://internal.local");
+
+      if (url.origin !== "https://internal.local") {
+        return "/onboarding";
+      }
+
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      return "/onboarding";
+    }
   });
 
 export const loginSchema = z.object({

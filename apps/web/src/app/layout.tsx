@@ -1,11 +1,27 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { getPublicMarketingUrl } from "@fpp/config";
 import "./globals.css";
 
+const marketingUrl = getPublicMarketingUrl();
+
 export const metadata: Metadata = {
+  metadataBase: new URL(marketingUrl),
   title: "ATHVEXA | Coach Player Development",
   description:
     "Mobile-first football performance software for coaches to plan training, track wellness, guide habits, and support players offline.",
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    title: "ATHVEXA | Coach Player Development",
+    description:
+      "Mobile-first football performance software for coaches to plan training, track wellness, guide habits, and support players offline.",
+    images: ["/marketing/coach-performance-hero.png"],
+    siteName: "ATHVEXA",
+    type: "website",
+    url: "/"
+  },
   icons: {
     icon: [
       { url: "/brand/favicon.ico" },

@@ -52,6 +52,7 @@ describe("auth security primitives", () => {
 
   it("blocks unsafe return paths", () => {
     expect(getSafeReturnPath("/sessions")).toBe("/sessions");
+    expect(getSafeReturnPath("/coach?tab=members")).toBe("/coach?tab=members");
     expect(getSafeReturnPath("https://evil.example")).toBe("/onboarding");
     expect(getSafeReturnPath("//evil.example")).toBe("/onboarding");
   });

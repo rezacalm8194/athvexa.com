@@ -40,6 +40,47 @@ pnpm dev
 
 Open `http://localhost:3000/health`.
 
+## Production Configuration
+
+Production public origin:
+
+```text
+https://athvexa.com
+```
+
+Required build-time variables:
+
+- `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_MARKETING_URL`
+
+Current target values:
+
+```text
+NEXT_PUBLIC_APP_URL=https://athvexa.com
+NEXT_PUBLIC_MARKETING_URL=https://athvexa.com
+```
+
+Changing either `NEXT_PUBLIC_*` value requires rebuilding the Next.js app.
+
+Required runtime variables:
+
+- `NODE_ENV`
+- `DATABASE_URL`
+
+Runtime variables for later email and file delivery:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_FROM`
+- `S3_ENDPOINT`
+- `S3_PUBLIC_ENDPOINT`
+- `S3_REGION`
+- `S3_BUCKET`
+- `S3_ACCESS_KEY_ID`
+- `S3_SECRET_ACCESS_KEY`
+
+Do not commit real secret values. Use `.env.production.example` for placeholder names only and configure real values in the production server or Pachim secret manager.
+
 ## Verification
 
 ```bash

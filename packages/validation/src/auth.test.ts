@@ -19,7 +19,9 @@ describe("auth validation schemas", () => {
 
   it("keeps return paths local", () => {
     expect(safePathSchema.parse("/sessions")).toBe("/sessions");
+    expect(safePathSchema.parse("/coach?tab=members")).toBe("/coach?tab=members");
     expect(safePathSchema.parse("https://example.com")).toBe("/onboarding");
+    expect(safePathSchema.parse("//example.com")).toBe("/onboarding");
   });
 
   it("validates login input without revealing account existence", () => {
