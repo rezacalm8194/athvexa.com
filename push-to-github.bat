@@ -14,7 +14,8 @@ set "EXPECTED_REMOTE=https://github.com/rezacalm8194/athvexa.com.git"
 set "SERVER_USER=athvexauser"
 set "SERVER_HOST=37.32.12.189"
 set "SERVER_PATH=/home/athvexauser/athvexa.com"
-set "PNPM_VERSION=11.9.0"
+set "REMOTE_NODE=/home/athvexauser/.nvm/versions/node/v22.23.1/bin/node"
+set "REMOTE_PNPM_JS=/home/athvexauser/.nvm/versions/node/v22.23.1/lib/node_modules/corepack/dist/pnpm.js"
 
 git rev-parse --is-inside-work-tree >nul 2>&1
 if errorlevel 1 (
@@ -115,13 +116,13 @@ echo Server: %SERVER_USER%@%SERVER_HOST%
 echo Path: %SERVER_PATH%
 echo.
 
-set "DEPLOY_CMD=cd %SERVER_PATH% && git pull --ff-only origin main && corepack enable && corepack prepare pnpm@%PNPM_VERSION% --activate && pnpm install --frozen-lockfile && pnpm build"
+set "DEPLOY_CMD=cd %SERVER_PATH% && git pull --ff-only origin main && %REMOTE_NODE% %REMOTE_PNPM_JS% install --frozen-lockfile && %REMOTE_NODE% %REMOTE_PNPM_JS% build"
 
 ssh %SERVER_USER%@%SERVER_HOST% "%DEPLOY_CMD%"
 if errorlevel 1 (
   echo.
   echo ERROR: Server deploy failed.
-  echo Check SSH access, server path, pnpm/corepack, and Pachim logs.
+  echo Check SSH access, server path, Node, pnpm.js, and Pachim logs.
   pause
   exit /b 1
 )
@@ -129,7 +130,7 @@ if errorlevel 1 (
 echo.
 echo ========================================
 echo Push and server build completed successfully.
-echo If Pachim keeps an old running process, restart the app from the Pachim panel.
+echo Restart the Node service from the Pachim panel so the new build is served.
 echo ========================================
 git status -sb
 echo.
