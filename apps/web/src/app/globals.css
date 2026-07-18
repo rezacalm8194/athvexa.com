@@ -728,16 +728,25 @@ p {
 .marketing-hero {
   position: relative;
   display: grid;
-  min-height: calc(100svh - 7.5rem);
-  align-items: center;
+  isolation: isolate;
+  min-height: clamp(42.5rem, calc(100svh - 4.25rem), 48.75rem);
+  align-items: start;
   overflow: hidden;
   border-bottom: 1px solid var(--color-border);
-  padding: var(--space-8) var(--space-4);
+  background-color: var(--color-background);
+  padding: calc(var(--space-8) + env(safe-area-inset-top)) var(--space-4) var(--space-8);
 }
 
-.marketing-hero img {
+.marketing-hero::before {
+  position: absolute;
+  inset: auto 0 0;
   z-index: 0;
-  object-fit: cover;
+  block-size: 48%;
+  content: "";
+  background-image: url("/marketing/coach-performance-hero-mobile.png");
+  background-position: right bottom;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
 }
 
 .marketing-hero::after {
@@ -746,8 +755,9 @@ p {
   z-index: 1;
   content: "";
   background:
-    linear-gradient(90deg, var(--color-background) 0%, color-mix(in srgb, var(--color-background) 72%, transparent) 42%, color-mix(in srgb, var(--color-background) 16%, transparent) 100%),
-    linear-gradient(0deg, var(--color-background) 0%, transparent 38%);
+    linear-gradient(90deg, var(--color-background) 0%, color-mix(in srgb, var(--color-background) 86%, transparent) 54%, color-mix(in srgb, var(--color-background) 30%, transparent) 100%),
+    linear-gradient(180deg, var(--color-background) 0%, color-mix(in srgb, var(--color-background) 76%, transparent) 28%, transparent 58%),
+    linear-gradient(0deg, var(--color-background) 0%, transparent 34%);
 }
 
 .marketing-hero__content {
@@ -755,7 +765,7 @@ p {
   z-index: 2;
   display: grid;
   gap: var(--space-4);
-  max-width: 42rem;
+  max-width: 34rem;
 }
 
 .marketing-hero h1,
@@ -772,6 +782,12 @@ p {
   color: var(--color-text-muted);
   font-size: 1.05rem;
   line-height: 1.7;
+}
+
+@media (min-width: 390px) and (max-width: 767px) {
+  .marketing-hero::before {
+    block-size: 52%;
+  }
 }
 
 .marketing-section {
@@ -1124,8 +1140,27 @@ p {
   }
 
   .marketing-hero {
+    align-items: center;
     min-height: 86svh;
     padding: var(--space-10);
+  }
+
+  .marketing-hero::before {
+    inset: 0;
+    block-size: auto;
+    background-image: url("/marketing/coach-performance-hero.png");
+    background-position: center;
+    background-size: cover;
+  }
+
+  .marketing-hero::after {
+    background:
+      linear-gradient(90deg, var(--color-background) 0%, color-mix(in srgb, var(--color-background) 72%, transparent) 42%, color-mix(in srgb, var(--color-background) 16%, transparent) 100%),
+      linear-gradient(0deg, var(--color-background) 0%, transparent 38%);
+  }
+
+  .marketing-hero__content {
+    max-width: 42rem;
   }
 
   .marketing-hero h1,

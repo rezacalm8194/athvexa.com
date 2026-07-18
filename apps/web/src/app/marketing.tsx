@@ -279,13 +279,6 @@ export function MarketingHero({
 }) {
   return (
     <section className="marketing-hero">
-      <Image
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        src="/marketing/coach-performance-hero.png"
-      />
       <div className="marketing-hero__content">
         <p className="ui-eyebrow">ATHVEXA</p>
         <h1>{context.copy.home.title}</h1>
