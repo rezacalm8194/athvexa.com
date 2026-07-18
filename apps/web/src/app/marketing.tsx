@@ -246,7 +246,13 @@ export function MarketingShell({
     <main className="marketing" data-theme="dark" dir={context.dir}>
       <header className="marketing-header">
         <Link className="marketing-brand" href={marketingHref("home", context.locale)}>
-          brand.com
+          <Image
+            alt="ATHVEXA"
+            height={36}
+            priority
+            src="/brand/athvexa-nav-logo.png"
+            width={184}
+          />
         </Link>
         <nav aria-label="Marketing navigation">
           {navItems.map(([key, label]) => (
@@ -268,7 +274,7 @@ export function MarketingShell({
       </header>
       {children}
       <footer className="marketing-footer">
-        <span>brand.com</span>
+        <Image alt="ATHVEXA" height={42} src="/brand/athvexa-nav-logo.png" width={214} />
         <nav aria-label="Footer navigation">
           {(["about", "contact", "privacy", "terms", "security"] as const).map((page) => (
             <Link href={marketingHref(page, context.locale)} key={page}>
@@ -296,7 +302,7 @@ export function MarketingHero({
         src="/marketing/coach-performance-hero.png"
       />
       <div className="marketing-hero__content">
-        <p className="ui-eyebrow">Football Performance Platform</p>
+        <p className="ui-eyebrow">ATHVEXA</p>
         <h1>{context.copy.home.title}</h1>
         <p>{context.copy.home.subtitle}</p>
         <div className="marketing-hero__actions">

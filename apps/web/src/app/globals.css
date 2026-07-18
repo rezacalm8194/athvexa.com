@@ -592,9 +592,18 @@ p {
 }
 
 .marketing-brand {
+  display: inline-flex;
+  align-items: center;
+  inline-size: 11.5rem;
+  block-size: 2.75rem;
   color: var(--color-text);
-  font-weight: 900;
   text-decoration: none;
+}
+
+.marketing-brand img,
+.marketing-footer > img {
+  display: block;
+  object-fit: contain;
 }
 
 .marketing-header nav,

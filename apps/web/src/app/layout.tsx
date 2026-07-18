@@ -3,9 +3,16 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Football Performance Platform | Coach Player Development",
+  title: "ATHVEXA | Coach Player Development",
   description:
-    "Mobile-first football performance software for coaches to plan training, track wellness, guide habits, and support players offline."
+    "Mobile-first football performance software for coaches to plan training, track wellness, guide habits, and support players offline.",
+  icons: {
+    icon: [
+      { url: "/brand/favicon.ico" },
+      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" }
+    ],
+    apple: [{ url: "/brand/athvexa-icon-192.png", sizes: "192x192", type: "image/png" }]
+  }
 };
 
 export default function RootLayout({
