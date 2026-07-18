@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { sql } from "drizzle-orm";
-import { platformAdmins, sessions, users } from "@fpp/database";
+import { platformAdmins, platformSettings, sessions, users, workspaces } from "@fpp/database";
 import { hashToken, sessionCookieName } from "@fpp/auth";
 import { getDatabase } from "./auth-db";
 
@@ -79,6 +79,37 @@ export async function listPlatformAdmins() {
     .from(platformAdmins)
     .where(sql`${platformAdmins.revokedAt} is null and ${platformAdmins.deletedAt} is null`)
     .orderBy(platformAdmins.createdAt);
+}
+
+export async function listPlatformUsers() {
+  const db = getDatabase();
+
+  return db
+    .select({
+      id: users.id,
+      email: users.emailNormalized,
+      name: users.name,
+      status: users.status,
+      createdAt: users.createdAt,
+      deletedAt: users.deletedAt,
+      workspaceCount: sql<number>`count(${workspaces.id})::int`
+    })
+    .from(users)
+    .leftJoin(workspaces, sql`${workspaces.createdBy} = ${users.id} and ${workspaces.deletedAt} is null`)
+    .groupBy(users.id)
+    .orderBy(sql`${users.createdAt} desc`)
+    .limit(50);
+}
+
+export async function getPlatformSetting(key: string, fallback: string) {
+  const db = getDatabase();
+  const [setting] = await db
+    .select({ value: platformSettings.value })
+    .from(platformSettings)
+    .where(sql`${platformSettings.key} = ${key}`)
+    .limit(1);
+
+  return setting?.value ?? fallback;
 }
 
 export async function isPlatformAdminEmail(email: string) {

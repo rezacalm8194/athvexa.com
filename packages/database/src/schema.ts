@@ -312,6 +312,13 @@ export const platformAdmins = pgTable(
   ]
 );
 
+export const platformSettings = pgTable("platform_settings", {
+  key: varchar("key", { length: 120 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedBy: uuid("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
 export const baseSchemaTables = {
   users,
   devices,
@@ -332,5 +339,6 @@ export const authSchemaTables = {
 export const memberSchemaTables = {
   ...authSchemaTables,
   invitations,
-  platformAdmins
+  platformAdmins,
+  platformSettings
 };

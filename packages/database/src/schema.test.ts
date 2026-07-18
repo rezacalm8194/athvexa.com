@@ -33,6 +33,7 @@ describe("base database schema", () => {
       "passwordResetTokens",
       "permissions",
       "platformAdmins",
+      "platformSettings",
       "roles",
       "sessions",
       "users",

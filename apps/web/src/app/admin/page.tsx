@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { activityLogs, platformAdmins, sessions, users, workspaces } from "@fpp/database";
 import { getDatabase } from "../auth-db";
-import { getPlatformAdminFromCookies, listPlatformAdmins } from "../admin-auth";
+import {
+  getPlatformAdminFromCookies,
+  getPlatformSetting,
+  listPlatformAdmins,
+  listPlatformUsers
+} from "../admin-auth";
 
 async function getPlatformStats() {
   const db = getDatabase();
@@ -52,8 +57,10 @@ export default async function AdminPage() {
     redirect("/login?returnTo=/admin");
   }
 
-  const [admins, stats, activity] = await Promise.all([
+  const [admins, platformUsers, defaultLocale, stats, activity] = await Promise.all([
     listPlatformAdmins(),
+    listPlatformUsers(),
+    getPlatformSetting("default_locale", "en"),
     getPlatformStats(),
     getRecentActivity()
   ]);
@@ -102,6 +109,65 @@ export default async function AdminPage() {
         <article className="coach-card">
           <div className="coach-card__top">
             <div>
+              <p className="ui-eyebrow">Settings</p>
+              <h2>Program language</h2>
+            </div>
+            <span className="ui-badge" data-tone="info">
+              {defaultLocale.toUpperCase()}
+            </span>
+          </div>
+          <p>Choose the default language used by platform-level screens and future defaults.</p>
+          <form className="admin-form admin-form--inline" action="/api/admin/settings/language" method="post">
+            <label className="ui-field">
+              <span>Default language</span>
+              <select className="ui-input ui-select" defaultValue={defaultLocale} name="locale">
+                <option value="en">English</option>
+                <option value="fa">Persian</option>
+                <option value="ar">Arabic</option>
+              </select>
+            </label>
+            <button className="ui-button ui-button--primary" type="submit">
+              Save language
+            </button>
+          </form>
+        </article>
+
+        <article className="coach-card">
+          <div className="coach-card__top">
+            <div>
+              <p className="ui-eyebrow">Users</p>
+              <h2>Add account</h2>
+            </div>
+            <span className="ui-badge" data-tone="info">
+              Secure create
+            </span>
+          </div>
+          <form className="admin-form admin-user-form" action="/api/admin/users" method="post">
+            <label className="ui-field">
+              <span>Name</span>
+              <input className="ui-input" name="name" required />
+            </label>
+            <label className="ui-field">
+              <span>Email</span>
+              <input className="ui-input" name="email" type="email" required />
+            </label>
+            <label className="ui-field">
+              <span>Temporary password</span>
+              <input className="ui-input" name="password" type="password" required />
+            </label>
+            <label className="ui-check">
+              <input name="platformAdmin" type="checkbox" />
+              <span>Grant platform admin access</span>
+            </label>
+            <button className="ui-button ui-button--primary" type="submit">
+              Add user
+            </button>
+          </form>
+        </article>
+
+        <article className="coach-card">
+          <div className="coach-card__top">
+            <div>
               <p className="ui-eyebrow">Access</p>
               <h2>Platform administrators</h2>
             </div>
@@ -145,6 +211,74 @@ export default async function AdminPage() {
                           Remove
                         </button>
                       </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article className="coach-card admin-wide">
+          <div className="coach-card__top">
+            <div>
+              <p className="ui-eyebrow">Users</p>
+              <h2>User control</h2>
+            </div>
+            <span className="ui-badge" data-tone="info">
+              Latest 50
+            </span>
+          </div>
+          <div className="ui-table-wrap">
+            <table className="ui-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Status</th>
+                  <th>Workspaces</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {platformUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td>
+                      <strong>{user.name ?? "Unnamed user"}</strong>
+                      <span>{user.email}</span>
+                    </td>
+                    <td>{user.deletedAt ? "deleted" : user.status}</td>
+                    <td>{user.workspaceCount}</td>
+                    <td>{user.createdAt.toISOString().slice(0, 10)}</td>
+                    <td>
+                      <div className="admin-row-actions">
+                        <form action="/api/admin/users/status" method="post">
+                          <input name="userId" type="hidden" value={user.id} />
+                          <input
+                            name="action"
+                            type="hidden"
+                            value={user.status === "active" && !user.deletedAt ? "disable" : "activate"}
+                          />
+                          <button
+                            className="ui-button ui-button--secondary"
+                            disabled={user.id === currentAdmin.userId}
+                            type="submit"
+                          >
+                            {user.status === "active" && !user.deletedAt ? "Disable" : "Activate"}
+                          </button>
+                        </form>
+                        <form action="/api/admin/users/status" method="post">
+                          <input name="userId" type="hidden" value={user.id} />
+                          <input name="action" type="hidden" value="delete" />
+                          <button
+                            className="ui-button ui-button--danger"
+                            disabled={user.id === currentAdmin.userId || Boolean(user.deletedAt)}
+                            type="submit"
+                          >
+                            Delete
+                          </button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 ))}
