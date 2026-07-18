@@ -583,24 +583,34 @@ p {
   z-index: 20;
   top: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
   border-bottom: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-background) 88%, transparent);
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   backdrop-filter: blur(16px);
 }
 
 .marketing-brand {
   display: inline-flex;
   align-items: center;
-  inline-size: 11.5rem;
-  block-size: 2.75rem;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  block-size: 2.5rem;
   color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   text-decoration: none;
 }
 
-.marketing-brand img,
+.marketing-brand img {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
 .marketing-footer > img {
   display: block;
   object-fit: contain;
@@ -614,6 +624,24 @@ p {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
+}
+
+.marketing-header nav {
+  grid-column: 1 / -1;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-block: var(--space-1);
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+
+.marketing-header nav::-webkit-scrollbar {
+  display: none;
+}
+
+.marketing-header__actions {
+  justify-content: end;
+  gap: var(--space-2);
 }
 
 .marketing-header a,
@@ -639,14 +667,19 @@ p {
   text-decoration: none;
 }
 
+.marketing-header__actions .marketing-button {
+  min-block-size: 2.35rem;
+  padding-inline: var(--space-3);
+}
+
 .marketing-hero {
   position: relative;
   display: grid;
-  min-height: 84svh;
+  min-height: calc(100svh - 7.5rem);
   align-items: center;
   overflow: hidden;
   border-bottom: 1px solid var(--color-border);
-  padding: var(--space-6);
+  padding: var(--space-8) var(--space-4);
 }
 
 .marketing-hero img {
@@ -675,7 +708,7 @@ p {
 .marketing-hero h1,
 .marketing-section h1 {
   max-width: 13ch;
-  font-size: clamp(2.25rem, 9vw, 5.25rem);
+  font-size: 2.7rem;
   line-height: 0.96;
   letter-spacing: 0;
 }
@@ -1006,12 +1039,22 @@ p {
   }
 
   .marketing-header nav {
+    grid-column: auto;
     justify-content: center;
+  }
+
+  .marketing-brand {
+    font-size: 1rem;
   }
 
   .marketing-hero {
     min-height: 86svh;
     padding: var(--space-10);
+  }
+
+  .marketing-hero h1,
+  .marketing-section h1 {
+    font-size: 5.25rem;
   }
 
   .marketing-section {
