@@ -1,9 +1,6 @@
-import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { sessionCookieName } from "@fpp/auth";
-import { getPublicAppUrl } from "@fpp/config";
 import { getDirection, resolveLocale, type SupportedLocale } from "@fpp/i18n";
 import { MarketingHeader } from "./marketing-header";
 
@@ -212,17 +209,13 @@ export async function getMarketingContext(searchParams: MarketingSearchParams) {
   const params = await searchParams;
   const locale = resolveLocale({ userLocale: params.lang });
   const copy = pageCopy[locale];
-  const cookieStore = await cookies();
-  const hasSession = Boolean(cookieStore.get(sessionCookieName));
-  const appUrl = getPublicAppUrl();
 
   return {
     locale,
     dir: getDirection(locale),
     copy,
-    hasSession,
-    loginHref: hasSession ? appUrl : withLocale("/login", locale),
-    signupHref: hasSession ? appUrl : withLocale("/signup", locale)
+    loginHref: withLocale("/login", locale),
+    signupHref: withLocale("/signup", locale)
   };
 }
 
