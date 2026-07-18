@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { sessionCookieName } from "@fpp/auth";
 import { getDirection, resolveLocale, type SupportedLocale } from "@fpp/i18n";
+import { MarketingHeader } from "./marketing-header";
 
 type MarketingPageKey =
   | "home"
@@ -244,35 +245,18 @@ export function MarketingShell({
 }) {
   return (
     <main className="marketing" data-theme="dark" dir={context.dir}>
-      <header className="marketing-header">
-        <Link className="marketing-brand" href={marketingHref("home", context.locale)}>
-          <Image
-            alt=""
-            height={34}
-            priority
-            src="/brand/athvexa-icon-192.png"
-            width={34}
-          />
-          <span>ATHVEXA</span>
-        </Link>
-        <nav aria-label="Marketing navigation">
-          {navItems.map(([key, label]) => (
-            <Link
-              aria-current={activePage === key ? "page" : undefined}
-              href={marketingHref(key, context.locale)}
-              key={key}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
-        <div className="marketing-header__actions">
-          <Link href={context.loginHref}>{context.copy.nav.login}</Link>
-          <Link className="marketing-button" href={context.signupHref}>
-            {context.copy.nav.start}
-          </Link>
-        </div>
-      </header>
+      <MarketingHeader
+        brandHref={marketingHref("home", context.locale)}
+        loginHref={context.loginHref}
+        loginLabel={context.copy.nav.login}
+        navItems={navItems.map(([key, label]) => ({
+          active: activePage === key,
+          href: marketingHref(key, context.locale),
+          label
+        }))}
+        signupHref={context.signupHref}
+        signupLabel={context.copy.nav.start}
+      />
       {children}
       <footer className="marketing-footer">
         <Image alt="ATHVEXA" height={54} src="/brand/athvexa-logo.png" width={220} />

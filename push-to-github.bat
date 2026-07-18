@@ -70,11 +70,9 @@ if "%HAS_WORKTREE_CHANGES%"=="0" if "%HAS_STAGED_CHANGES%"=="0" (
 )
 
 echo.
-set /p COMMIT_MESSAGE=Commit message: 
+set /p COMMIT_MESSAGE=Commit message [Update ATHVEXA site]: 
 if "%COMMIT_MESSAGE%"=="" (
-  echo ERROR: Commit message cannot be empty.
-  pause
-  exit /b 1
+  set "COMMIT_MESSAGE=Update ATHVEXA site"
 )
 
 echo.

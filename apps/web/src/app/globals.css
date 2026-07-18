@@ -583,31 +583,29 @@ p {
   z-index: 20;
   top: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-3) var(--space-4);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0 var(--space-3);
   align-items: center;
+  min-block-size: 4.25rem;
   border-bottom: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-background) 88%, transparent);
-  padding: var(--space-3) var(--space-4);
+  padding: 0 var(--space-4);
   backdrop-filter: blur(16px);
 }
 
 .marketing-brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  min-inline-size: 0;
-  block-size: 2.5rem;
+  inline-size: 8.25rem;
+  block-size: 3rem;
   color: var(--color-text);
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
   text-decoration: none;
 }
 
 .marketing-brand img {
   display: block;
-  flex: 0 0 auto;
+  inline-size: 100%;
+  block-size: 100%;
   object-fit: contain;
 }
 
@@ -616,7 +614,6 @@ p {
   object-fit: contain;
 }
 
-.marketing-header nav,
 .marketing-header__actions,
 .marketing-footer nav,
 .marketing-hero__actions {
@@ -626,22 +623,18 @@ p {
   gap: var(--space-3);
 }
 
-.marketing-header nav {
-  grid-column: 1 / -1;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-block: var(--space-1);
-  scrollbar-width: none;
-  white-space: nowrap;
-}
-
-.marketing-header nav::-webkit-scrollbar {
+.marketing-nav {
   display: none;
 }
 
 .marketing-header__actions {
+  flex-wrap: nowrap;
   justify-content: end;
   gap: var(--space-2);
+}
+
+.marketing-login {
+  display: none;
 }
 
 .marketing-header a,
@@ -667,9 +660,69 @@ p {
   text-decoration: none;
 }
 
-.marketing-header__actions .marketing-button {
+.marketing-button--header {
   min-block-size: 2.35rem;
+  font-size: 0.9rem;
   padding-inline: var(--space-3);
+}
+
+.marketing-menu-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.24rem;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--color-surface) 74%, transparent);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.marketing-menu-button span {
+  display: block;
+  inline-size: 1.1rem;
+  block-size: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.marketing-mobile-menu {
+  display: none;
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--color-border);
+  padding-block: var(--space-3);
+}
+
+.marketing-mobile-menu[data-open="true"] {
+  display: block;
+}
+
+.marketing-mobile-menu nav {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.marketing-mobile-menu a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.marketing-mobile-menu .marketing-button {
+  justify-self: start;
+  min-block-size: 2.45rem;
+}
+
+@media (max-width: 379px) {
+  .marketing-brand {
+    inline-size: 7.5rem;
+  }
+
+  .marketing-button--header {
+    display: none;
+  }
 }
 
 .marketing-hero {
@@ -1033,18 +1086,41 @@ p {
   }
 
   .marketing-header {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 10rem minmax(0, 1fr) auto;
     align-items: center;
-    padding-inline: var(--space-8);
+    min-block-size: 4.75rem;
+    gap: var(--space-6);
+    padding: 0 var(--space-8);
   }
 
-  .marketing-header nav {
-    grid-column: auto;
+  .marketing-nav {
+    display: flex;
+    align-items: center;
     justify-content: center;
+    gap: var(--space-4);
+    white-space: nowrap;
   }
 
   .marketing-brand {
+    inline-size: 10rem;
+    block-size: 3.25rem;
+  }
+
+  .marketing-login {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+  }
+
+  .marketing-button--header {
+    min-block-size: 2.75rem;
     font-size: 1rem;
+    padding-inline: var(--space-4);
+  }
+
+  .marketing-menu-button,
+  .marketing-mobile-menu {
+    display: none !important;
   }
 
   .marketing-hero {
