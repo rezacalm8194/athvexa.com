@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { platformAdmins } from "@fpp/database";
 import { emailSchema } from "@fpp/validation";
@@ -8,28 +7,27 @@ import {
   listPlatformAdmins,
   normalizeAdminEmail
 } from "../../../../admin-auth";
+import { redirectToAdminPath } from "../../redirect";
 
 export async function POST(request: Request) {
   const currentAdmin = await getPlatformAdminFromRequest(request);
 
   if (!currentAdmin) {
-    return NextResponse.redirect(new URL("/login?returnTo=/admin", request.url), { status: 303 });
+    return redirectToAdminPath(request, "/login?returnTo=/admin");
   }
 
   const formData = await request.formData();
   const parsed = emailSchema.safeParse(formData.get("email"));
 
   if (!parsed.success) {
-    return NextResponse.redirect(new URL("/admin?error=invalid_email", request.url), {
-      status: 303
-    });
+    return redirectToAdminPath(request, "/admin?error=invalid_email");
   }
 
   const email = normalizeAdminEmail(parsed.data);
   const admins = await listPlatformAdmins();
 
   if (admins.length <= 1 && admins[0]?.email === email) {
-    return NextResponse.redirect(new URL("/admin?error=last_admin", request.url), { status: 303 });
+    return redirectToAdminPath(request, "/admin?error=last_admin");
   }
 
   await getDatabase()
@@ -44,5 +42,5 @@ export async function POST(request: Request) {
         and ${platformAdmins.deletedAt} is null`
     );
 
-  return NextResponse.redirect(new URL("/admin", request.url), { status: 303 });
+  return redirectToAdminPath(request, "/admin");
 }

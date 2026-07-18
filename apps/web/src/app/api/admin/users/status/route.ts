@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { sessions, users } from "@fpp/database";
 import { getDatabase } from "../../../../auth-db";
 import { getPlatformAdminFromRequest } from "../../../../admin-auth";
+import { redirectToAdminPath } from "../../redirect";
 
 const allowedActions = new Set(["activate", "disable", "delete"]);
 
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const currentAdmin = await getPlatformAdminFromRequest(request);
 
   if (!currentAdmin) {
-    return NextResponse.redirect(new URL("/login?returnTo=/admin", request.url), { status: 303 });
+    return redirectToAdminPath(request, "/login?returnTo=/admin");
   }
 
   const formData = await request.formData();
@@ -18,15 +18,11 @@ export async function POST(request: Request) {
   const action = String(formData.get("action") ?? "");
 
   if (!userId || !allowedActions.has(action)) {
-    return NextResponse.redirect(new URL("/admin?error=invalid_user_action", request.url), {
-      status: 303
-    });
+    return redirectToAdminPath(request, "/admin?error=invalid_user_action");
   }
 
   if (userId === currentAdmin.userId && action !== "activate") {
-    return NextResponse.redirect(new URL("/admin?error=self_protection", request.url), {
-      status: 303
-    });
+    return redirectToAdminPath(request, "/admin?error=self_protection");
   }
 
   const db = getDatabase();
@@ -59,5 +55,5 @@ export async function POST(request: Request) {
       .where(sql`${sessions.userId} = ${userId} and ${sessions.revokedAt} is null`);
   }
 
-  return NextResponse.redirect(new URL("/admin", request.url), { status: 303 });
+  return redirectToAdminPath(request, "/admin");
 }

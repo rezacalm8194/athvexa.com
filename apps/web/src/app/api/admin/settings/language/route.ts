@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { platformSettings } from "@fpp/database";
 import { getDatabase } from "../../../../auth-db";
 import { getPlatformAdminFromRequest } from "../../../../admin-auth";
+import { redirectToAdminPath } from "../../redirect";
 
 const supportedLocales = new Set(["en", "fa", "ar"]);
 
@@ -9,16 +9,14 @@ export async function POST(request: Request) {
   const currentAdmin = await getPlatformAdminFromRequest(request);
 
   if (!currentAdmin) {
-    return NextResponse.redirect(new URL("/login?returnTo=/admin", request.url), { status: 303 });
+    return redirectToAdminPath(request, "/login?returnTo=/admin");
   }
 
   const formData = await request.formData();
   const locale = String(formData.get("locale") ?? "").trim().toLowerCase();
 
   if (!supportedLocales.has(locale)) {
-    return NextResponse.redirect(new URL("/admin?error=invalid_locale", request.url), {
-      status: 303
-    });
+    return redirectToAdminPath(request, "/admin?error=invalid_locale");
   }
 
   await getDatabase()
@@ -38,5 +36,5 @@ export async function POST(request: Request) {
       }
     });
 
-  return NextResponse.redirect(new URL("/admin", request.url), { status: 303 });
+  return redirectToAdminPath(request, "/admin");
 }
