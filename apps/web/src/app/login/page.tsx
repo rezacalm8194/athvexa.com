@@ -1,5 +1,4 @@
 import { AuthLink, AuthShell } from "../auth-shell";
-import { loginAction } from "../auth-actions";
 import { getAuthErrorMessage } from "../auth-errors";
 
 export default async function LoginPage({
@@ -21,7 +20,7 @@ export default async function LoginPage({
       }
       title="Log in"
     >
-      <form action={loginAction} className="auth-form" method="post">
+      <form action="/api/auth/login" className="auth-form" method="post">
         {errorMessage ? (
           <p className="ui-alert" role="alert">
             {errorMessage}

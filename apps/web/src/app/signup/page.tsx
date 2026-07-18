@@ -1,5 +1,4 @@
 import { AuthLink, AuthShell } from "../auth-shell";
-import { signupAction } from "../auth-actions";
 import { getAuthErrorMessage } from "../auth-errors";
 
 export default async function SignupPage({
@@ -16,7 +15,7 @@ export default async function SignupPage({
       footer={<AuthLink href="/login">Already have an account?</AuthLink>}
       title="Create your workspace"
     >
-      <form action={signupAction} className="auth-form" method="post">
+      <form action="/api/auth/signup" className="auth-form" method="post">
         {errorMessage ? (
           <p className="ui-alert" role="alert">
             {errorMessage}
