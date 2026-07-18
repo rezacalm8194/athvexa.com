@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createWorkspaceSlug, formBoolean, formString, getAuthErrorMessage } from "./auth-flow";
+import { getAuthErrorMessage } from "./auth-errors";
+import { createWorkspaceSlug, formBoolean, formString } from "./auth-flow";
 
 describe("auth form flow helpers", () => {
   it("reads string and checkbox form values safely", () => {

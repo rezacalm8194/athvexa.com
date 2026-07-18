@@ -18,25 +18,6 @@ import { getDatabase } from "./auth-db";
 type AuthDatabase = ReturnType<typeof getDatabase>;
 type AuthTransaction = Parameters<Parameters<AuthDatabase["transaction"]>[0]>[0];
 
-export const authErrorMessages = {
-  invalid: "Please check the fields and try again.",
-  login_failed: "Email or password is not correct.",
-  signup_failed: "We could not create the account. Please try again.",
-  server: "Authentication is temporarily unavailable."
-} as const;
-
-export type AuthErrorCode = keyof typeof authErrorMessages;
-
-export function getAuthErrorMessage(value: string | string[] | undefined) {
-  const code = Array.isArray(value) ? value[0] : value;
-
-  if (code && code in authErrorMessages) {
-    return authErrorMessages[code as AuthErrorCode];
-  }
-
-  return undefined;
-}
-
 export function formString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : undefined;
@@ -120,7 +101,6 @@ export async function signupWithPassword(formData: FormData, headersList: Header
     return { ok: false as const, error: "invalid" as const };
   }
 
-  const db = getDatabase();
   const now = new Date();
   const passwordHash = await hashPassword(parsed.data.password);
   const sessionToken = createSessionToken();
@@ -129,6 +109,8 @@ export async function signupWithPassword(formData: FormData, headersList: Header
   const userAgent = headersList.get("user-agent");
 
   try {
+    const db = getDatabase();
+
     await db.transaction(async (tx) => {
       const [user] = await tx
         .insert(users)
@@ -223,12 +205,13 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
     return { ok: false as const, error: "invalid" as const };
   }
 
-  const db = getDatabase();
   const now = new Date();
   const ipHash = hashHeaderValue(getClientIp(headersList));
   const userAgent = headersList.get("user-agent");
 
   try {
+    const db = getDatabase();
+
     const [user] = await db
       .select()
       .from(users)

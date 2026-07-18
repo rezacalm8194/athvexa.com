@@ -1,6 +1,6 @@
 import { AuthLink, AuthShell } from "../auth-shell";
 import { loginAction } from "../auth-actions";
-import { getAuthErrorMessage } from "../auth-flow";
+import { getAuthErrorMessage } from "../auth-errors";
 
 export default async function LoginPage({
   searchParams
