@@ -202,7 +202,7 @@ Role-based workspace invitation.
 
 Fields:
 
-- `id`, `workspace_id`, `email_normalized`, `role_id`, `team_id nullable`, `player_scope_id nullable`, `token_hash`, `expires_at`, `usage_limit`, `usage_count`, `requires_approval`, `revoked_at`, `accepted_at`, `accepted_by`, common columns
+- `id`, `workspace_id`, `email_normalized`, `role_id`, `team_id nullable`, `player_scope_id nullable`, `team_scope_mode`, `player_scope_mode`, `token_hash`, `expires_at`, `usage_limit`, `usage_count`, `requires_approval`, `revoked_at`, `accepted_at`, `accepted_by`, common columns
 
 Constraints:
 
@@ -847,7 +847,9 @@ Product tables are still intentionally not implemented.
 
 - Drizzle schema adds `invitations`.
 - Migration: `packages/database/drizzle/0002_invitations.sql`.
+- Scope migration: `packages/database/drizzle/0005_invitation_scope_modes.sql`.
 - `team_id` and `player_scope_id` are nullable UUID placeholders until Stage 11 creates teams and player profiles.
+- `team_scope_mode` and `player_scope_mode` are stored on pending invitations and copied to membership on acceptance.
 - Invitation tokens are stored as hashes only.
 - RLS is enabled on `invitations` with workspace isolation.
 - The migration has not been run against a live local PostgreSQL instance in this environment because Docker CLI is not available here.

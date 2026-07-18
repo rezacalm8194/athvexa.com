@@ -38,6 +38,12 @@ Stage 10 adds:
 
 It creates role-based workspace invitations with hashed token storage, expiration, usage limits, approval state, revocation state, acceptance metadata, indexes, and RLS. `team_id` and `player_scope_id` are nullable UUID placeholders until the team and player tables are introduced.
 
+Stage 10 also adds:
+
+- `drizzle/0005_invitation_scope_modes.sql`
+
+It keeps `team_scope_mode` and `player_scope_mode` on pending invitations so acceptance can create a correctly scoped workspace member before team and player records exist.
+
 ## Development Seed
 
 `src/seed.ts` exports role and permission seed data for development. It does not contain real users, passwords, tokens, or secrets.

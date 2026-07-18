@@ -48,7 +48,7 @@ export default function InvitationsPage() {
       </header>
 
       <section className="invitation-layout">
-        <form action="/coach/invitations" className="invitation-form" method="get">
+        <form action="/api/coach/invitations" className="invitation-form" method="post">
           <div>
             <p className="ui-eyebrow">New invitation</p>
             <h2>Access details</h2>

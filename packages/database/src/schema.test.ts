@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseSchemaTables, memberSchemaTables } from "./schema";
+import { baseSchemaTables, invitations, memberSchemaTables } from "./schema";
 import { getDevelopmentSeed } from "./seed";
 import { buildWorkspaceContextSql, workspaceScopedTables } from "./workspace-isolation";
 
@@ -42,6 +42,11 @@ describe("base database schema", () => {
     ]);
     expect(Object.keys(memberSchemaTables)).not.toContain("teams");
     expect(Object.keys(memberSchemaTables)).not.toContain("playerProfiles");
+  });
+
+  it("keeps invitation scope modes on the invitation record before member acceptance", () => {
+    expect(invitations.teamScopeMode).toBeDefined();
+    expect(invitations.playerScopeMode).toBeDefined();
   });
 
 

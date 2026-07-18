@@ -269,6 +269,8 @@ export const invitations = pgTable(
       .references(() => roles.id, { onDelete: "restrict" }),
     teamId: uuid("team_id"),
     playerScopeId: uuid("player_scope_id"),
+    teamScopeMode: scopeMode("team_scope_mode").notNull().default("assigned"),
+    playerScopeMode: scopeMode("player_scope_mode").notNull().default("assigned"),
     tokenHash: text("token_hash").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usageLimit: integer("usage_limit").notNull().default(1),
