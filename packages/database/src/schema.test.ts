@@ -32,6 +32,7 @@ describe("base database schema", () => {
       "loginAttempts",
       "passwordResetTokens",
       "permissions",
+      "platformAdmins",
       "roles",
       "sessions",
       "users",
@@ -47,6 +48,10 @@ describe("base database schema", () => {
     const seed = getDevelopmentSeed();
 
     expect(seed.roles.map((role) => role.key)).toEqual(["owner", "coach", "assistant", "player"]);
+    expect(seed.platformAdmins).toEqual([
+      "r.hasantabar7@gmail.com",
+      "rezasafarinet1@gmail.com"
+    ]);
     expect(JSON.stringify(seed)).not.toMatch(/password|token|secret/i);
   });
 

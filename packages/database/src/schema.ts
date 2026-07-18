@@ -294,6 +294,24 @@ export const invitations = pgTable(
   ]
 );
 
+export const platformAdmins = pgTable(
+  "platform_admins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    emailNormalized: varchar("email_normalized", { length: 320 }).notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    grantedBy: uuid("granted_by").references(() => users.id, { onDelete: "set null" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex("platform_admins_active_email_uidx")
+      .on(table.emailNormalized)
+      .where(sql`${table.revokedAt} is null and ${table.deletedAt} is null`),
+    index("platform_admins_user_id_idx").on(table.userId)
+  ]
+);
+
 export const baseSchemaTables = {
   users,
   devices,
@@ -313,5 +331,6 @@ export const authSchemaTables = {
 
 export const memberSchemaTables = {
   ...authSchemaTables,
-  invitations
+  invitations,
+  platformAdmins
 };

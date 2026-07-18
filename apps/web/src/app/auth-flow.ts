@@ -4,6 +4,7 @@ import {
   activityLogs,
   devices,
   loginAttempts,
+  platformAdmins,
   permissions,
   roles,
   sessions,
@@ -89,6 +90,23 @@ function getClientIp(headersList: Headers) {
   );
 }
 
+async function linkPlatformAdmin(db: AuthDatabase, email: string, userId: string) {
+  const [admin] = await db
+    .update(platformAdmins)
+    .set({
+      userId,
+      updatedAt: new Date()
+    })
+    .where(
+      sql`${platformAdmins.emailNormalized} = ${email}
+        and ${platformAdmins.revokedAt} is null
+        and ${platformAdmins.deletedAt} is null`
+    )
+    .returning({ id: platformAdmins.id });
+
+  return Boolean(admin);
+}
+
 async function ensureOwnerRole(tx: AuthTransaction) {
   const [insertedRole] = await tx
     .insert(roles)
@@ -126,6 +144,7 @@ async function ensureOwnerRole(tx: AuthTransaction) {
 }
 
 export async function signupWithPassword(formData: FormData, headersList: Headers) {
+  const requestedReturnTo = formString(formData, "returnTo");
   const parsed = signupSchema.safeParse({
     name: formString(formData, "name"),
     email: formString(formData, "email"),
@@ -144,6 +163,8 @@ export async function signupWithPassword(formData: FormData, headersList: Header
   const expiresAt = getSessionExpiry(now, true);
   const ipHash = hashHeaderValue(getClientIp(headersList));
   const userAgent = headersList.get("user-agent");
+  let userId: string | null = null;
+  let returnTo = parsed.data.returnTo;
 
   let stage = "database_connect";
 
@@ -160,6 +181,7 @@ export async function signupWithPassword(formData: FormData, headersList: Header
           name: parsed.data.name
         })
         .returning();
+      userId = user.id;
 
       const [workspace] = await tx
         .insert(workspaces)
@@ -220,6 +242,15 @@ export async function signupWithPassword(formData: FormData, headersList: Header
         userAgent
       });
     });
+
+    if (userId) {
+      stage = "platform_admin_link";
+      const isPlatformAdmin = await linkPlatformAdmin(db, parsed.data.email, userId);
+
+      if (isPlatformAdmin && !requestedReturnTo) {
+        returnTo = "/admin";
+      }
+    }
   } catch (error) {
     logAuthError("signup", stage, error);
 
@@ -230,11 +261,12 @@ export async function signupWithPassword(formData: FormData, headersList: Header
     ok: true as const,
     token: sessionToken,
     expiresAt,
-    returnTo: parsed.data.returnTo
+    returnTo
   };
 }
 
 export async function loginWithPassword(formData: FormData, headersList: Headers) {
+  const requestedReturnTo = formString(formData, "returnTo");
   const parsed = loginSchema.safeParse({
     email: formString(formData, "email"),
     password: formString(formData, "password"),
@@ -304,11 +336,14 @@ export async function loginWithPassword(formData: FormData, headersList: Headers
       userAgent
     });
 
+    stage = "platform_admin_link";
+    const isPlatformAdmin = await linkPlatformAdmin(db, parsed.data.email, user.id);
+
     return {
       ok: true as const,
       token: sessionToken,
       expiresAt,
-      returnTo: parsed.data.returnTo
+      returnTo: isPlatformAdmin && !requestedReturnTo ? "/admin" : parsed.data.returnTo
     };
   } catch (error) {
     logAuthError("login", stage, error);

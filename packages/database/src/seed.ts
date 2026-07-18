@@ -29,9 +29,15 @@ export const developmentPermissions = [
   { roleKey: "player", resource: "profile", action: "read", scope: "own" }
 ] as const;
 
+export const initialPlatformAdminEmails = [
+  "r.hasantabar7@gmail.com",
+  "rezasafarinet1@gmail.com"
+] as const;
+
 export function getDevelopmentSeed() {
   return {
     roles: systemRoles,
-    permissions: developmentPermissions
+    permissions: developmentPermissions,
+    platformAdmins: initialPlatformAdminEmails
   };
 }
