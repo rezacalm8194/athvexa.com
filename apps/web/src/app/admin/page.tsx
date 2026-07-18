@@ -13,7 +13,10 @@ import {
 async function getPlatformStats() {
   const db = getDatabase();
   const [[userStats], [workspaceStats], [sessionStats], [adminStats]] = await Promise.all([
-    db.select({ count: sql<number>`count(*)::int` }).from(users),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(sql`${users.deletedAt} is null`),
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(workspaces)
