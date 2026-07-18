@@ -3,7 +3,7 @@ import { sessionCookieName } from "@fpp/auth";
 import { buildSafeRedirectUrl } from "@fpp/config";
 
 function getRedirectUrl(request: Request, path: string) {
-  return buildSafeRedirectUrl(request.url, path);
+  return buildSafeRedirectUrl(request.url, path, process.env, request.headers);
 }
 
 export function redirectTo(request: Request, path: string) {

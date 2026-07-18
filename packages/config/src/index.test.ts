@@ -61,6 +61,61 @@ describe("public URL configuration", () => {
     );
   });
 
+  it("uses an allowlisted forwarded host when env still contains local development URLs", () => {
+    const env = {
+      NODE_ENV: "development",
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+    };
+    const headers = new Headers({
+      "x-forwarded-host": "athvexa.com",
+      "x-forwarded-proto": "https"
+    });
+
+    expect(
+      buildSafeRedirectUrl(
+        "http://localhost:3001/api/auth/login",
+        "/login?error=server",
+        env,
+        headers
+      ).toString()
+    ).toBe("https://athvexa.com/login?error=server");
+  });
+
+  it("does not trust unallowlisted forwarded hosts for redirects", () => {
+    const env = {
+      NODE_ENV: "development",
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+    };
+    const headers = new Headers({
+      "x-forwarded-host": "evil.example",
+      "x-forwarded-proto": "https"
+    });
+
+    expect(
+      buildSafeRedirectUrl("http://localhost:3001/api/auth/login", "/login", env, headers).toString()
+    ).toBe("http://localhost:3001/login");
+  });
+
+  it("uses an allowlisted HTTPS referer when forwarded host is internal", () => {
+    const env = {
+      NODE_ENV: "development",
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+    };
+    const headers = new Headers({
+      host: "localhost:3001",
+      referer: "https://athvexa.com/login"
+    });
+
+    expect(
+      buildSafeRedirectUrl(
+        "http://localhost:3001/api/auth/login",
+        "/login?error=server",
+        env,
+        headers
+      ).toString()
+    ).toBe("https://athvexa.com/login?error=server");
+  });
+
   it("prevents open redirects and preserves valid internal callback paths", () => {
     expect(getSafeInternalPath("/coach?tab=members")).toBe("/coach?tab=members");
     expect(getSafeInternalPath("https://evil.example/coach")).toBe("/onboarding");

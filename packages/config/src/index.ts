@@ -6,13 +6,22 @@ export type PublicUrlEnvironment = {
   NODE_ENV?: string;
 };
 
+export type ForwardedHeaders = {
+  get(name: string): string | null;
+};
+
 const defaultProductionAppUrl = "https://athvexa.com";
 const defaultDevelopmentAppUrl = "http://localhost:3000";
 const invalidBrowserHosts = new Set(["0.0.0.0", "[::]", "::"]);
 const localBrowserHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+const productionBrowserHosts = new Set(["athvexa.com"]);
 
 function isLocalBrowserHost(hostname: string) {
   return localBrowserHosts.has(hostname);
+}
+
+function isAllowedProductionBrowserHost(hostname: string) {
+  return productionBrowserHosts.has(hostname.toLowerCase());
 }
 
 export function getRuntimeMode(env: PublicUrlEnvironment = process.env): RuntimeMode {
@@ -103,7 +112,44 @@ export function getSafeInternalPath(value: string | null | undefined, fallback =
   }
 }
 
-export function getRequestBaseUrl(requestUrl: string, env: PublicUrlEnvironment = process.env) {
+function getForwardedBaseUrl(headers: ForwardedHeaders | undefined) {
+  if (!headers) {
+    return undefined;
+  }
+
+  const forwardedHost = headers.get("x-forwarded-host") ?? headers.get("host");
+  const firstForwardedHost = forwardedHost?.split(",")[0]?.trim();
+
+  if (firstForwardedHost) {
+    const hostWithoutPort = firstForwardedHost.split(":")[0]?.toLowerCase();
+
+    if (hostWithoutPort && isAllowedProductionBrowserHost(hostWithoutPort)) {
+      return `https://${hostWithoutPort}`;
+    }
+  }
+
+  const referer = headers.get("referer");
+
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+
+      if (refererUrl.protocol === "https:" && isAllowedProductionBrowserHost(refererUrl.hostname)) {
+        return refererUrl.origin;
+      }
+    } catch {
+      // Ignore malformed referers.
+    }
+  }
+
+  return undefined;
+}
+
+export function getRequestBaseUrl(
+  requestUrl: string,
+  env: PublicUrlEnvironment = process.env,
+  headers?: ForwardedHeaders
+) {
   const mode = getRuntimeMode(env);
   const configuredAppUrl = env.NEXT_PUBLIC_APP_URL?.trim();
 
@@ -117,6 +163,12 @@ export function getRequestBaseUrl(requestUrl: string, env: PublicUrlEnvironment 
     } catch {
       // Fall through to the request URL or default app URL.
     }
+  }
+
+  const forwardedBaseUrl = getForwardedBaseUrl(headers);
+
+  if (forwardedBaseUrl) {
+    return normalizeTrailingSlash(forwardedBaseUrl);
   }
 
   if (mode === "production") {
@@ -136,9 +188,10 @@ export function getRequestBaseUrl(requestUrl: string, env: PublicUrlEnvironment 
 export function buildSafeRedirectUrl(
   requestUrl: string,
   destination: string,
-  env: PublicUrlEnvironment = process.env
+  env: PublicUrlEnvironment = process.env,
+  headers?: ForwardedHeaders
 ) {
-  const baseUrl = getRequestBaseUrl(requestUrl, env);
+  const baseUrl = getRequestBaseUrl(requestUrl, env, headers);
 
   return new URL(getSafeInternalPath(destination), `${baseUrl}/`);
 }
@@ -174,5 +227,6 @@ export function isAllowedBrowserOrigin(
 export const publicUrlTestExports = {
   defaultProductionAppUrl,
   defaultDevelopmentAppUrl,
-  localBrowserHosts
+  localBrowserHosts,
+  productionBrowserHosts
 };
