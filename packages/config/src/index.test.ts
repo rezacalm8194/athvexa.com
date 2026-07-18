@@ -50,6 +50,17 @@ describe("public URL configuration", () => {
     );
   });
 
+  it("prefers a configured non-local canonical app URL over an internal proxy URL", () => {
+    const env = {
+      NODE_ENV: "development",
+      NEXT_PUBLIC_APP_URL: "https://athvexa.com"
+    };
+
+    expect(buildSafeRedirectUrl("http://localhost:3001/api/auth/login", "/login?error=server", env).toString()).toBe(
+      "https://athvexa.com/login?error=server"
+    );
+  });
+
   it("prevents open redirects and preserves valid internal callback paths", () => {
     expect(getSafeInternalPath("/coach?tab=members")).toBe("/coach?tab=members");
     expect(getSafeInternalPath("https://evil.example/coach")).toBe("/onboarding");

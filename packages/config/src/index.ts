@@ -11,6 +11,10 @@ const defaultDevelopmentAppUrl = "http://localhost:3000";
 const invalidBrowserHosts = new Set(["0.0.0.0", "[::]", "::"]);
 const localBrowserHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
+function isLocalBrowserHost(hostname: string) {
+  return localBrowserHosts.has(hostname);
+}
+
 export function getRuntimeMode(env: PublicUrlEnvironment = process.env): RuntimeMode {
   if (env.NODE_ENV === "production") {
     return "production";
@@ -101,6 +105,19 @@ export function getSafeInternalPath(value: string | null | undefined, fallback =
 
 export function getRequestBaseUrl(requestUrl: string, env: PublicUrlEnvironment = process.env) {
   const mode = getRuntimeMode(env);
+  const configuredAppUrl = env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (configuredAppUrl) {
+    try {
+      const url = new URL(configuredAppUrl);
+
+      if (!invalidBrowserHosts.has(url.hostname) && !isLocalBrowserHost(url.hostname)) {
+        return getPublicAppUrl(env);
+      }
+    } catch {
+      // Fall through to the request URL or default app URL.
+    }
+  }
 
   if (mode === "production") {
     return getPublicAppUrl(env);
