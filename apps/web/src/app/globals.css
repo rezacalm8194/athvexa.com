@@ -234,6 +234,17 @@ p {
   font-size: 0.8125rem;
 }
 
+.ui-alert {
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 42%);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--color-danger), transparent 88%);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: var(--space-3);
+}
+
 .ui-input {
   inline-size: 100%;
   min-block-size: 2.75rem;

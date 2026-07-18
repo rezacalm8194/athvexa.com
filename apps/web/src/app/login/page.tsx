@@ -1,6 +1,14 @@
 import { AuthLink, AuthShell } from "../auth-shell";
+import { loginAction } from "../auth-actions";
+import { getAuthErrorMessage } from "../auth-flow";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
+  const errorMessage = getAuthErrorMessage((await searchParams).error);
+
   return (
     <AuthShell
       description="Use your email and password. Errors stay generic for account safety."
@@ -13,7 +21,12 @@ export default function LoginPage() {
       }
       title="Log in"
     >
-      <form className="auth-form" method="post">
+      <form action={loginAction} className="auth-form" method="post">
+        {errorMessage ? (
+          <p className="ui-alert" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
         <label className="ui-field">
           <span className="ui-field__label">Email</span>
           <input autoComplete="email" className="ui-input" name="email" required type="email" />

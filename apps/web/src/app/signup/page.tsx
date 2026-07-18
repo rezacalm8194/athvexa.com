@@ -1,6 +1,14 @@
 import { AuthLink, AuthShell } from "../auth-shell";
+import { signupAction } from "../auth-actions";
+import { getAuthErrorMessage } from "../auth-flow";
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
+  const errorMessage = getAuthErrorMessage((await searchParams).error);
+
   return (
     <AuthShell
       description="Public signup is only for the coach owner who creates a new workspace."
@@ -8,7 +16,12 @@ export default function SignupPage() {
       footer={<AuthLink href="/login">Already have an account?</AuthLink>}
       title="Create your workspace"
     >
-      <form className="auth-form" method="post">
+      <form action={signupAction} className="auth-form" method="post">
+        {errorMessage ? (
+          <p className="ui-alert" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
         <label className="ui-field">
           <span className="ui-field__label">Name</span>
           <input autoComplete="name" className="ui-input" name="name" required />

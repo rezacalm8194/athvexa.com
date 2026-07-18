@@ -44,6 +44,9 @@ importers:
       '@fpp/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@fpp/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@fpp/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
