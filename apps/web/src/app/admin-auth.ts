@@ -96,6 +96,7 @@ export async function listPlatformUsers() {
     })
     .from(users)
     .leftJoin(workspaces, sql`${workspaces.createdBy} = ${users.id} and ${workspaces.deletedAt} is null`)
+    .where(sql`${users.deletedAt} is null`)
     .groupBy(users.id)
     .orderBy(sql`${users.createdAt} desc`)
     .limit(50);
