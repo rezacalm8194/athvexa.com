@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: #0a0a0a;
+  color: #f5f5f5;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2e2e2e transparent;
+}
+
+:focus-visible {
+  outline: 2px solid #e02020;
+  outline-offset: 2px;
+}
+
+@layer components {
+  .card {
+    @apply bg-ink-3 border border-white/5 rounded-lg;
+  }
+  .input-field {
+    @apply w-full bg-ink-3 border border-line-1 rounded-md px-4 py-3 text-sm text-paper-pure placeholder:text-smoke-3 outline-none transition-colors focus:border-red;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-red px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-glow disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-md border border-line-2 px-5 py-3 text-sm font-medium text-paper transition-colors hover:border-smoke-4 hover:text-paper-pure;
+  }
+  .eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.08em] text-smoke-3;
+  }
+}

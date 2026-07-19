@@ -1,0 +1,155 @@
+// Athvexa — Phase 1 data model
+// Dev uses SQLite for zero-setup. Switch provider to "postgresql" + set
+// DATABASE_URL to go to Postgres for production (see .env.example).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COACH
+  ASSISTANT
+  PLAYER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+
+  // Player-specific: which coach this player belongs to
+  coachId String?
+  coach   User?   @relation("CoachPlayers", fields: [coachId], references: [id])
+  players User[]  @relation("CoachPlayers")
+
+  dailyLogs   DailyLog[]
+  coachNotes  CoachNote[]     @relation("NotesToPlayer")
+  invitesSent Invite[]
+
+  planItems   PlanItem[]
+  habits      Habit[]
+  goals       Goal[]
+}
+
+// One entry per player per day — the "Today Dashboard" data.
+model DailyLog {
+  id            String   @id @default(cuid())
+  date          String   // "YYYY-MM-DD", one log per player per day
+  playerId      String
+  player        User     @relation(fields: [playerId], references: [id])
+
+  score         Int      @default(0) // 0-100 daily readiness score
+  sleepHours    Float?
+  waterLiters   Float?
+  energy        Int?     // 1-5
+  fatigue       Int?     // 1-5
+  soreness      Int?     // 1-5
+  mood          Int?     // 1-5
+  stress        Int?     // 1-5
+  sleepQuality  Int?     // 1-5
+
+  tasks         Task[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([playerId, date])
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  dailyLogId String
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id])
+  label      String
+  done       Boolean  @default(false)
+  order      Int      @default(0)
+}
+
+// Coach's message-of-the-day to a specific player.
+model CoachNote {
+  id        String   @id @default(cuid())
+  playerId  String
+  player    User     @relation("NotesToPlayer", fields: [playerId], references: [id])
+  message   String
+  date      String   // "YYYY-MM-DD"
+  createdAt DateTime @default(now())
+
+  @@unique([playerId, date])
+}
+
+// Phase 2 — Weekly Planner: a single planned item on a given day. Separate
+// from Task/DailyLog on purpose — the planner lets a player lay out a whole
+// week (including future days), while Task/DailyLog stays focused on today's
+// readiness check-in.
+model PlanItem {
+  id        String   @id @default(cuid())
+  playerId  String
+  player    User     @relation(fields: [playerId], references: [id])
+  date      String   // "YYYY-MM-DD"
+  label     String
+  category  String   @default("Training") // Training | Gym | Match | Recovery | Rest | Other
+  done      Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// Phase 2 — Habits: a recurring habit a player is building, tracked with a
+// per-day HabitLog (present = done that day). targetDays is "times per
+// week" and drives the weekly progress ring in the UI.
+model Habit {
+  id         String     @id @default(cuid())
+  playerId   String
+  player     User       @relation(fields: [playerId], references: [id])
+  name       String
+  icon       String     @default("💧")
+  color      String     @default("#4CAF50")
+  targetDays Int        @default(7) // times per week, 1-7
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  logs       HabitLog[]
+}
+
+model HabitLog {
+  id      String @id @default(cuid())
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id])
+  date    String // "YYYY-MM-DD"
+
+  @@unique([habitId, date])
+}
+
+// Phase 2 — Goals: longer-horizon targets a player is working toward,
+// tracked with a simple 0-100 progress bar.
+model Goal {
+  id          String   @id @default(cuid())
+  playerId    String
+  player      User     @relation(fields: [playerId], references: [id])
+  title       String
+  description String?
+  category    String   @default("Performance") // Fitness | Skill | Performance | Team
+  targetDate  String?  // "YYYY-MM-DD"
+  progress    Int      @default(0) // 0-100
+  status      String   @default("ACTIVE") // ACTIVE | DONE | ARCHIVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Shareable invite link a coach sends a player to join their roster.
+model Invite {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  coachId   String
+  coach     User     @relation(fields: [coachId], references: [id])
+  role      Role     @default(PLAYER)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
