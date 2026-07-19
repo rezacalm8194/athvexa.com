@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sessions, users } from "@fpp/database";
+import { platformAdmins, sessions, users } from "@fpp/database";
 import { getDatabase } from "../../../../auth-db";
 import { getPlatformAdminFromRequest } from "../../../../admin-auth";
 import { redirectToAdminPath } from "../../redirect";
@@ -29,14 +29,18 @@ export async function POST(request: Request) {
   const now = new Date();
 
   if (action === "delete") {
-    await db
-      .update(users)
-      .set({
-        deletedAt: now,
-        updatedAt: now,
-        status: "disabled"
-      })
-      .where(sql`${users.id} = ${userId}`);
+    await db.transaction(async (tx) => {
+      await tx
+        .update(platformAdmins)
+        .set({
+          revokedAt: now,
+          deletedAt: now,
+          updatedAt: now
+        })
+        .where(sql`${platformAdmins.userId} = ${userId}`);
+
+      await tx.delete(users).where(sql`${users.id} = ${userId}`);
+    });
   } else {
     await db
       .update(users)
