@@ -805,8 +805,8 @@
     <li><a href="#roadmap">Roadmap</a></li>
   </ul>
   <div class="nav-cta">
-    <a class="btn-ghost" href="#" onclick="openAuth('login')">Sign in</a>
-    <a class="btn-red" href="#" onclick="openAuth('register')">Get started free</a>
+    <a class="btn-ghost" href="/login">Sign in</a>
+    <a class="btn-red" href="/register">Get started free</a>
   </div>
   <button class="hamburger" onclick="toggleMobile()" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -819,8 +819,8 @@
   <a href="#modules" onclick="toggleMobile()">Modules</a>
   <a href="#roles" onclick="toggleMobile()">Roles</a>
   <a href="#roadmap" onclick="toggleMobile()">Roadmap</a>
-  <a class="btn-ghost" href="#" onclick="toggleMobile(); openAuth('login')">Sign in</a>
-  <a class="btn-red" href="#" onclick="toggleMobile(); openAuth('register')">Get started free</a>
+  <a class="btn-ghost" href="/login">Sign in</a>
+  <a class="btn-red" href="/register">Get started free</a>
 </div>
 
 <!-- HERO -->
@@ -834,7 +834,7 @@
       <h1>TRAIN SMARTER.<br><em>WIN HARDER.</em></h1>
       <p class="hero-sub">Athvexa gives football strength coaches full visibility into every player's daily performance — training, recovery, wellness, habits, and goals — in one powerful dashboard.</p>
       <div class="hero-actions">
-        <a class="btn-hero" href="#" onclick="openAuth('register')">
+        <a class="btn-hero" href="/register">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 7l5 5-5 5M6 12h12"/></svg>
           Start for free
         </a>
@@ -1238,9 +1238,7 @@
 
 <script>
 function openAuth(tab) {
-  document.getElementById('authModal').classList.add('open');
-  switchTab(tab);
-  document.body.style.overflow = 'hidden';
+  window.location.href = tab === 'register' ? '/register' : '/login';
 }
 function closeAuth() {
   document.getElementById('authModal').classList.remove('open');
@@ -1254,7 +1252,7 @@ function switchTab(tab) {
   document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
 }
 function goToApp() {
-  window.location.href = 'https://app.athvexa.com';
+  window.location.href = '/dashboard';
 }
 document.getElementById('authModal').addEventListener('click', function(e) {
   if (e.target === this) closeAuth();
