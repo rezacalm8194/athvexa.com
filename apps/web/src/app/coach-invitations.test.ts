@@ -49,6 +49,8 @@ describe("invitation flow helpers", () => {
   });
 
   it("keeps invitation errors allowlisted and role landing internal", () => {
+    expect(getInvitationErrorMessage("invalid_player_usage")).toContain("usage limit 1");
+    expect(getInvitationErrorMessage("invalid_assistant_scope")).toContain("all-team access");
     expect(getInvitationErrorMessage("email_mismatch")).toContain("different email");
     expect(getInvitationErrorMessage("already_revoked")).toContain("already revoked");
     expect(getInvitationErrorMessage("surprise")).toBeUndefined();

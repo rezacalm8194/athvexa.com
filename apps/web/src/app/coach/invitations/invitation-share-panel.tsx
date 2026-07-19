@@ -27,9 +27,11 @@ export function InvitationSharePanel({
   return (
     <section className="invitation-share" aria-label="Created invitation link">
       <div>
-        <p className="ui-eyebrow">Invitation link</p>
-        <h2>{email}</h2>
-        <span>{role}</span>
+        <p className="ui-eyebrow">Ready to send</p>
+        <h2>Share this invitation link</h2>
+        <span>
+          {email} · {role}
+        </span>
       </div>
       <input className="ui-input" readOnly value={inviteLink} />
       <div className="invitation-share__actions">

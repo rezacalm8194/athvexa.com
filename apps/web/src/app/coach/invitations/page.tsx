@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { sessionCookieName } from "@fpp/auth";
-import { invitationRoles, invitationScopeModes } from "@fpp/validation";
+import { invitationScopeModes } from "@fpp/validation";
 import {
   getInvitationErrorMessage,
   listWorkspaceInvitationsByToken
 } from "../../coach-invitations";
 import { InvitationSharePanel } from "./invitation-share-panel";
+import { InvitationRoleFields } from "./invitation-role-fields";
 
 export const dynamic = "force-dynamic";
 
@@ -94,13 +95,12 @@ export default async function InvitationsPage({
               {errorMessage}
             </p>
           ) : null}
-          {resolvedSearchParams.created ? (
-            <p className="ui-alert ui-alert--success" role="status">
-              Invitation prepared and stored securely.
-            </p>
-          ) : null}
           {inviteLink && inviteEmail && inviteRole ? (
             <InvitationSharePanel email={inviteEmail} inviteLink={inviteLink} role={inviteRole} />
+          ) : resolvedSearchParams.created ? (
+            <p className="ui-alert ui-alert--success" role="status">
+              Invitation prepared, but the share link was not returned. Try again and keep this page open.
+            </p>
           ) : null}
           {resolvedSearchParams.revoked ? (
             <p className="ui-alert ui-alert--success" role="status">
@@ -118,25 +118,14 @@ export default async function InvitationsPage({
             <input className="ui-input" name="email" placeholder="coach@example.com" required type="email" />
           </label>
 
-          <label className="ui-field">
-            <span className="ui-field__label">Role</span>
-            <select className="ui-input ui-select" defaultValue="coach" name="role" required>
-              {invitationRoles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="invitation-form__grid">
+            <InvitationRoleFields />
+          </div>
 
           <div className="invitation-form__grid">
             <label className="ui-field">
               <span className="ui-field__label">Expires in days</span>
               <input className="ui-input" defaultValue={14} min={1} max={90} name="expiresInDays" type="number" />
-            </label>
-            <label className="ui-field">
-              <span className="ui-field__label">Usage limit</span>
-              <input className="ui-input" defaultValue={1} min={1} max={100} name="usageLimit" type="number" />
             </label>
           </div>
 

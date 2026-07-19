@@ -25,6 +25,8 @@ type InvitationError =
   | "unauthorized"
   | "invalid"
   | "forbidden"
+  | "invalid_assistant_scope"
+  | "invalid_player_usage"
   | "role_missing"
   | "not_found"
   | "expired"
@@ -143,6 +145,10 @@ export function getInvitationErrorMessage(value: string | string[] | undefined) 
   switch (code) {
     case "invalid":
       return "Please check the invitation form and try again.";
+    case "invalid_player_usage":
+      return "Player invitations must have usage limit 1. The form now keeps this locked automatically.";
+    case "invalid_assistant_scope":
+      return "Assistant invitations cannot use all-team access. Choose assigned or none.";
     case "not_found":
       return "This invitation link is not valid.";
     case "expired":
@@ -280,6 +286,16 @@ export async function createWorkspaceInvitation(formData: FormData, request: Req
   });
 
   if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+
+    if (firstIssue?.path.includes("usageLimit")) {
+      return { ok: false as const, error: "invalid_player_usage" as InvitationError };
+    }
+
+    if (firstIssue?.path.includes("teamScopeMode")) {
+      return { ok: false as const, error: "invalid_assistant_scope" as InvitationError };
+    }
+
     return { ok: false as const, error: "invalid" as InvitationError };
   }
 
