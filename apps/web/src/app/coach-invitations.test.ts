@@ -14,7 +14,7 @@ describe("invitation flow helpers", () => {
     const path = createReadableInvitationPath("player", "Player.Name@example.com", "token_123");
 
     expect(createInvitationEmailSlug("Player.Name@example.com")).toBe("player.name-at-example.com");
-    expect(path).toBe("/invite/player/player.name-at-example.com/token_123");
+    expect(path).toBe("/invite/link/player/player.name-at-example.com/token_123");
   });
 
   it("classifies invitations that cannot be accepted", () => {

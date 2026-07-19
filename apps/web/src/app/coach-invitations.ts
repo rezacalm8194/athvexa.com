@@ -74,7 +74,7 @@ export function createInvitationEmailSlug(email: string) {
 }
 
 export function createReadableInvitationPath(role: string, email: string, token: string) {
-  return `/invite/${role}/${createInvitationEmailSlug(email)}/${encodeURIComponent(token)}`;
+  return `/invite/link/${role}/${createInvitationEmailSlug(email)}/${encodeURIComponent(token)}`;
 }
 
 export function getInvitationUnavailableReason(invitation: InvitationStatusInput, now = new Date()) {
