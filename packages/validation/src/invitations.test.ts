@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptInvitationSchema, createInvitationSchema } from "./index";
+import { acceptInvitationSchema, createInvitationSchema, revokeInvitationSchema } from "./index";
 
 describe("invitation validation", () => {
   it("normalizes email and validates coach invitations", () => {
@@ -49,5 +49,13 @@ describe("invitation validation", () => {
     });
 
     expect(parsed.name).toBe("Invited Coach");
+  });
+
+  it("validates invitation revocation payloads", () => {
+    const parsed = revokeInvitationSchema.parse({
+      invitationId: "11111111-1111-4111-8111-111111111111"
+    });
+
+    expect(parsed.invitationId).toBe("11111111-1111-4111-8111-111111111111");
   });
 });

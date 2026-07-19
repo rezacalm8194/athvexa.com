@@ -1,31 +1,71 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { sessionCookieName } from "@fpp/auth";
 import { invitationRoles, invitationScopeModes } from "@fpp/validation";
+import {
+  getInvitationErrorMessage,
+  listWorkspaceInvitationsByToken
+} from "../../coach-invitations";
+import { InvitationSharePanel } from "./invitation-share-panel";
 
-const pendingInvitations = [
-  {
-    email: "coach@example.com",
-    role: "Coach",
-    expires: "14 days",
-    usage: "0 / 1",
-    status: "Pending"
-  },
-  {
-    email: "assistant@example.com",
-    role: "Assistant",
-    expires: "7 days",
-    usage: "0 / 1",
-    status: "Needs approval"
-  },
-  {
-    email: "player@example.com",
-    role: "Player",
-    expires: "3 days",
-    usage: "0 / 1",
-    status: "Pending"
+export const dynamic = "force-dynamic";
+
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC"
+  }).format(value);
+}
+
+function getSearchString(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getSafeInviteLink(value: string | string[] | undefined) {
+  const candidate = getSearchString(value);
+
+  if (!candidate) {
+    return undefined;
   }
-];
 
-export default function InvitationsPage() {
+  try {
+    const url = new URL(candidate);
+
+    if (!["http:", "https:"].includes(url.protocol) || !url.pathname.startsWith("/invite/")) {
+      return undefined;
+    }
+
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
+export default async function InvitationsPage({
+  searchParams
+}: {
+  searchParams: Promise<{
+    created?: string;
+    error?: string | string[];
+    inviteEmail?: string | string[];
+    inviteLink?: string | string[];
+    inviteRole?: string | string[];
+    revoked?: string;
+  }>;
+}) {
+  const cookieStore = await cookies();
+  const resolvedSearchParams = await searchParams;
+  const invitationResult = await listWorkspaceInvitationsByToken(
+    cookieStore.get(sessionCookieName)?.value
+  ).catch(() => ({ ok: false as const, error: "server" as const }));
+  const errorMessage =
+    getInvitationErrorMessage(resolvedSearchParams.error) ??
+    (invitationResult.ok ? undefined : getInvitationErrorMessage(invitationResult.error));
+  const inviteLink = getSafeInviteLink(resolvedSearchParams.inviteLink);
+  const inviteEmail = getSearchString(resolvedSearchParams.inviteEmail);
+  const inviteRole = getSearchString(resolvedSearchParams.inviteRole);
+
   return (
     <main className="coach-shell" data-theme="dark">
       <header className="coach-header">
@@ -34,8 +74,8 @@ export default function InvitationsPage() {
           <h1>Invite by role and scope.</h1>
         </div>
         <p>
-          Invitation tokens are stored as hashes in the database plan. This local UI prepares the owner
-          flow before email delivery and acceptance endpoints are connected.
+          Invitation tokens are stored as hashes. Email delivery is still staged for later, but
+          owners can prepare scoped invitations and revoke pending access here.
         </p>
         <div className="coach-header__actions">
           <Link className="ui-button ui-button--secondary" href="/coach/members">
@@ -49,6 +89,25 @@ export default function InvitationsPage() {
 
       <section className="invitation-layout">
         <form action="/api/coach/invitations" className="invitation-form" method="post">
+          {errorMessage ? (
+            <p className="ui-alert" role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
+          {resolvedSearchParams.created ? (
+            <p className="ui-alert ui-alert--success" role="status">
+              Invitation prepared and stored securely.
+            </p>
+          ) : null}
+          {inviteLink && inviteEmail && inviteRole ? (
+            <InvitationSharePanel email={inviteEmail} inviteLink={inviteLink} role={inviteRole} />
+          ) : null}
+          {resolvedSearchParams.revoked ? (
+            <p className="ui-alert ui-alert--success" role="status">
+              Invitation revoked.
+            </p>
+          ) : null}
+
           <div>
             <p className="ui-eyebrow">New invitation</p>
             <h2>Access details</h2>
@@ -119,19 +178,40 @@ export default function InvitationsPage() {
             <p className="ui-eyebrow">Pending</p>
             <h2>Invitation queue</h2>
           </div>
-          {pendingInvitations.map((invitation) => (
-            <article className="invitation-item" key={invitation.email}>
+          {invitationResult.ok && invitationResult.invitations.length > 0 ? (
+            invitationResult.invitations.map((invitation) => (
+              <article className="invitation-item" key={invitation.id}>
+                <div>
+                  <strong>{invitation.email}</strong>
+                  <span>
+                    {invitation.role} · expires {formatDate(invitation.expiresAt)} · used{" "}
+                    {invitation.usageCount} / {invitation.usageLimit}
+                  </span>
+                  <span>
+                    Team scope: {invitation.teamScopeMode} · player scope: {invitation.playerScopeMode}
+                  </span>
+                </div>
+                <div className="invitation-item__actions">
+                  <span className="ui-badge" data-tone={invitation.badgeTone}>
+                    {invitation.status}
+                  </span>
+                  <form action="/api/coach/invitations/revoke" method="post">
+                    <input name="invitationId" type="hidden" value={invitation.id} />
+                    <button className="ui-button ui-button--secondary" type="submit">
+                      Revoke
+                    </button>
+                  </form>
+                </div>
+              </article>
+            ))
+          ) : (
+            <article className="invitation-item">
               <div>
-                <strong>{invitation.email}</strong>
-                <span>
-                  {invitation.role} · expires in {invitation.expires} · used {invitation.usage}
-                </span>
+                <strong>No pending invitations</strong>
+                <span>Prepared invitations will appear here after the database is connected.</span>
               </div>
-              <span className="ui-badge" data-tone={invitation.status === "Pending" ? "info" : "warning"}>
-                {invitation.status}
-              </span>
             </article>
-          ))}
+          )}
         </section>
       </section>
     </main>

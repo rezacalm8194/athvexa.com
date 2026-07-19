@@ -245,6 +245,11 @@ p {
   padding: var(--space-3);
 }
 
+.ui-alert--success {
+  border-color: color-mix(in srgb, var(--color-success), transparent 42%);
+  background: color-mix(in srgb, var(--color-success), transparent 88%);
+}
+
 .ui-input {
   inline-size: 100%;
   min-block-size: 2.75rem;
@@ -1125,6 +1130,38 @@ p {
   font-size: 1.15rem;
 }
 
+.invitation-share {
+  display: grid;
+  gap: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-info), transparent 45%);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--color-info), transparent 90%);
+  padding: var(--space-4);
+}
+
+.invitation-share h2 {
+  overflow-wrap: anywhere;
+}
+
+.invitation-share span {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.invitation-share input {
+  font-size: 0.9rem;
+}
+
+.invitation-share__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.invitation-share__actions .ui-button {
+  text-decoration: none;
+}
+
 .invitation-form__grid {
   display: grid;
   gap: var(--space-4);
@@ -1137,6 +1174,14 @@ p {
 .invitation-item div {
   display: grid;
   gap: var(--space-1);
+}
+
+.invitation-item__actions {
+  align-items: start;
+}
+
+.invitation-item__actions form {
+  display: grid;
 }
 
 .invitation-item span:not(.ui-badge) {

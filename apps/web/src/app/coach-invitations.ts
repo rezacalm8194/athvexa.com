@@ -17,7 +17,7 @@ import {
   hashToken,
   sessionCookieName
 } from "@fpp/auth";
-import { acceptInvitationSchema, createInvitationSchema } from "@fpp/validation";
+import { acceptInvitationSchema, createInvitationSchema, revokeInvitationSchema } from "@fpp/validation";
 import { getDatabase } from "./auth-db";
 import { formBoolean, formString } from "./auth-flow";
 
@@ -33,6 +33,8 @@ type InvitationError =
   | "login_required"
   | "email_mismatch"
   | "already_member"
+  | "already_revoked"
+  | "already_accepted"
   | "server";
 
 type InvitationStatusInput = {
@@ -40,6 +42,11 @@ type InvitationStatusInput = {
   expiresAt: Date;
   usageCount: number;
   usageLimit: number;
+};
+
+type InvitationQueueStatusInput = InvitationStatusInput & {
+  acceptedAt: Date | null;
+  requiresApproval: boolean;
 };
 
 function getCookieValue(cookieHeader: string | null, name: string) {
@@ -52,6 +59,20 @@ function getCookieValue(cookieHeader: string | null, name: string) {
 
 function createInvitationToken() {
   return randomBytes(32).toString("base64url");
+}
+
+export function createInvitationEmailSlug(email: string) {
+  return email
+    .trim()
+    .toLowerCase()
+    .replace("@", "-at-")
+    .replace(/[^a-z0-9.-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+export function createReadableInvitationPath(role: string, email: string, token: string) {
+  return `/invite/${role}/${createInvitationEmailSlug(email)}/${encodeURIComponent(token)}`;
 }
 
 export function getInvitationUnavailableReason(invitation: InvitationStatusInput, now = new Date()) {
@@ -68,6 +89,44 @@ export function getInvitationUnavailableReason(invitation: InvitationStatusInput
   }
 
   return null;
+}
+
+export function getInvitationQueueStatus(invitation: InvitationQueueStatusInput, now = new Date()) {
+  if (invitation.revokedAt) {
+    return "Revoked";
+  }
+
+  if (invitation.acceptedAt) {
+    return "Accepted";
+  }
+
+  const unavailableReason = getInvitationUnavailableReason(invitation, now);
+
+  if (unavailableReason === "expired") {
+    return "Expired";
+  }
+
+  if (unavailableReason === "used") {
+    return "Used";
+  }
+
+  return invitation.requiresApproval ? "Needs approval" : "Pending";
+}
+
+export function getInvitationBadgeTone(status: string) {
+  if (status === "Pending") {
+    return "info";
+  }
+
+  if (status === "Needs approval") {
+    return "warning";
+  }
+
+  if (status === "Accepted") {
+    return "success";
+  }
+
+  return "danger";
 }
 
 export function getInvitationLandingPath(role: "owner" | "coach" | "assistant" | "player") {
@@ -98,6 +157,10 @@ export function getInvitationErrorMessage(value: string | string[] | undefined) 
       return "This invitation belongs to a different email address.";
     case "already_member":
       return "This account is already a member of the workspace.";
+    case "already_revoked":
+      return "This invitation was already revoked.";
+    case "already_accepted":
+      return "Accepted invitations cannot be revoked from this queue.";
     case "server":
       return "Invitation acceptance is temporarily unavailable.";
     default:
@@ -134,9 +197,7 @@ export async function getAuthenticatedUserFromRequest(request: Request) {
   return user ?? null;
 }
 
-export async function getActiveWorkspaceMemberFromRequest(request: Request) {
-  const token = getCookieValue(request.headers.get("cookie"), sessionCookieName);
-
+export async function getActiveWorkspaceMemberByToken(token: string | undefined) {
   if (!token) {
     return null;
   }
@@ -169,6 +230,10 @@ export async function getActiveWorkspaceMemberFromRequest(request: Request) {
     .limit(1);
 
   return member ?? null;
+}
+
+export async function getActiveWorkspaceMemberFromRequest(request: Request) {
+  return getActiveWorkspaceMemberByToken(getCookieValue(request.headers.get("cookie"), sessionCookieName));
 }
 
 async function canManageMembers(member: NonNullable<Awaited<ReturnType<typeof getActiveWorkspaceMemberFromRequest>>>) {
@@ -222,6 +287,7 @@ export async function createWorkspaceInvitation(formData: FormData, request: Req
   const token = createInvitationToken();
   const expiresAt = new Date(now.getTime() + parsed.data.expiresInDays * 24 * 60 * 60 * 1000);
   const db = getDatabase();
+  let invitationId: string | null = null;
 
   try {
     await db.transaction(async (tx) => {
@@ -253,6 +319,7 @@ export async function createWorkspaceInvitation(formData: FormData, request: Req
           updatedBy: currentMember.userId
         })
         .returning({ id: invitations.id });
+      invitationId = invitation.id;
 
       await tx.insert(activityLogs).values({
         workspaceId: currentMember.workspaceId,
@@ -281,6 +348,157 @@ export async function createWorkspaceInvitation(formData: FormData, request: Req
     console.error("[invitations]", {
       errorName: error instanceof Error ? error.name : "UnknownError",
       errorMessage: error instanceof Error ? error.message : "Unknown invitation error."
+    });
+
+    return { ok: false as const, error: "server" as InvitationError };
+  }
+
+  return {
+    ok: true as const,
+    invitationId,
+    token,
+    email: parsed.data.email,
+    role: parsed.data.role,
+    invitePath: createReadableInvitationPath(parsed.data.role, parsed.data.email, token)
+  };
+}
+
+export async function listWorkspaceInvitationsByToken(token: string | undefined) {
+  const currentMember = await getActiveWorkspaceMemberByToken(token);
+
+  if (!currentMember) {
+    return { ok: false as const, error: "unauthorized" as InvitationError };
+  }
+
+  if (!(await canManageMembers(currentMember))) {
+    return { ok: false as const, error: "forbidden" as InvitationError };
+  }
+
+  const db = getDatabase();
+  const rows = await db
+    .select({
+      id: invitations.id,
+      email: invitations.emailNormalized,
+      role: roles.key,
+      expiresAt: invitations.expiresAt,
+      usageCount: invitations.usageCount,
+      usageLimit: invitations.usageLimit,
+      requiresApproval: invitations.requiresApproval,
+      revokedAt: invitations.revokedAt,
+      acceptedAt: invitations.acceptedAt,
+      teamScopeMode: invitations.teamScopeMode,
+      playerScopeMode: invitations.playerScopeMode,
+      createdAt: invitations.createdAt
+    })
+    .from(invitations)
+    .innerJoin(roles, sql`${invitations.roleId} = ${roles.id}`)
+    .where(
+      sql`${invitations.workspaceId} = ${currentMember.workspaceId}
+        and ${invitations.acceptedAt} is null
+        and ${invitations.deletedAt} is null`
+    )
+    .orderBy(sql`${invitations.createdAt} desc`)
+    .limit(25);
+
+  return {
+    ok: true as const,
+    invitations: rows.map((invitation) => {
+      const status = getInvitationQueueStatus(invitation);
+
+      return {
+        ...invitation,
+        status,
+        badgeTone: getInvitationBadgeTone(status)
+      };
+    })
+  };
+}
+
+export async function revokeWorkspaceInvitation(formData: FormData, request: Request) {
+  const currentMember = await getActiveWorkspaceMemberFromRequest(request);
+
+  if (!currentMember) {
+    return { ok: false as const, error: "unauthorized" as InvitationError };
+  }
+
+  if (!(await canManageMembers(currentMember))) {
+    return { ok: false as const, error: "forbidden" as InvitationError };
+  }
+
+  const parsed = revokeInvitationSchema.safeParse({
+    invitationId: formString(formData, "invitationId")
+  });
+
+  if (!parsed.success) {
+    return { ok: false as const, error: "invalid" as InvitationError };
+  }
+
+  const db = getDatabase();
+  const now = new Date();
+
+  try {
+    await db.transaction(async (tx) => {
+      const [invitation] = await tx
+        .select({
+          id: invitations.id,
+          workspaceId: invitations.workspaceId,
+          email: invitations.emailNormalized,
+          revokedAt: invitations.revokedAt,
+          acceptedAt: invitations.acceptedAt
+        })
+        .from(invitations)
+        .where(
+          sql`${invitations.id} = ${parsed.data.invitationId}
+            and ${invitations.workspaceId} = ${currentMember.workspaceId}
+            and ${invitations.deletedAt} is null`
+        )
+        .limit(1);
+
+      if (!invitation) {
+        throw new Error("not_found");
+      }
+
+      if (invitation.revokedAt) {
+        throw new Error("already_revoked");
+      }
+
+      if (invitation.acceptedAt) {
+        throw new Error("already_accepted");
+      }
+
+      await tx
+        .update(invitations)
+        .set({
+          revokedAt: now,
+          updatedBy: currentMember.userId,
+          updatedAt: now
+        })
+        .where(sql`${invitations.id} = ${invitation.id}`);
+
+      await tx.insert(activityLogs).values({
+        workspaceId: currentMember.workspaceId,
+        actorUserId: currentMember.userId,
+        actorMemberId: currentMember.memberId,
+        action: "invitation.revoked",
+        entityType: "invitation",
+        entityId: invitation.id,
+        after: {
+          email: invitation.email,
+          revokedAt: now.toISOString()
+        },
+        userAgent: request.headers.get("user-agent")
+      });
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "server";
+
+    if (["not_found", "already_revoked", "already_accepted"].includes(message)) {
+      return { ok: false as const, error: message as InvitationError };
+    }
+
+    console.error("[invitations]", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : "Unknown invitation revocation error."
     });
 
     return { ok: false as const, error: "server" as InvitationError };

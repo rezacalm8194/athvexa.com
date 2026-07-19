@@ -156,6 +156,10 @@ export const acceptInvitationSchema = z.object({
   password: passwordSchema.optional()
 });
 
+export const revokeInvitationSchema = z.object({
+  invitationId: z.string().uuid()
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -163,3 +167,4 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type WorkspaceOnboardingInput = z.infer<typeof workspaceOnboardingSchema>;
 export type CreateInvitationInput = z.infer<typeof createInvitationSchema>;
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
+export type RevokeInvitationInput = z.infer<typeof revokeInvitationSchema>;

@@ -47,7 +47,9 @@ Sensitive auth-related events should be logged:
 - Device revocation.
 - Workspace membership changes.
 - Invitation creation requires an active session, active workspace membership, and owner or member-management permission before a hashed token record is stored.
+- Invitation share links may include role and an email slug for human readability, but authorization uses only the hashed invitation token and stored invitation email.
 - Invitation acceptance checks the hashed token, expiration, revocation, usage limit, invited email, and existing membership before creating workspace access.
+- Invitation revocation requires the same member-management checks as creation and cannot revoke already accepted invitations from the pending queue.
 
 ## Rate Limiting
 

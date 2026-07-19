@@ -56,6 +56,7 @@ NEXT_PUBLIC_MARKETING_URL=https://athvexa.com
 packages/database/drizzle/0000_base_identity_workspace.sql
 packages/database/drizzle/0001_auth_reset_and_attempts.sql
 packages/database/drizzle/0002_invitations.sql
+packages/database/drizzle/0005_invitation_scope_modes.sql
 ```
 
 Do not run migrations against production without an approved backup and release window.
