@@ -133,7 +133,7 @@ export function getInvitationBadgeTone(status: string) {
 
 export function getInvitationLandingPath(role: "owner" | "coach" | "assistant" | "player") {
   if (role === "player") {
-    return "/coach";
+    return "/player";
   }
 
   return "/coach";

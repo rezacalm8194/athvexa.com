@@ -56,7 +56,7 @@ describe("invitation flow helpers", () => {
     expect(getInvitationErrorMessage("surprise")).toBeUndefined();
     expect(getInvitationLandingPath("coach")).toBe("/coach");
     expect(getInvitationLandingPath("assistant")).toBe("/coach");
-    expect(getInvitationLandingPath("player")).toBe("/coach");
+    expect(getInvitationLandingPath("player")).toBe("/player");
   });
 
   it("labels invitation queue status for owners", () => {
