@@ -2,7 +2,7 @@
 // still opens offline. Phase 2 will add an IndexedDB write-queue so
 // check-ins made offline sync once the connection returns.
 
-const CACHE = "athvexa-shell-v1";
+const CACHE = "athvexa-shell-v2";
 const SHELL = ["/dashboard/player", "/dashboard/coach", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -20,6 +20,12 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return; // writes (PATCH/POST) pass through untouched
+
+  // Always ask the server for page navigations so old redirects never get stuck.
+  if (request.mode === "navigate") {
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
+    return;
+  }
 
   // Network-first for API calls, so data is always fresh when online.
   if (request.url.includes("/api/")) {
