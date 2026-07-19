@@ -19,19 +19,24 @@ export default function RegisterForm({ inviteToken }: { inviteToken?: string }) 
     if (!role) return;
     setLoading(true);
     setError(null);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role, inviteToken }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error ?? "Something went wrong. Try again.");
-      return;
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role, inviteToken }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "Something went wrong. Try again.");
+        return;
+      }
+      router.push(role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      router.refresh();
+    } catch {
+      setError("Could not create your account. Check the server database settings and try again.");
+    } finally {
+      setLoading(false);
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   // Step 1 — the required "player or coach" choice.

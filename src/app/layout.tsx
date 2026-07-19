@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "Athvexa — Football Performance Platform",
   description: "Daily readiness, training and recovery for players and coaches.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export const viewport: Viewport = {
