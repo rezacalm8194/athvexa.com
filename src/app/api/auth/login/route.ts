@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { verifyPassword, signSession, SESSION_COOKIE } from "@/lib/auth";
+import { verifyPassword, signSession, SESSION_COOKIE, parseRole } from "@/lib/auth";
 
 const schema = z.object({
   email: z.string().email(),
@@ -21,8 +21,12 @@ export async function POST(req: NextRequest) {
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return NextResponse.json({ error: "Incorrect email or password" }, { status: 401 });
   }
+  const role = parseRole(user.role);
+  if (!role) {
+    return NextResponse.json({ error: "Account role is invalid" }, { status: 500 });
+  }
 
-  const token = await signSession({ sub: user.id, role: user.role, name: user.name }, remember);
+  const token = await signSession({ sub: user.id, role, name: user.name }, remember);
 
   const res = NextResponse.json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },

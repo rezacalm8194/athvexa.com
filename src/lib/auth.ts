@@ -3,9 +3,18 @@ import { SignJWT, jwtVerify } from "jose";
 
 export type SessionPayload = {
   sub: string; // user id
-  role: "COACH" | "ASSISTANT" | "PLAYER";
+  role: Role;
   name: string;
 };
+
+export type Role = "COACH" | "ASSISTANT" | "PLAYER";
+
+export function parseRole(role: string): Role | null {
+  if (role === "COACH" || role === "ASSISTANT" || role === "PLAYER") {
+    return role;
+  }
+  return null;
+}
 
 const secret = () => new TextEncoder().encode(process.env.JWT_SECRET);
 

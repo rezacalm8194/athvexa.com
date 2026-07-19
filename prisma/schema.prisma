@@ -11,18 +11,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  COACH
-  ASSISTANT
-  PLAYER
-}
-
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
-  role         Role
+  role         String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
   createdAt    DateTime @default(now())
 
   // Player-specific: which coach this player belongs to
@@ -148,7 +142,7 @@ model Invite {
   token     String   @unique
   coachId   String
   coach     User     @relation(fields: [coachId], references: [id])
-  role      Role     @default(PLAYER)
+  role      String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
   usedAt    DateTime?
   createdAt DateTime @default(now())
   expiresAt DateTime
