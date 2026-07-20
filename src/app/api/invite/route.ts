@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 const schema = z.object({
   role: z.enum(["PLAYER", "ASSISTANT"]).default("PLAYER"),
@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   if (!session || (session.role !== "COACH" && session.role !== "ASSISTANT")) {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
+
+  await ensureDatabase();
 
   const body = await req.json().catch(() => ({}));
   const parsed = schema.safeParse(body);

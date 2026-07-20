@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 const schema = z.object({
   name: z.string().min(2, "Team name is too short").max(60, "Team name is too long"),
@@ -13,6 +13,8 @@ export async function GET() {
   if (!session || (session.role !== "COACH" && session.role !== "ASSISTANT")) {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
+
+  await ensureDatabase();
 
   let teamOwnerId = session.sub;
   if (session.role === "ASSISTANT") {
@@ -29,6 +31,8 @@ export async function POST(req: NextRequest) {
   if (!session || session.role !== "COACH") {
     return NextResponse.json({ error: "Only a head coach can create a team" }, { status: 403 });
   }
+
+  await ensureDatabase();
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);

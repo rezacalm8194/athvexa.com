@@ -1,9 +1,31 @@
 import { PrismaClient } from "@prisma/client";
 
 // Prevent hot-reload from spawning a new PrismaClient on every save in dev.
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: ReturnType<typeof buildClient> };
 
-export const db = globalForPrisma.prisma ?? new PrismaClient();
+function buildClient() {
+  const client = new PrismaClient();
+
+  // Every model query (db.user.findMany, db.team.create, etc.) waits for
+  // ensureDatabase() first. This is what actually creates the SQLite tables —
+  // without this, a route/page that never explicitly calls ensureDatabase()
+  // (easy to forget, and the cause of a real "Team table doesn't exist yet"
+  // crash) would hit a fresh process with missing tables and 500 out.
+  // Raw calls ($executeRawUnsafe, used below to create tables) aren't
+  // affected by this hook, so there's no recursion.
+  return client.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ args, query }) {
+          await ensureDatabase();
+          return query(args);
+        },
+      },
+    },
+  });
+}
+
+export const db = globalForPrisma.prisma ?? buildClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 

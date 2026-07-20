@@ -1,8 +1,9 @@
 import AuthShell from "@/components/AuthShell";
 import RegisterForm from "@/components/RegisterForm";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 export default async function InvitePage({ params }: { params: { token: string } }) {
+  await ensureDatabase();
   const invite = await db.invite.findUnique({
     where: { token: params.token },
     include: { coach: { select: { name: true } } },

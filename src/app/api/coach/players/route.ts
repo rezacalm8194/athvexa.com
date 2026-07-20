@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 function statusFor(score: number) {
   if (score >= 80) return { label: "Excellent", tone: "good" as const };
@@ -14,6 +14,8 @@ export async function GET() {
   if (!session || (session.role !== "COACH" && session.role !== "ASSISTANT")) {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
+
+  await ensureDatabase();
 
   // An assistant coach shares the head coach's roster, not their own.
   let teamOwnerId = session.sub;

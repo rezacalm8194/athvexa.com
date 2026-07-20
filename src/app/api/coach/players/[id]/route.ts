@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 const schema = z.object({ role: z.enum(["PLAYER", "ASSISTANT"]) });
 
@@ -13,6 +13,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (params.id === session.sub) {
     return NextResponse.json({ error: "You can't change your own role" }, { status: 400 });
   }
+
+  await ensureDatabase();
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);

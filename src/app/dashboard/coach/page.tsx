@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import DashboardNav from "@/components/DashboardNav";
 import RosterView from "@/components/coach/RosterView";
 
@@ -8,6 +8,8 @@ export default async function CoachDashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.role === "PLAYER") redirect("/dashboard/player");
+
+  await ensureDatabase();
 
   // An assistant shares the head coach's team, so look up who that is.
   let teamOwnerId = session.sub;

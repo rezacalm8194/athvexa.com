@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import DashboardNav from "@/components/DashboardNav";
 import TeamSetupForm from "@/components/coach/TeamSetupForm";
 
@@ -10,6 +10,7 @@ export default async function TeamSetupPage() {
   if (session.role === "PLAYER") redirect("/dashboard/player");
   if (session.role === "ASSISTANT") redirect("/dashboard/coach"); // only the head coach sets this up
 
+  await ensureDatabase();
   const existing = await db.team.findUnique({ where: { coachId: session.sub } });
   if (existing) redirect("/dashboard/coach");
 
