@@ -7,8 +7,8 @@ const schema = z.object({
   name: z.string().min(2, "Name is too short"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["COACH", "PLAYER"]),
-  inviteToken: z.string().optional(), // present when a player joins via a coach's link
+  role: z.enum(["COACH", "PLAYER", "ASSISTANT"]),
+  inviteToken: z.string().optional(), // present when joining via a coach's invite link
 });
 
 export async function POST(req: NextRequest) {
@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { name, email, password, role, inviteToken } = parsed.data;
+    const { name, email, password, inviteToken } = parsed.data;
+    let role = parsed.data.role;
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
@@ -30,12 +31,27 @@ export async function POST(req: NextRequest) {
     }
 
     let coachId: string | undefined;
-    if (role === "PLAYER" && inviteToken) {
+
+    if (inviteToken) {
       const invite = await db.invite.findUnique({ where: { token: inviteToken } });
-      if (invite && !invite.usedAt && invite.expiresAt > new Date()) {
-        coachId = invite.coachId;
-        await db.invite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
+      const isValid = Boolean(invite && !invite.usedAt && invite.expiresAt > new Date());
+      if (!invite || !isValid) {
+        return NextResponse.json(
+          { error: "This invite link has expired or already been used" },
+          { status: 400 }
+        );
       }
+      // Trust the invite's role from the database, not whatever the client sent —
+      // otherwise anyone could self-promote to ASSISTANT by editing the request.
+      role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
+      coachId = invite.coachId;
+      await db.invite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
+    } else if (role === "ASSISTANT") {
+      // Assistant accounts can only be created through a coach's invite link.
+      return NextResponse.json(
+        { error: "Assistant coach accounts require an invite link from a coach" },
+        { status: 400 }
+      );
     }
 
     const user = await db.user.create({

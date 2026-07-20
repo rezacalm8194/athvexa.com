@@ -14,31 +14,54 @@ export async function GET() {
   if (!session || (session.role !== "COACH" && session.role !== "ASSISTANT")) {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
+
+  // An assistant coach shares the head coach's roster, not their own.
+  let teamOwnerId = session.sub;
+  if (session.role === "ASSISTANT") {
+    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
+    teamOwnerId = me?.coachId ?? session.sub;
+  }
+
   const date = new Date().toISOString().slice(0, 10);
 
-  const players = await db.user.findMany({
-    where: { coachId: session.sub, role: "PLAYER" },
+  const members = await db.user.findMany({
+    where: { coachId: teamOwnerId, role: { in: ["PLAYER", "ASSISTANT"] } },
     select: {
       id: true,
       name: true,
       email: true,
-      dailyLogs: { where: { date }, select: { score: true, sleepHours: true, waterLiters: true } },
+      role: true,
+      dailyLogs: { where: { date }, select: { score: true } },
     },
-    orderBy: { name: "asc" },
+    orderBy: [{ role: "asc" }, { name: "asc" }],
   });
 
-  const roster = players.map((p) => {
+  const roster = members.map((p) => {
+    if (p.role === "ASSISTANT") {
+      return {
+        id: p.id,
+        name: p.name,
+        email: p.email,
+        role: p.role as "ASSISTANT",
+        score: 0,
+        loggedToday: false,
+        label: "Assistant coach",
+        tone: "good" as const,
+      };
+    }
     const today = p.dailyLogs[0];
     const score = today?.score ?? 0;
     return {
       id: p.id,
       name: p.name,
       email: p.email,
+      role: p.role as "PLAYER",
       score,
       loggedToday: Boolean(today),
       ...statusFor(score),
     };
   });
 
-  return NextResponse.json({ players: roster });
+  // Only the head coach can reassign roles — keeps assistants from promoting themselves or others.
+  return NextResponse.json({ players: roster, canManageRoles: session.role === "COACH" });
 }

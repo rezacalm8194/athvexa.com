@@ -3,11 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Role = "PLAYER" | "COACH";
+type Role = "PLAYER" | "COACH" | "ASSISTANT";
 
-export default function RegisterForm({ inviteToken }: { inviteToken?: string }) {
+export default function RegisterForm({
+  inviteToken,
+  inviteRole,
+}: {
+  inviteToken?: string;
+  inviteRole?: "PLAYER" | "ASSISTANT";
+}) {
   const router = useRouter();
-  const [role, setRole] = useState<Role | null>(inviteToken ? "PLAYER" : null);
+  const [role, setRole] = useState<Role | null>(inviteToken ? inviteRole ?? "PLAYER" : null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,7 +71,7 @@ export default function RegisterForm({ inviteToken }: { inviteToken?: string }) 
         disabled={Boolean(inviteToken)}
         className="self-start text-xs font-medium text-smoke-3 hover:text-white disabled:opacity-40 disabled:hover:text-smoke-3"
       >
-        ← {role === "PLAYER" ? "Player" : "Coach"} account · change
+        ← {role === "PLAYER" ? "Player" : role === "ASSISTANT" ? "Assistant coach" : "Coach"} account · change
       </button>
 
       <Field label="Your name">
@@ -73,7 +79,7 @@ export default function RegisterForm({ inviteToken }: { inviteToken?: string }) 
           className="input-field"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={role === "PLAYER" ? "Ali Hassan" : "Coach Ali"}
+          placeholder={role === "PLAYER" ? "Ali Hassan" : role === "ASSISTANT" ? "Assistant name" : "Coach Ali"}
           autoComplete="name"
           required
         />
