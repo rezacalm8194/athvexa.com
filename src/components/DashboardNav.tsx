@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function DashboardNav({ name, roleLabel }: { name: string; roleLabel: string }) {
@@ -13,9 +14,9 @@ export default function DashboardNav({ name, roleLabel }: { name: string; roleLa
 
   return (
     <header className="flex items-center justify-between border-b border-white/5 bg-ink-2/80 px-6 py-4 backdrop-blur">
-      <div className="font-display text-xl font-black tracking-wide text-white">
+      <Link href="/" className="font-display text-xl font-black tracking-wide text-white">
         ATH<span className="text-red">VEXA</span>
-      </div>
+      </Link>
       <div className="flex items-center gap-4">
         <div className="text-right">
           <div className="text-sm font-semibold text-white">{name}</div>
