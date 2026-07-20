@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { authRedirectUrl } from "@/lib/clientRedirect";
 
 type Role = "PLAYER" | "COACH";
 
 export default function RegisterForm({ inviteToken }: { inviteToken?: string }) {
-  const router = useRouter();
   const [role, setRole] = useState<Role | null>(inviteToken ? "PLAYER" : null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,8 +29,7 @@ export default function RegisterForm({ inviteToken }: { inviteToken?: string }) 
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
-      window.location.href =
-        data.user?.redirectTo ?? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}${role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach"}`;
+      window.location.href = authRedirectUrl(role, data.user?.redirectTo);
     } catch {
       setError("Could not create your account. Check the server database settings and try again.");
     } finally {
