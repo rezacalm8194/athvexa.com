@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { authRedirectUrl } from "@/lib/clientRedirect";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -25,7 +26,9 @@ export default function LoginForm() {
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
-      window.location.href = authRedirectUrl(data.user?.role, data.user?.redirectTo);
+      window.location.href =
+        data.user?.redirectTo ??
+        `${process.env.NEXT_PUBLIC_APP_URL ?? ""}${data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach"}`;
     } catch {
       setError("Could not sign in. Check the server database settings and try again.");
     } finally {
