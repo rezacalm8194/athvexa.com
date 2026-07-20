@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     let coachId: string | undefined;
+    let inviteIdToLink: string | undefined;
 
     if (inviteToken) {
       const invite = await db.invite.findUnique({ where: { token: inviteToken } });
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       // otherwise anyone could self-promote to ASSISTANT by editing the request.
       role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
       coachId = invite.coachId;
-      await db.invite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
+      inviteIdToLink = invite.id;
     } else if (role === "ASSISTANT") {
       // Assistant accounts can only be created through a coach's invite link.
       return NextResponse.json(
@@ -63,6 +64,13 @@ export async function POST(req: NextRequest) {
         coachId,
       },
     });
+
+    if (inviteIdToLink) {
+      await db.invite.update({
+        where: { id: inviteIdToLink },
+        data: { usedAt: new Date(), acceptedUserId: user.id },
+      });
+    }
 
     const token = await signSession({ sub: user.id, role, name: user.name }, true);
 

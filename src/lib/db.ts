@@ -173,6 +173,69 @@ async function ensureSqliteSchema() {
   if (!inviteColumns.some((c) => c.name === "revoked")) {
     await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "revoked" BOOLEAN NOT NULL DEFAULT false;`);
   }
+  if (!inviteColumns.some((c) => c.name === "acceptedUserId")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "acceptedUserId" TEXT;`);
+  }
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Program" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "coachId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "description" TEXT,
+      "goal" TEXT,
+      "durationWeeks" INTEGER NOT NULL DEFAULT 4,
+      "sessionsPerWeek" INTEGER NOT NULL DEFAULT 3,
+      "startDate" TEXT,
+      "endDate" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'DRAFT',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Program_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ProgramSession" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "programId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "day" TEXT NOT NULL DEFAULT 'Monday',
+      "durationMinutes" INTEGER,
+      "intensity" TEXT NOT NULL DEFAULT 'MEDIUM',
+      "notes" TEXT,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT "ProgramSession_programId_fkey" FOREIGN KEY ("programId") REFERENCES "Program" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `);
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ProgramAssignment" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "programId" TEXT NOT NULL,
+      "playerId" TEXT NOT NULL,
+      "assignedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "ProgramAssignment_programId_fkey" FOREIGN KEY ("programId") REFERENCES "Program" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "ProgramAssignment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramAssignment_programId_playerId_key" ON "ProgramAssignment"("programId", "playerId");`);
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Assessment" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "coachId" TEXT NOT NULL,
+      "playerId" TEXT NOT NULL,
+      "type" TEXT NOT NULL,
+      "date" TEXT NOT NULL,
+      "score" INTEGER NOT NULL,
+      "notes" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Assessment_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+      CONSTRAINT "Assessment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `);
 
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Team" (

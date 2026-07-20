@@ -27,10 +27,16 @@ model User {
   dailyLogs   DailyLog[]
   coachNotes  CoachNote[]     @relation("NotesToPlayer")
   invitesSent Invite[]
+  invitesAccepted Invite[]    @relation("InviteAcceptedUser")
 
   planItems   PlanItem[]
   habits      Habit[]
   goals       Goal[]
+
+  programsCreated       Program[]           @relation("CoachPrograms")
+  programAssignments    ProgramAssignment[]  @relation("PlayerProgramAssignments")
+  assessmentsGiven      Assessment[]         @relation("CoachAssessments")
+  assessmentsReceived   Assessment[]         @relation("PlayerAssessments")
 
   // Present only on the head coach's own User row — the team they run.
   team Team?
@@ -152,13 +158,80 @@ model Goal {
 
 // Shareable invite link a coach sends a player to join their roster.
 model Invite {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  coachId   String
-  coach     User     @relation(fields: [coachId], references: [id])
-  role      String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
-  usedAt    DateTime?
-  revoked   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+  id             String   @id @default(cuid())
+  token          String   @unique
+  coachId        String
+  coach          User     @relation(fields: [coachId], references: [id])
+  role           String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
+  usedAt         DateTime?
+  revoked        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  // Set once the invite is redeemed during registration — lets the
+  // invitations page show/search/link to who actually joined.
+  acceptedUserId String?
+  acceptedUser   User?    @relation("InviteAcceptedUser", fields: [acceptedUserId], references: [id])
 }
+
+// Phase 3 — Coach programs: a structured training program a coach builds
+// and assigns to one or more players.
+model Program {
+  id               String              @id @default(cuid())
+  coachId          String
+  coach            User                @relation("CoachPrograms", fields: [coachId], references: [id])
+  name             String
+  description      String?
+  goal             String?
+  durationWeeks    Int                 @default(4)
+  sessionsPerWeek  Int                 @default(3)
+  startDate        String?             // "YYYY-MM-DD"
+  endDate          String?             // "YYYY-MM-DD"
+  status           String              @default("DRAFT") // DRAFT | ACTIVE | ARCHIVED
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  sessions         ProgramSession[]
+  assignments      ProgramAssignment[]
+}
+
+model ProgramSession {
+  id              String   @id @default(cuid())
+  programId       String
+  program         Program  @relation(fields: [programId], references: [id])
+  title           String
+  day             String   @default("Monday")
+  durationMinutes Int?
+  intensity       String   @default("MEDIUM") // LOW | MEDIUM | HIGH
+  notes           String?
+  order           Int      @default(0)
+}
+
+// Join table: which players a program is assigned to.
+model ProgramAssignment {
+  id         String   @id @default(cuid())
+  programId  String
+  program    Program  @relation(fields: [programId], references: [id])
+  playerId   String
+  player     User     @relation("PlayerProgramAssignments", fields: [playerId], references: [id])
+  assignedAt DateTime @default(now())
+
+  @@unique([programId, playerId])
+}
+
+// Phase 3 — Player assessments: a coach-recorded score for a player on a
+// given date, across a small fixed set of assessment types.
+model Assessment {
+  id        String   @id @default(cuid())
+  coachId   String
+  coach     User     @relation("CoachAssessments", fields: [coachId], references: [id])
+  playerId  String
+  player    User     @relation("PlayerAssessments", fields: [playerId], references: [id])
+  type      String   // Speed | Strength | Endurance | Agility | Mobility | Body composition | Technical | General
+  date      String   // "YYYY-MM-DD"
+  score     Int      // 0-100
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

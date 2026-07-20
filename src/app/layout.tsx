@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Barlow_Condensed } from "next/font/google";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${barlow.variable}`}>
       <body className="font-body antialiased">
         <RegisterServiceWorker />
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
