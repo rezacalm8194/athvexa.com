@@ -158,6 +158,7 @@ model Invite {
   coach     User     @relation(fields: [coachId], references: [id])
   role      String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
   usedAt    DateTime?
+  revoked   Boolean  @default(false)
   createdAt DateTime @default(now())
   expiresAt DateTime
 }

@@ -159,12 +159,20 @@ async function ensureSqliteSchema() {
       "coachId" TEXT NOT NULL,
       "role" TEXT NOT NULL DEFAULT 'PLAYER',
       "usedAt" DATETIME,
+      "revoked" BOOLEAN NOT NULL DEFAULT false,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "expiresAt" DATETIME NOT NULL,
       CONSTRAINT "Invite_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
   await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Invite_token_key" ON "Invite"("token");`);
+  // Older SQLite files created before "revoked" existed won't have the column —
+  // add it if missing. SQLite has no "ADD COLUMN IF NOT EXISTS", so we probe
+  // pragma table_info instead of relying on a throwaway try/catch.
+  const inviteColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Invite");`);
+  if (!inviteColumns.some((c) => c.name === "revoked")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "revoked" BOOLEAN NOT NULL DEFAULT false;`);
+  }
 
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Team" (

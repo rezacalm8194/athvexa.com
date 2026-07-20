@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
+import { buildInviteUrl } from "@/lib/invites";
 
 const schema = z.object({
   role: z.enum(["PLAYER", "ASSISTANT"]).default("PLAYER"),
@@ -53,9 +54,11 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Prefer the domain the request actually came in on — falling back to
-  // localhost only ever produced broken links once this was deployed for
-  // real, since NEXT_PUBLIC_APP_URL was never set in production.
-  const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin || "http://localhost:3000";
-  return NextResponse.json({ url: `${base}/invite/${invite.token}`, role: invite.role });
+  return NextResponse.json({
+    id: invite.id,
+    url: buildInviteUrl(invite.token, req),
+    role: invite.role,
+    createdAt: invite.createdAt,
+    expiresAt: invite.expiresAt,
+  });
 }
