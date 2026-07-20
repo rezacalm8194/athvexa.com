@@ -45,25 +45,3 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
 }
 
 export const SESSION_COOKIE = "athvexa_session";
-
-export function sessionCookieDomain() {
-  if (process.env.SESSION_COOKIE_DOMAIN) return process.env.SESSION_COOKIE_DOMAIN;
-  if (process.env.NODE_ENV === "production") return ".athvexa.com";
-  return undefined;
-}
-
-export function appBaseUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "https://app.athvexa.com";
-}
-
-export function marketingBaseUrl() {
-  return process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://athvexa.com";
-}
-
-export function dashboardPathForRole(role: Role) {
-  return role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach";
-}
-
-export function dashboardUrlForRole(role: Role) {
-  return `${appBaseUrl()}${dashboardPathForRole(role)}`;
-}

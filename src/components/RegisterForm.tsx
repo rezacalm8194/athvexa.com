@@ -30,8 +30,8 @@ export default function RegisterForm({ inviteToken }: { inviteToken?: string }) 
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
-      window.location.href =
-        data.user?.redirectTo ?? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}${role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach"}`;
+      router.push(role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      router.refresh();
     } catch {
       setError("Could not create your account. Check the server database settings and try again.");
     } finally {

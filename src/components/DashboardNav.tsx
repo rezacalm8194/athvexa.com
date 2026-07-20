@@ -7,7 +7,8 @@ export default function DashboardNav({ name, roleLabel }: { name: string; roleLa
 
   async function signOut() {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = `${process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://athvexa.com"}/login`;
+    router.push("/login");
+    router.refresh();
   }
 
   return (
