@@ -26,8 +26,9 @@ export default function LoginForm() {
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
-      router.push(data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
-      router.refresh();
+      window.location.href =
+        data.user?.redirectTo ??
+        `${process.env.NEXT_PUBLIC_APP_URL ?? ""}${data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach"}`;
     } catch {
       setError("Could not sign in. Check the server database settings and try again.");
     } finally {

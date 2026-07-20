@@ -4,6 +4,7 @@ import path from "path";
 export const runtime = "nodejs";
 
 function withAppAuthLinks(html: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.athvexa.com";
   return html
     .replace(/href="#" onclick="openAuth\('login'\)"/g, 'href="/login"')
     .replace(/href="#" onclick="openAuth\('register'\)"/g, 'href="/register"')
@@ -18,7 +19,7 @@ function withAppAuthLinks(html: string) {
     .replace(
       /function goToApp\(\) \{[\s\S]*?\n\}/,
       `function goToApp() {
-  window.location.href = '/dashboard';
+  window.location.href = '${appUrl}/dashboard';
 }`
     );
 }
