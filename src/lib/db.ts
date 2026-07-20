@@ -143,4 +143,16 @@ async function ensureSqliteSchema() {
     );
   `);
   await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Invite_token_key" ON "Invite"("token");`);
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Team" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "name" TEXT NOT NULL,
+      "sport" TEXT,
+      "coachId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Team_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Team_coachId_key" ON "Team"("coachId");`);
 }

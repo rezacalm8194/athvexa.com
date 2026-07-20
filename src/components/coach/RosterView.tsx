@@ -21,13 +21,14 @@ const toneColor: Record<Member["tone"], string> = {
   bad: "#E02020",
 };
 
-export default function RosterView({ coachName }: { coachName: string }) {
+export default function RosterView({ coachName, teamName }: { coachName: string; teamName?: string | null }) {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [canManageRoles, setCanManageRoles] = useState(false);
   const [inviteRole, setInviteRole] = useState<MemberRole>("PLAYER");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   function loadRoster() {
@@ -46,6 +47,7 @@ export default function RosterView({ coachName }: { coachName: string }) {
   async function generateInvite() {
     setGenerating(true);
     setInviteUrl(null);
+    setInviteError(null);
     const res = await fetch("/api/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,7 +55,11 @@ export default function RosterView({ coachName }: { coachName: string }) {
     });
     const data = await res.json().catch(() => ({}));
     setGenerating(false);
-    if (res.ok) setInviteUrl(data.url);
+    if (res.ok) {
+      setInviteUrl(data.url);
+    } else {
+      setInviteError(data.error ?? "Could not generate an invite link. Try again.");
+    }
     setCopied(false);
   }
 
@@ -107,7 +113,7 @@ export default function RosterView({ coachName }: { coachName: string }) {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="eyebrow">Team status — today</div>
+          <div className="eyebrow">{teamName ?? "Team status"} — today</div>
           <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">
             Welcome back, {coachName.split(" ")[0]}
           </h1>
@@ -141,6 +147,10 @@ export default function RosterView({ coachName }: { coachName: string }) {
           </button>
         </div>
       </div>
+
+      {inviteError && (
+        <p className="mb-4 text-sm text-red-glow">{inviteError}</p>
+      )}
 
       {inviteUrl && (
         <div className="mb-6 flex flex-col gap-3 rounded-md border border-red/40 bg-ink-3 p-3">

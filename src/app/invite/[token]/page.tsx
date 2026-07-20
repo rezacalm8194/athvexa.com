@@ -24,13 +24,15 @@ export default async function InvitePage({ params }: { params: { token: string }
   }
 
   const role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
+  const team = await db.team.findUnique({ where: { coachId: invite.coachId }, select: { name: true } });
+  const teamLabel = team?.name ?? invite.coach.name;
 
   return (
     <AuthShell
       title={
         role === "ASSISTANT"
-          ? `Join ${invite.coach.name}'s staff on Athvexa`
-          : `Join ${invite.coach.name} on Athvexa`
+          ? `Join ${teamLabel}'s staff on Athvexa`
+          : `Join ${teamLabel} on Athvexa`
       }
       subtitle={
         role === "ASSISTANT"

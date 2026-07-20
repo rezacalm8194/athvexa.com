@@ -31,6 +31,20 @@ model User {
   planItems   PlanItem[]
   habits      Habit[]
   goals       Goal[]
+
+  // Present only on the head coach's own User row — the team they run.
+  team Team?
+}
+
+// A coach's team. Must exist before the coach can invite players or
+// assistant coaches — created once, right after the coach signs up.
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  sport     String?
+  coachId   String   @unique
+  coach     User     @relation(fields: [coachId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 // One entry per player per day — the "Today Dashboard" data.

@@ -34,6 +34,14 @@ export async function POST(req: NextRequest) {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
+  const team = await db.team.findUnique({ where: { coachId: teamOwnerId } });
+  if (!team) {
+    return NextResponse.json(
+      { error: "Set up your team before inviting players or assistants" },
+      { status: 400 }
+    );
+  }
+
   const invite = await db.invite.create({
     data: {
       token: nanoid(12),
@@ -43,6 +51,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // Prefer the domain the request actually came in on — falling back to
+  // localhost only ever produced broken links once this was deployed for
+  // real, since NEXT_PUBLIC_APP_URL was never set in production.
+  const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin || "http://localhost:3000";
   return NextResponse.json({ url: `${base}/invite/${invite.token}`, role: invite.role });
 }
