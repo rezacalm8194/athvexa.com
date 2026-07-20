@@ -83,7 +83,7 @@
   .nav-links a:hover { color: var(--white-pure); }
 
   .nav-cta {
-    display: flex; gap: 12px; align-items: center;
+    display: flex; gap: 12px; align-items: center; flex-wrap: nowrap;
   }
 
   .btn-ghost {
@@ -782,18 +782,22 @@
   @media (max-width: 480px) {
     nav { padding: 0 4vw; gap: 6px; }
     .nav-logo { font-size: 20px; letter-spacing: 0.02em; }
-    .nav-cta { gap: 6px; flex-shrink: 0; }
+    .nav-cta { gap: 6px; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
     .btn-ghost, .btn-red {
       padding: 7px 10px;
       font-size: 12px;
       white-space: nowrap;
     }
+    .nav-cta .btn-red { font-size: 0; }
+    .nav-cta .btn-red::before { content: "Start"; font-size: 12px; }
+    .nav-cta .btn-red::after { content: " free"; font-size: 12px; }
     .hamburger { padding: 4px; margin-left: 2px; }
   }
 
   @media (max-width: 360px) {
     .nav-logo { font-size: 17px; }
     .btn-ghost, .btn-red { padding: 6px 8px; font-size: 11px; }
+    .nav-cta .btn-red::before, .nav-cta .btn-red::after { font-size: 11px; }
   }
 
   .mobile-menu {

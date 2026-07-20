@@ -2,7 +2,7 @@
 // still opens offline. Phase 2 will add an IndexedDB write-queue so
 // check-ins made offline sync once the connection returns.
 
-const CACHE = "athvexa-shell-v2";
+const CACHE = "athvexa-shell-v3";
 const SHELL = ["/dashboard/player", "/dashboard/coach", "/manifest.json"];
 
 self.addEventListener("install", (event) => {

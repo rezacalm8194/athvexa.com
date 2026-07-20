@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Athvexa — Football Performance Platform</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -81,7 +83,7 @@
   .nav-links a:hover { color: var(--white-pure); }
 
   .nav-cta {
-    display: flex; gap: 12px; align-items: center;
+    display: flex; gap: 12px; align-items: center; flex-wrap: nowrap;
   }
 
   .btn-ghost {
@@ -775,6 +777,27 @@
     .hero { padding: 100px 5vw 48px; }
     .hero-stats { flex-wrap: wrap; gap: 20px; }
     .modal { padding: 28px 20px; }
+  }
+
+  @media (max-width: 480px) {
+    nav { padding: 0 4vw; gap: 6px; }
+    .nav-logo { font-size: 20px; letter-spacing: 0.02em; }
+    .nav-cta { gap: 6px; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
+    .btn-ghost, .btn-red {
+      padding: 7px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .nav-cta .btn-red { font-size: 0; }
+    .nav-cta .btn-red::before { content: "Start"; font-size: 12px; }
+    .nav-cta .btn-red::after { content: " free"; font-size: 12px; }
+    .hamburger { padding: 4px; margin-left: 2px; }
+  }
+
+  @media (max-width: 360px) {
+    .nav-logo { font-size: 17px; }
+    .btn-ghost, .btn-red { padding: 6px 8px; font-size: 11px; }
+    .nav-cta .btn-red::before, .nav-cta .btn-red::after { font-size: 11px; }
   }
 
   .mobile-menu {
