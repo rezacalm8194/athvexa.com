@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
+import { createManyNotifications } from "@/lib/notifications";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -143,6 +144,18 @@ export async function POST(req: NextRequest) {
       },
     },
   });
+
+  await createManyNotifications(
+    validPlayerIds.map((playerId) => ({
+      userId: playerId,
+      title: "New program assigned",
+      description: `${program.name} has been assigned to you.`,
+      type: "PROGRAM_ASSIGNED",
+      actionHref: "/dashboard/player/training",
+      relatedId: program.id,
+      dedupeKey: `program-assigned:${program.id}:${playerId}`,
+    }))
+  );
 
   return NextResponse.json({ id: program.id }, { status: 201 });
 }

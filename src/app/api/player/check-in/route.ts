@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { createNotification, todayKey } from "@/lib/notifications";
 
 const checkInSchema = z.object({
   readiness: z.number({ invalid_type_error: "Readiness is required." }).int("Readiness must be a whole number.").min(1, "Readiness must be at least 1.").max(10, "Readiness must be 10 or less."),
@@ -112,6 +109,30 @@ export async function PUT(req: NextRequest) {
       updatedAt: true,
     },
   });
+
+  const player = await db.user.findUnique({ where: { id: session.sub }, select: { name: true, coachId: true } });
+  if (player?.coachId) {
+    await createNotification({
+      userId: player.coachId,
+      title: "Player submitted check-in",
+      description: `${player.name} submitted today's check-in.`,
+      type: "PLAYER_CHECK_IN_SUBMITTED",
+      actionHref: "/dashboard/coach/reports",
+      relatedId: log.id,
+      dedupeKey: `check-in-submitted:${player.coachId}:${session.sub}:${date}`,
+    });
+    if (data.score < 40) {
+      await createNotification({
+        userId: player.coachId,
+        title: "Player readiness is low",
+        description: `${player.name}'s readiness is ${data.score}/100 today.`,
+        type: "PLAYER_LOW_READINESS",
+        actionHref: "/dashboard/coach/reports",
+        relatedId: log.id,
+        dedupeKey: `low-readiness:${player.coachId}:${session.sub}:${date}`,
+      });
+    }
+  }
 
   return NextResponse.json({ checkIn: serializeLog(log), message: "Today's check-in has been saved." });
 }

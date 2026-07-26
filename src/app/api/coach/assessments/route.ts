@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
+import { createNotification } from "@/lib/notifications";
 
 const assessmentSchema = z.object({
   playerId: z.string().min(1, "Player is required"),
@@ -153,6 +154,14 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  await createNotification({
+    userId: parsed.data.playerId,
+    title: "New assessment added",
+    description: `${parsed.data.type} assessment recorded: ${parsed.data.score}/100.`,
+    type: "ASSESSMENT_ADDED",
+    actionHref: "/dashboard/player",
+    relatedId: assessment.id,
+  });
+
   return NextResponse.json({ id: assessment.id }, { status: 201 });
 }
-

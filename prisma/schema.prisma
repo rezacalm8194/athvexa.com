@@ -26,6 +26,7 @@ model User {
 
   dailyLogs   DailyLog[]
   coachNotes  CoachNote[]     @relation("NotesToPlayer")
+  notifications Notification[]
   invitesSent Invite[]
   invitesAccepted Invite[]    @relation("InviteAcceptedUser")
 
@@ -79,6 +80,20 @@ model DailyLog {
   updatedAt     DateTime @updatedAt
 
   @@unique([playerId, date])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  title       String
+  description String
+  actionHref  String?
+  type        String
+  relatedId   String?
+  dedupeKey   String?   @unique
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
 }
 
 model Task {

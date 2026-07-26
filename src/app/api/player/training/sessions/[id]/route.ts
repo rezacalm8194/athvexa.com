@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { createNotification } from "@/lib/notifications";
 
 const schema = z.object({
   action: z.enum(["start", "complete", "skip"]),
@@ -28,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const programSession = await db.programSession.findUnique({
     where: { id: params.id },
-    select: { id: true, programId: true },
+    select: { id: true, programId: true, title: true },
   });
   if (!programSession) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
@@ -67,6 +68,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       notes,
     },
   });
+
+  if (progress.status === "COMPLETED" || progress.status === "SKIPPED") {
+    const player = await db.user.findUnique({ where: { id: session.sub }, select: { name: true, coachId: true } });
+    if (player?.coachId) {
+      await createNotification({
+        userId: player.coachId,
+        title: progress.status === "COMPLETED" ? "Player completed a session" : "Player skipped a session",
+        description: `${player.name} ${progress.status === "COMPLETED" ? "completed" : "skipped"} ${programSession.title}.`,
+        type: progress.status === "COMPLETED" ? "PLAYER_SESSION_COMPLETED" : "PLAYER_SESSION_SKIPPED",
+        actionHref: "/dashboard/coach/reports",
+        relatedId: progress.id,
+      });
+    }
+  }
 
   return NextResponse.json({
     session: serialize(progress.status, progress.completedAt, progress.notes),

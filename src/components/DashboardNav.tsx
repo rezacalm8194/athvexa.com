@@ -21,6 +21,7 @@ export default function DashboardNav({
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(notificationCount);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,6 +30,15 @@ export default function DashboardNav({
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/notifications", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.unreadCount === "number") setUnreadCount(data.unreadCount);
+      })
+      .catch(() => {});
   }, []);
 
   async function signOut() {
@@ -55,18 +65,18 @@ export default function DashboardNav({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Link
+            href="/dashboard/notifications"
             aria-label="Notifications"
             className="relative flex h-9 w-9 items-center justify-center rounded-md border border-line-1 text-smoke-4 transition-colors hover:border-smoke-4 hover:text-paper-pure"
           >
             <BellIcon className="h-[18px] w-[18px]" />
-            {notificationCount > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[10px] font-bold text-white">
-                {notificationCount > 9 ? "9+" : notificationCount}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
-          </button>
+          </Link>
 
           <div className="relative" ref={menuRef}>
             <button

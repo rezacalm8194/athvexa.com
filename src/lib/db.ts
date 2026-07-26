@@ -85,6 +85,24 @@ async function ensureSqliteSchema() {
   }
 
   await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Notification" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL,
+      "actionHref" TEXT,
+      "type" TEXT NOT NULL,
+      "relatedId" TEXT,
+      "dedupeKey" TEXT,
+      "readAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Notification_dedupeKey_key" ON "Notification"("dedupeKey");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");`);
+
+  await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Task" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "dailyLogId" TEXT NOT NULL,

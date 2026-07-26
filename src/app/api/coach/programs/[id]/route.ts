@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
+import { createManyNotifications } from "@/lib/notifications";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -100,6 +101,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         })
       ).map((p) => p.id)
     : [];
+  const previousAssignments = await db.programAssignment.findMany({
+    where: { programId: params.id },
+    select: { playerId: true },
+  });
+  const previousPlayerIds = new Set(previousAssignments.map((assignment) => assignment.playerId));
 
   await db.$transaction([
     db.programSession.deleteMany({ where: { programId: params.id } }),
@@ -131,6 +137,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       },
     }),
   ]);
+
+  await createManyNotifications(
+    validPlayerIds.map((playerId) => {
+      const isNew = !previousPlayerIds.has(playerId);
+      return {
+        userId: playerId,
+        title: isNew ? "New program assigned" : "Program updated",
+        description: isNew ? `${data.name} has been assigned to you.` : `${data.name} has been updated by your coach.`,
+        type: isNew ? "PROGRAM_ASSIGNED" : "PROGRAM_UPDATED",
+        actionHref: "/dashboard/player/training",
+        relatedId: params.id,
+        dedupeKey: isNew ? `program-assigned:${params.id}:${playerId}` : null,
+      };
+    })
+  );
 
   return NextResponse.json({ id: params.id });
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { createNotification } from "@/lib/notifications";
 import { db, ensureDatabase } from "@/lib/db";
 
 function todayKey() {
@@ -89,6 +90,17 @@ export async function GET() {
   }
 
   const note = await db.coachNote.findUnique({ where: { playerId_date: { playerId: session.sub, date } } });
+  if (note) {
+    await createNotification({
+      userId: session.sub,
+      title: "Coach message",
+      description: note.message,
+      type: "COACH_MESSAGE",
+      actionHref: "/dashboard/player",
+      relatedId: note.id,
+      dedupeKey: `coach-message:${session.sub}:${note.id}`,
+    });
+  }
   const [latestAssessment, activeAssignment] = await Promise.all([
     db.assessment.findFirst({
       where: { playerId: session.sub, player: { id: session.sub } },
