@@ -21,10 +21,10 @@ export async function getCoachContext() {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
-  const team = await db.team.findUnique({ where: { coachId: teamOwnerId } });
+  const team = await db.team.findFirst({ where: { coachId: teamOwnerId }, orderBy: { createdAt: "asc" } });
 
   if (!team && session.role === "COACH") {
-    redirect("/dashboard/coach/team/new");
+    redirect("/dashboard/coach/teams");
   }
 
   return {

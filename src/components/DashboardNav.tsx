@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, ChevronDownIcon, LogOutIcon, SettingsIcon } from "@/components/icons";
 
+type HeaderTeam = {
+  id: string;
+  name: string;
+  roleLabel: string;
+  logo?: string | null;
+};
+
 export default function DashboardNav({
   name,
   roleLabel,
@@ -21,12 +28,17 @@ export default function DashboardNav({
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);
+  const [teams, setTeams] = useState<HeaderTeam[]>([]);
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(notificationCount);
   const menuRef = useRef<HTMLDivElement>(null);
+  const teamRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (teamRef.current && !teamRef.current.contains(e.target as Node)) setTeamOpen(false);
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -41,6 +53,25 @@ export default function DashboardNav({
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    fetch("/api/coach/teams", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || !Array.isArray(data.teams)) return;
+        setTeams(data.teams);
+        setCurrentTeamId(data.currentTeamId ?? data.teams[0]?.id ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function switchTeam(teamId: string) {
+    setTeamOpen(false);
+    const res = await fetch(`/api/coach/teams/${teamId}/switch`, { method: "POST" });
+    if (!res.ok) return;
+    setCurrentTeamId(teamId);
+    router.refresh();
+  }
+
   async function signOut() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
@@ -48,6 +79,7 @@ export default function DashboardNav({
   }
 
   const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const currentTeam = teams.find((team) => team.id === currentTeamId) ?? teams[0];
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/5 bg-ink-2/90 backdrop-blur">
@@ -65,6 +97,82 @@ export default function DashboardNav({
         </div>
 
         <div className="flex items-center gap-2">
+          {currentTeam && (
+            <div className="relative hidden sm:block" ref={teamRef}>
+              <button
+                type="button"
+                onClick={() => setTeamOpen((value) => !value)}
+                className="flex max-w-[220px] items-center gap-2 rounded-md border border-line-1 px-3 py-2 text-left transition-colors hover:border-smoke-4"
+                aria-haspopup="menu"
+                aria-expanded={teamOpen}
+              >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-red/15 text-[10px] font-bold text-red">
+                  {currentTeam.logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={currentTeam.logo} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    currentTeam.name.charAt(0).toUpperCase()
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-white">{currentTeam.name}</span>
+                  <span className="block truncate text-[10px] uppercase tracking-[0.08em] text-smoke-3">
+                    {currentTeam.roleLabel}
+                  </span>
+                </span>
+                <ChevronDownIcon className={`h-4 w-4 shrink-0 text-smoke-3 transition-transform ${teamOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {teamOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+8px)] w-64 overflow-hidden rounded-md border border-line-1 bg-ink-3 shadow-xl shadow-black/40"
+                >
+                  <div className="border-b border-white/5 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-smoke-3">
+                    Switch team
+                  </div>
+                  {teams.map((team) => (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => switchTeam(team.id)}
+                      className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-white/5 ${
+                        team.id === currentTeam.id ? "text-white" : "text-smoke-4"
+                      }`}
+                      role="menuitem"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold">{team.name}</span>
+                        <span className="block truncate text-[10px] uppercase tracking-[0.08em] text-smoke-3">
+                          {team.roleLabel}
+                        </span>
+                      </span>
+                      {team.id === currentTeam.id && <span className="h-2 w-2 rounded-full bg-red" />}
+                    </button>
+                  ))}
+                  <div className="border-t border-white/5">
+                    <Link
+                      href="/dashboard/coach/teams?create=1"
+                      onClick={() => setTeamOpen(false)}
+                      className="block px-3.5 py-2.5 text-sm text-smoke-4 transition-colors hover:bg-white/5 hover:text-paper-pure"
+                      role="menuitem"
+                    >
+                      Create new team
+                    </Link>
+                    <Link
+                      href="/dashboard/coach/teams"
+                      onClick={() => setTeamOpen(false)}
+                      className="block px-3.5 py-2.5 text-sm text-smoke-4 transition-colors hover:bg-white/5 hover:text-paper-pure"
+                      role="menuitem"
+                    >
+                      Manage teams
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <Link
             href="/dashboard/notifications"
             aria-label="Notifications"

@@ -14,6 +14,7 @@ import {
 
 const TABS = [
   { href: "/dashboard/coach", label: "Dashboard", icon: GridIcon },
+  { href: "/dashboard/coach/teams", label: "Teams", icon: UsersIcon },
   { href: "/dashboard/coach/players", label: "Players", icon: UsersIcon },
   { href: "/dashboard/coach/programs", label: "Programs", icon: ClipboardListIcon },
   { href: "/dashboard/coach/assessments", label: "Assessments", icon: ClipboardCheckIcon },

@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
-  const team = await db.team.findUnique({ where: { coachId: teamOwnerId } });
+  const team = await db.team.findFirst({ where: { coachId: teamOwnerId }, orderBy: { createdAt: "asc" } });
   if (!team) {
     return NextResponse.json(
       { error: "Set up your team before inviting players or assistants" },

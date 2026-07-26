@@ -41,18 +41,45 @@ model User {
   assessmentsReceived   Assessment[]         @relation("PlayerAssessments")
 
   // Present only on the head coach's own User row — the team they run.
-  team Team?
+  teamsOwned Team[] @relation("TeamOwner")
+  teamMemberships TeamMember[]
 }
 
 // A coach's team. Must exist before the coach can invite players or
 // assistant coaches — created once, right after the coach signs up.
 model Team {
+  id              String   @id @default(cuid())
+  name            String
+  sport           String?
+  ageGroup        String?
+  season          String?
+  country         String?
+  timeZone        String?
+  logo            String?
+  units           String?
+  defaultLanguage String?
+  coachId         String?
+  coach           User?    @relation("TeamOwner", fields: [coachId], references: [id])
+  members         TeamMember[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([coachId])
+}
+
+model TeamMember {
   id        String   @id @default(cuid())
-  name      String
-  sport     String?
-  coachId   String   @unique
-  coach     User     @relation(fields: [coachId], references: [id])
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@index([teamId])
 }
 
 // One entry per player per day — the "Today Dashboard" data.

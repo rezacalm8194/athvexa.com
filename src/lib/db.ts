@@ -285,10 +285,52 @@ async function ensureSqliteSchema() {
       "id" TEXT NOT NULL PRIMARY KEY,
       "name" TEXT NOT NULL,
       "sport" TEXT,
-      "coachId" TEXT NOT NULL,
+      "ageGroup" TEXT,
+      "season" TEXT,
+      "country" TEXT,
+      "timeZone" TEXT,
+      "logo" TEXT,
+      "units" TEXT,
+      "defaultLanguage" TEXT,
+      "coachId" TEXT,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT "Team_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Team_coachId_key" ON "Team"("coachId");`);
+  const teamColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Team");`);
+  for (const [name, type] of [
+    ["ageGroup", "TEXT"],
+    ["season", "TEXT"],
+    ["country", "TEXT"],
+    ["timeZone", "TEXT"],
+    ["logo", "TEXT"],
+    ["units", "TEXT"],
+    ["defaultLanguage", "TEXT"],
+  ] as const) {
+    if (!teamColumns.some((column) => column.name === name)) {
+      await db.$executeRawUnsafe(`ALTER TABLE "Team" ADD COLUMN "${name}" ${type};`);
+    }
+  }
+  if (!teamColumns.some((column) => column.name === "updatedAt")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Team" ADD COLUMN "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;`);
+  }
+  await db.$executeRawUnsafe(`DROP INDEX IF EXISTS "Team_coachId_key";`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Team_coachId_idx" ON "Team"("coachId");`);
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "TeamMember" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "teamId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "role" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "TeamMember_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "TeamMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "TeamMember_teamId_userId_key" ON "TeamMember"("teamId", "userId");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TeamMember_userId_idx" ON "TeamMember"("userId");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TeamMember_teamId_idx" ON "TeamMember"("teamId");`);
 }

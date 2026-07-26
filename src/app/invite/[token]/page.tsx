@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: { params: { token: string }
   }
 
   const role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
-  const team = await db.team.findUnique({ where: { coachId: invite.coachId }, select: { name: true } });
+  const team = await db.team.findFirst({ where: { coachId: invite.coachId }, orderBy: { createdAt: "asc" }, select: { name: true } });
   const teamLabel = team?.name ?? invite.coach.name;
 
   return (
