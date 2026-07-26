@@ -41,7 +41,16 @@ type PlayerProgress = {
   latestAssessment: { id: string; type: string; score: number; date: string } | null;
   previousAssessment: { id: string; type: string; score: number; date: string } | null;
   assessmentChange: number | null;
-  activeProgram: { id: string; name: string; startDate: string | null; endDate: string | null; assignedAt: string } | null;
+  activeProgram: {
+    id: string;
+    name: string;
+    startDate: string | null;
+    endDate: string | null;
+    assignedAt: string;
+    completedSessions: number;
+    remainingSessions: number;
+    progress: number;
+  } | null;
   hasActiveAssignment: boolean;
   programStatus: string;
   overallStatus: OverallStatus;
@@ -410,7 +419,18 @@ export default function ReportsPageView() {
                         <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatDate(player.latestAssessment.date) : "No assessment"}</td>
                         <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness)}</td>
                         <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, "h")}</td>
-                        <td className="px-3 py-4 text-smoke-2">{player.activeProgram?.name ?? "No active program"}</td>
+                        <td className="px-3 py-4 text-smoke-2">
+                          {player.activeProgram ? (
+                            <div>
+                              <div className="font-semibold text-white">{player.activeProgram.name}</div>
+                              <div className="text-xs text-smoke-4">
+                                {player.activeProgram.progress}% · {player.activeProgram.completedSessions} completed · {player.activeProgram.remainingSessions} remaining
+                              </div>
+                            </div>
+                          ) : (
+                            "No active program"
+                          )}
+                        </td>
                         <td className="px-3 py-4 text-smoke-2">
                           {player.activeProgram
                             ? `${formatMaybeDate(player.activeProgram.startDate)} - ${formatMaybeDate(player.activeProgram.endDate)}`

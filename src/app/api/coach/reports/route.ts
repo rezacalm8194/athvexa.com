@@ -182,7 +182,21 @@ export async function GET(req: NextRequest) {
       select: {
         playerId: true,
         assignedAt: true,
-        program: { select: { id: true, name: true, status: true, startDate: true, endDate: true } },
+        program: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            sessions: {
+              select: {
+                id: true,
+                progress: { select: { playerId: true, status: true, completedAt: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { assignedAt: "desc" },
     }),
@@ -252,6 +266,11 @@ export async function GET(req: NextRequest) {
     const assessmentChange = latestAssessment && previousAssessment ? latestAssessment.score - previousAssessment.score : null;
     const hasData = logs.length > 0 || latestAssessment != null;
     const activeProgram = activeProgramByPlayer.get(player.id);
+    const totalProgramSessions = activeProgram?.program.sessions.length ?? 0;
+    const completedProgramSessions =
+      activeProgram?.program.sessions.filter((session) =>
+        session.progress.some((progress) => progress.playerId === player.id && progress.status === "COMPLETED")
+      ).length ?? 0;
     return {
       id: player.id,
       name: player.name,
@@ -286,6 +305,9 @@ export async function GET(req: NextRequest) {
             startDate: activeProgram.program.startDate,
             endDate: activeProgram.program.endDate,
             assignedAt: activeProgram.assignedAt,
+            completedSessions: completedProgramSessions,
+            remainingSessions: Math.max(totalProgramSessions - completedProgramSessions, 0),
+            progress: totalProgramSessions > 0 ? Math.round((completedProgramSessions / totalProgramSessions) * 100) : 0,
           }
         : null,
       hasActiveAssignment: Boolean(activeProgram),

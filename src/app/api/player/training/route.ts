@@ -39,7 +39,12 @@ export async function GET() {
     include: {
       program: {
         include: {
-          sessions: { orderBy: [{ order: "asc" }, { day: "asc" }] },
+          sessions: {
+            orderBy: [{ order: "asc" }, { day: "asc" }],
+            include: {
+              progress: { where: { playerId: session.sub } },
+            },
+          },
         },
       },
     },
@@ -51,6 +56,16 @@ export async function GET() {
   }
 
   const { program } = assignment;
+  const sessions = program.sessions
+    .slice()
+    .sort((a, b) => {
+      const dayDiff = DAYS.indexOf(a.day) - DAYS.indexOf(b.day);
+      return dayDiff === 0 ? a.order - b.order : dayDiff;
+    });
+  const completedSessions = sessions.filter((session) => session.progress[0]?.status === "COMPLETED").length;
+  const remainingSessions = Math.max(sessions.length - completedSessions, 0);
+  const progress = sessions.length > 0 ? Math.round((completedSessions / sessions.length) * 100) : 0;
+
   return NextResponse.json({
     program: {
       id: program.id,
@@ -61,20 +76,24 @@ export async function GET() {
       endDate: program.endDate,
       status: program.status,
       assignedAt: assignment.assignedAt,
-      sessions: program.sessions
-        .slice()
-        .sort((a, b) => {
-          const dayDiff = DAYS.indexOf(a.day) - DAYS.indexOf(b.day);
-          return dayDiff === 0 ? a.order - b.order : dayDiff;
-        })
-        .map((session) => ({
+      progress,
+      completedSessions,
+      remainingSessions,
+      totalSessions: sessions.length,
+      sessions: sessions.map((session) => {
+        const progress = session.progress[0] ?? null;
+        return {
           id: session.id,
           title: session.title,
           day: session.day,
           durationMinutes: session.durationMinutes,
           intensity: session.intensity,
           notes: session.notes,
-        })),
+          status: progress?.status ?? "NOT_STARTED",
+          completedAt: progress?.completedAt ?? null,
+          completionNotes: progress?.notes ?? null,
+        };
+      }),
     },
   });
 }

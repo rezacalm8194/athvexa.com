@@ -219,6 +219,22 @@ async function ensureSqliteSchema() {
   `);
 
   await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ProgramSessionProgress" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "playerId" TEXT NOT NULL,
+      "programSessionId" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'NOT_STARTED',
+      "completedAt" DATETIME,
+      "notes" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "ProgramSessionProgress_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+      CONSTRAINT "ProgramSessionProgress_programSessionId_fkey" FOREIGN KEY ("programSessionId") REFERENCES "ProgramSession" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramSessionProgress_playerId_programSessionId_key" ON "ProgramSessionProgress"("playerId", "programSessionId");`);
+
+  await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "ProgramAssignment" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "programId" TEXT NOT NULL,

@@ -35,6 +35,7 @@ model User {
 
   programsCreated       Program[]           @relation("CoachPrograms")
   programAssignments    ProgramAssignment[]  @relation("PlayerProgramAssignments")
+  sessionProgress        ProgramSessionProgress[]
   assessmentsGiven      Assessment[]         @relation("CoachAssessments")
   assessmentsReceived   Assessment[]         @relation("PlayerAssessments")
 
@@ -207,6 +208,22 @@ model ProgramSession {
   intensity       String   @default("MEDIUM") // LOW | MEDIUM | HIGH
   notes           String?
   order           Int      @default(0)
+  progress         ProgramSessionProgress[]
+}
+
+model ProgramSessionProgress {
+  id                  String         @id @default(cuid())
+  playerId            String
+  player              User           @relation(fields: [playerId], references: [id])
+  programSessionId    String
+  session             ProgramSession @relation(fields: [programSessionId], references: [id])
+  status              String         @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED | SKIPPED
+  completedAt         DateTime?
+  notes               String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@unique([playerId, programSessionId])
 }
 
 // Join table: which players a program is assigned to.
