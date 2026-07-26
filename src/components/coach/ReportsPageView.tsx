@@ -33,12 +33,18 @@ type PlayerProgress = {
   name: string;
   email: string;
   latestReadiness: number | null;
+  sleep: number | null;
+  fatigue: number | null;
+  soreness: number | null;
   averageReadiness: number | null;
   averageSleep: number | null;
-  latestAssessment: { type: string; score: number; date: string } | null;
+  latestAssessment: { id: string; type: string; score: number; date: string } | null;
+  previousAssessment: { id: string; type: string; score: number; date: string } | null;
+  assessmentChange: number | null;
   programStatus: string;
   overallStatus: OverallStatus;
   profileHref: string;
+  assessmentHref: string | null;
 };
 
 type TrendPoint = {
@@ -79,6 +85,18 @@ function daysAgo(days: number) {
 
 function displayValue(value: number | null, suffix = "") {
   return value == null ? "No data" : `${value}${suffix}`;
+}
+
+function displayChange(value: number | null) {
+  if (value == null) return "No comparison";
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function changeStyle(value: number | null) {
+  if (value == null) return "text-smoke-4";
+  if (value > 0) return "text-[#80D987]";
+  if (value < 0) return "text-red-glow";
+  return "text-smoke-2";
 }
 
 function formatDate(value: string) {
@@ -347,15 +365,16 @@ export default function ReportsPageView() {
                 <h2 className="font-display text-lg font-black text-white">Player progress</h2>
               </div>
               <div className="overflow-x-auto p-4">
-                <table className="w-full min-w-[980px] text-left text-sm">
+                <table className="w-full min-w-[1080px] text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-smoke-4">
                     <tr className="border-b border-line-1">
                       <th className="px-3 py-3 font-bold">Player</th>
-                      <th className="px-3 py-3 font-bold">Latest readiness</th>
-                      <th className="px-3 py-3 font-bold">Average readiness</th>
-                      <th className="px-3 py-3 font-bold">Average sleep</th>
-                      <th className="px-3 py-3 font-bold">Latest assessment</th>
-                      <th className="px-3 py-3 font-bold">Program status</th>
+                      <th className="px-3 py-3 font-bold">Latest assessment type</th>
+                      <th className="px-3 py-3 font-bold">Latest assessment score</th>
+                      <th className="px-3 py-3 font-bold">Score change</th>
+                      <th className="px-3 py-3 font-bold">Assessment date</th>
+                      <th className="px-3 py-3 font-bold">Readiness</th>
+                      <th className="px-3 py-3 font-bold">Sleep</th>
                       <th className="px-3 py-3 font-bold">Overall status</th>
                     </tr>
                   </thead>
@@ -363,18 +382,25 @@ export default function ReportsPageView() {
                     {data.playerProgress.map((player) => (
                       <tr key={player.id} className="border-b border-line-1 last:border-b-0">
                         <td className="px-3 py-4">
-                          <div className="font-bold text-white">{player.name}</div>
+                          <Link className="font-bold text-white hover:text-red-glow" href={player.profileHref}>
+                            {player.name}
+                          </Link>
                           <div className="text-xs text-smoke-4">{player.email}</div>
                         </td>
-                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness)}</td>
-                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.averageReadiness)}</td>
-                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.averageSleep, "h")}</td>
                         <td className="px-3 py-4 text-smoke-2">
-                          {player.latestAssessment
-                            ? `${player.latestAssessment.type} ${player.latestAssessment.score}/100`
-                            : "No data"}
+                          {player.latestAssessment && player.assessmentHref ? (
+                            <Link className="font-semibold text-red hover:text-red-glow" href={player.assessmentHref}>
+                              {player.latestAssessment.type}
+                            </Link>
+                          ) : (
+                            "No assessment"
+                          )}
                         </td>
-                        <td className="px-3 py-4 text-smoke-2">{player.programStatus}</td>
+                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? `${player.latestAssessment.score}/100` : "No assessment"}</td>
+                        <td className={`px-3 py-4 font-semibold ${changeStyle(player.assessmentChange)}`}>{displayChange(player.assessmentChange)}</td>
+                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatDate(player.latestAssessment.date) : "No assessment"}</td>
+                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness)}</td>
+                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, "h")}</td>
                         <td className="px-3 py-4">
                           <StatusBadge status={player.overallStatus} />
                         </td>

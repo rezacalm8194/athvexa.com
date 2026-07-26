@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import KpiCard from "@/components/coach/KpiCard";
 import ConfirmModal from "@/components/coach/shared/ConfirmModal";
 import EmptyState from "@/components/coach/shared/EmptyState";
@@ -273,6 +274,8 @@ function AssessmentDetailModal({ assessment, onClose }: { assessment: Assessment
 
 export default function AssessmentsPageView() {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const deepLinkedAssessmentId = searchParams.get("assessmentId");
   const [data, setData] = useState<AssessmentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -283,6 +286,7 @@ export default function AssessmentsPageView() {
   const [viewing, setViewing] = useState<AssessmentItem | null>(null);
   const [deleting, setDeleting] = useState<AssessmentItem | null>(null);
   const [busy, setBusy] = useState(false);
+  const [openedDeepLink, setOpenedDeepLink] = useState<string | null>(null);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -310,6 +314,34 @@ export default function AssessmentsPageView() {
   useEffect(() => {
     void loadAssessments();
   }, [queryString]);
+
+  useEffect(() => {
+    if (!deepLinkedAssessmentId || openedDeepLink === deepLinkedAssessmentId) return;
+
+    const loadedAssessment = data?.assessments.find((assessment) => assessment.id === deepLinkedAssessmentId);
+    if (loadedAssessment) {
+      setViewing(loadedAssessment);
+      setOpenedDeepLink(deepLinkedAssessmentId);
+      return;
+    }
+
+    let active = true;
+    fetch(`/api/coach/assessments/${deepLinkedAssessmentId}`, { cache: "no-store" })
+      .then((res) => res.json().then((payload) => ({ ok: res.ok, payload })))
+      .then(({ ok, payload }) => {
+        if (!active) return;
+        if (!ok) throw new Error(payload.error || "Could not open assessment");
+        setViewing(payload.assessment);
+        setOpenedDeepLink(deepLinkedAssessmentId);
+      })
+      .catch((err) => {
+        if (active) showToast(err instanceof Error ? err.message : "Could not open assessment", "error");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [data?.assessments, deepLinkedAssessmentId, openedDeepLink, showToast]);
 
   const players = data?.players ?? [];
   const assessments = data?.assessments ?? [];

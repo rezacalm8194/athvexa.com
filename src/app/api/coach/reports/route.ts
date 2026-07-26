@@ -78,12 +78,35 @@ function dateKeysBetween(from: string, to: string) {
   return keys;
 }
 
-function statusFromSignals(hasData: boolean, latestReadiness: number | null, avgReadiness: number | null, avgSleep: number | null): OverallStatus {
+function statusFromSignals({
+  hasData,
+  readiness,
+  sleep,
+  fatigue,
+  soreness,
+  assessmentChange,
+}: {
+  hasData: boolean;
+  readiness: number | null;
+  sleep: number | null;
+  fatigue: number | null;
+  soreness: number | null;
+  assessmentChange: number | null;
+}): OverallStatus {
   if (!hasData) return "No data";
-  if ((latestReadiness != null && latestReadiness < 40) || (avgReadiness != null && avgReadiness < 45) || (avgSleep != null && avgSleep < 6)) {
+  if (
+    (readiness != null && readiness < 40) ||
+    (sleep != null && sleep < 6) ||
+    (fatigue != null && fatigue >= 4) ||
+    (soreness != null && soreness >= 4)
+  ) {
     return "Attention";
   }
-  if ((latestReadiness != null && latestReadiness < 60) || (avgReadiness != null && avgReadiness < 65) || (avgSleep != null && avgSleep < 7)) {
+  if (
+    (assessmentChange != null && assessmentChange <= -10) ||
+    (readiness != null && readiness >= 40 && readiness <= 59) ||
+    (sleep != null && sleep >= 6 && sleep <= 7)
+  ) {
     return "Watch";
   }
   return "Good";
@@ -151,7 +174,7 @@ export async function GET(req: NextRequest) {
     }),
     db.assessment.findMany({
       where: { coachId: teamOwnerId, playerId: { in: playerIds } },
-      select: { playerId: true, type: true, score: true, date: true, createdAt: true },
+      select: { id: true, playerId: true, type: true, score: true, date: true, createdAt: true },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     }),
     db.programAssignment.findMany({
@@ -166,9 +189,9 @@ export async function GET(req: NextRequest) {
   }
 
   const todayByPlayer = new Map(todayLogs.map((log) => [log.playerId, log]));
-  const latestAssessmentByPlayer = new Map<string, (typeof assessments)[number]>();
+  const assessmentsByPlayer = new Map<string, typeof assessments>();
   for (const assessment of assessments) {
-    if (!latestAssessmentByPlayer.has(assessment.playerId)) latestAssessmentByPlayer.set(assessment.playerId, assessment);
+    assessmentsByPlayer.set(assessment.playerId, [...(assessmentsByPlayer.get(assessment.playerId) ?? []), assessment]);
   }
 
   const programStatusByPlayer = new Map<string, string>();
@@ -214,24 +237,49 @@ export async function GET(req: NextRequest) {
     const latestLog = logs[0] ?? null;
     const avgReadiness = average(logs.map((log) => log.score));
     const avgSleep = average(logs.map((log) => log.sleepHours));
-    const latestAssessment = latestAssessmentByPlayer.get(player.id);
+    const playerAssessments = assessmentsByPlayer.get(player.id) ?? [];
+    const latestAssessment = playerAssessments[0] ?? null;
+    const previousAssessment = playerAssessments[1] ?? null;
+    const assessmentChange = latestAssessment && previousAssessment ? latestAssessment.score - previousAssessment.score : null;
+    const hasData = logs.length > 0 || latestAssessment != null;
     return {
       id: player.id,
       name: player.name,
       email: player.email,
       latestReadiness: latestLog?.score ?? null,
+      sleep: latestLog?.sleepHours ?? null,
+      fatigue: latestLog?.fatigue ?? null,
+      soreness: latestLog?.soreness ?? null,
       averageReadiness: avgReadiness,
       averageSleep: avgSleep,
       latestAssessment: latestAssessment
         ? {
+            id: latestAssessment.id,
             type: latestAssessment.type,
             score: latestAssessment.score,
             date: latestAssessment.date,
           }
         : null,
+      previousAssessment: previousAssessment
+        ? {
+            id: previousAssessment.id,
+            type: previousAssessment.type,
+            score: previousAssessment.score,
+            date: previousAssessment.date,
+          }
+        : null,
+      assessmentChange,
       programStatus: programStatusByPlayer.get(player.id) ?? "Unassigned",
-      overallStatus: statusFromSignals(logs.length > 0, latestLog?.score ?? null, avgReadiness, avgSleep),
+      overallStatus: statusFromSignals({
+        hasData,
+        readiness: latestLog?.score ?? null,
+        sleep: latestLog?.sleepHours ?? null,
+        fatigue: latestLog?.fatigue ?? null,
+        soreness: latestLog?.soreness ?? null,
+        assessmentChange,
+      }),
       profileHref: `/dashboard/coach/players?playerId=${player.id}`,
+      assessmentHref: latestAssessment ? `/dashboard/coach/assessments?assessmentId=${latestAssessment.id}` : null,
     };
   });
 
