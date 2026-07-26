@@ -21,13 +21,18 @@ export async function getCoachContext() {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
-  const team = await db.team.findFirst({
-    where: { coachId: teamOwnerId },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, sport: true, coachId: true, createdAt: true },
-  });
+  const team = await db.team
+    .findFirst({
+      where: { coachId: teamOwnerId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, sport: true, coachId: true, createdAt: true },
+    })
+    .catch((error) => {
+      console.error("Coach team lookup failed", error);
+      return null;
+    });
 
-  if (!team && session.role === "COACH") {
+  if (!team && session.role === "COACH" && process.env.NODE_ENV !== "production") {
     redirect("/dashboard/coach/teams");
   }
 
