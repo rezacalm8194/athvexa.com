@@ -41,6 +41,8 @@ type PlayerProgress = {
   latestAssessment: { id: string; type: string; score: number; date: string } | null;
   previousAssessment: { id: string; type: string; score: number; date: string } | null;
   assessmentChange: number | null;
+  activeProgram: { id: string; name: string; startDate: string | null; endDate: string | null; assignedAt: string } | null;
+  hasActiveAssignment: boolean;
   programStatus: string;
   overallStatus: OverallStatus;
   profileHref: string;
@@ -101,6 +103,10 @@ function changeStyle(value: number | null) {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatMaybeDate(value: string | null) {
+  return value ? formatDate(value) : "Not set";
 }
 
 function StatusBadge({ status }: { status: OverallStatus }) {
@@ -365,7 +371,7 @@ export default function ReportsPageView() {
                 <h2 className="font-display text-lg font-black text-white">Player progress</h2>
               </div>
               <div className="overflow-x-auto p-4">
-                <table className="w-full min-w-[1080px] text-left text-sm">
+                <table className="w-full min-w-[1320px] text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-smoke-4">
                     <tr className="border-b border-line-1">
                       <th className="px-3 py-3 font-bold">Player</th>
@@ -375,6 +381,9 @@ export default function ReportsPageView() {
                       <th className="px-3 py-3 font-bold">Assessment date</th>
                       <th className="px-3 py-3 font-bold">Readiness</th>
                       <th className="px-3 py-3 font-bold">Sleep</th>
+                      <th className="px-3 py-3 font-bold">Active program</th>
+                      <th className="px-3 py-3 font-bold">Program dates</th>
+                      <th className="px-3 py-3 font-bold">Active assignment</th>
                       <th className="px-3 py-3 font-bold">Overall status</th>
                     </tr>
                   </thead>
@@ -401,6 +410,19 @@ export default function ReportsPageView() {
                         <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatDate(player.latestAssessment.date) : "No assessment"}</td>
                         <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness)}</td>
                         <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, "h")}</td>
+                        <td className="px-3 py-4 text-smoke-2">{player.activeProgram?.name ?? "No active program"}</td>
+                        <td className="px-3 py-4 text-smoke-2">
+                          {player.activeProgram
+                            ? `${formatMaybeDate(player.activeProgram.startDate)} - ${formatMaybeDate(player.activeProgram.endDate)}`
+                            : "No active program"}
+                        </td>
+                        <td className="px-3 py-4">
+                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
+                            player.hasActiveAssignment ? "bg-[#4CAF50]/15 text-[#80D987]" : "bg-white/10 text-smoke-3"
+                          }`}>
+                            {player.hasActiveAssignment ? "Active" : "None"}
+                          </span>
+                        </td>
                         <td className="px-3 py-4">
                           <StatusBadge status={player.overallStatus} />
                         </td>

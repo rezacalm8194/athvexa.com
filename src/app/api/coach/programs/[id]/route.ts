@@ -68,7 +68,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
         intensity: s.intensity,
         notes: s.notes,
       })),
-      assignedPlayers: program.assignments.map((a) => a.player),
+      assignedPlayers: program.assignments.map((a) => ({
+        ...a.player,
+        assignedAt: a.assignedAt,
+        assignmentStatus: program.status === "ACTIVE" ? "Active assignment" : "Assigned",
+      })),
     },
   });
 }

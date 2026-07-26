@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ScoreCard from "./ScoreCard";
 import StatInput from "./StatInput";
 import WellnessSlider from "./WellnessSlider";
@@ -19,10 +20,57 @@ type Log = {
   sleepQuality: number | null;
   tasks: Task[];
 };
+type TrainingSession = {
+  id: string;
+  title: string;
+  day: string;
+  durationMinutes: number | null;
+  intensity: string;
+  notes: string | null;
+  status: string;
+};
+type Assessment = { id: string; type: string; score: number; date: string } | null;
+type ActiveProgram = {
+  id: string;
+  name: string;
+  goal: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  progress: number | null;
+  nextSession: { id: string; title: string; day: string; durationMinutes: number | null; intensity: string } | null;
+} | null;
+
+function formatLongDate(value: string) {
+  return new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(
+    new Date(`${value}T00:00:00`)
+  );
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T00:00:00`));
+}
+
+function durationLabel(value: number | null | undefined) {
+  return value == null ? "Not set" : `${value} min`;
+}
+
+function SummaryCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-white/5 bg-ink-3 p-4">
+      <div className="eyebrow mb-2">{title}</div>
+      {children}
+    </section>
+  );
+}
 
 export default function TodayDashboard({ playerName }: { playerName: string }) {
   const [log, setLog] = useState<Log | null>(null);
   const [coachMessage, setCoachMessage] = useState<string | null>(null);
+  const [todayDate, setTodayDate] = useState<string | null>(null);
+  const [checkInCompleted, setCheckInCompleted] = useState(false);
+  const [todaysTraining, setTodaysTraining] = useState<TrainingSession | null>(null);
+  const [currentAssessment, setCurrentAssessment] = useState<Assessment>(null);
+  const [activeProgram, setActiveProgram] = useState<ActiveProgram>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +79,11 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
       .then((data) => {
         setLog(data.log);
         setCoachMessage(data.coachMessage);
+        setTodayDate(data.todayDate);
+        setCheckInCompleted(Boolean(data.checkInCompleted));
+        setTodaysTraining(data.todaysTraining);
+        setCurrentAssessment(data.currentAssessment);
+        setActiveProgram(data.activeProgram);
         setLoading(false);
       });
   }, []);
@@ -43,6 +96,7 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
     });
     const data = await res.json();
     setLog(data.log);
+    setCheckInCompleted(true);
   }
 
   async function toggleTask(task: Task) {
@@ -68,11 +122,99 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
       <div className="mb-6">
         <div className="eyebrow">Today</div>
         <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">
-          Hey {playerName.split(" ")[0]}, here's your day
+          Welcome, {playerName}
         </h1>
+        <p className="mt-1 text-sm text-smoke-3">{todayDate ? formatLongDate(todayDate) : ""}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <SummaryCard title="Today's training">
+          {todaysTraining ? (
+            <div>
+              <h2 className="font-display text-lg font-bold text-white">{todaysTraining.title}</h2>
+              <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+                <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{durationLabel(todaysTraining.durationMinutes)}</span>
+                <span className="rounded bg-red/15 px-2 py-1 font-bold text-red-glow">{todaysTraining.intensity}</span>
+                <span className="rounded bg-[#4CAF50]/15 px-2 py-1 font-bold text-[#80D987]">{todaysTraining.status}</span>
+              </div>
+              {todaysTraining.notes && <p className="mt-3 text-xs text-smoke-3">{todaysTraining.notes}</p>}
+            </div>
+          ) : (
+            <p className="text-sm text-smoke-3">No training session is scheduled for today.</p>
+          )}
+        </SummaryCard>
+
+        <SummaryCard title="Today's check-in">
+          <div className="flex flex-col gap-3">
+            <div>
+              <div className="font-display text-xl font-black text-white">{checkInCompleted ? "Completed" : "Not completed"}</div>
+              <p className="mt-1 text-xs text-smoke-3">
+                {checkInCompleted ? "Your readiness data is saved for today." : "Add your recovery and wellness numbers for today."}
+              </p>
+            </div>
+            {!checkInCompleted && (
+              <a href="#todays-check-in" className="btn-primary w-fit !px-4 !py-2 text-xs">
+                Complete today's check-in
+              </a>
+            )}
+          </div>
+        </SummaryCard>
+
+        <SummaryCard title="Current assessment">
+          {currentAssessment ? (
+            <div id="current-assessment">
+              <div className="font-display text-3xl font-black text-white">{currentAssessment.score}</div>
+              <p className="mt-1 text-sm text-smoke-3">
+                {currentAssessment.type} on {formatShortDate(currentAssessment.date)}
+              </p>
+            </div>
+          ) : (
+            <p id="current-assessment" className="text-sm text-smoke-3">
+              No assessment has been recorded yet.
+            </p>
+          )}
+        </SummaryCard>
+
+        <SummaryCard title="Active program">
+          {activeProgram ? (
+            <div>
+              <h2 className="font-display text-lg font-bold text-white">{activeProgram.name}</h2>
+              <p className="mt-1 text-xs text-smoke-3">{activeProgram.goal || "No goal set."}</p>
+              <div className="mt-3">
+                <div className="mb-1 flex justify-between text-xs text-smoke-4">
+                  <span>Progress</span>
+                  <span>{activeProgram.progress == null ? "Schedule not set" : `${activeProgram.progress}%`}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-red" style={{ width: `${activeProgram.progress ?? 0}%` }} />
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-smoke-3">
+                Next session: {activeProgram.nextSession ? `${activeProgram.nextSession.title} (${activeProgram.nextSession.day})` : "No sessions added."}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-smoke-3">No active training program has been assigned yet.</p>
+          )}
+        </SummaryCard>
+      </div>
+
+      <section className="mb-6 rounded-lg border border-white/5 bg-ink-3 p-4">
+        <div className="eyebrow mb-3">Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/dashboard/player/training" className="btn-ghost !px-3.5 !py-2 text-xs">
+            Open training
+          </Link>
+          <a href="#todays-check-in" className="btn-ghost !px-3.5 !py-2 text-xs">
+            Complete check-in
+          </a>
+          <a href="#current-assessment" className="btn-ghost !px-3.5 !py-2 text-xs">
+            View assessments
+          </a>
+        </div>
+      </section>
+
+      <div id="todays-check-in" className="grid gap-4 sm:grid-cols-2">
         <ScoreCard score={log.score} />
 
         <div className="grid grid-cols-2 gap-3">

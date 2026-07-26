@@ -179,7 +179,12 @@ export async function GET(req: NextRequest) {
     }),
     db.programAssignment.findMany({
       where: { playerId: { in: playerIds }, player: { coachId: teamOwnerId } },
-      select: { playerId: true, program: { select: { status: true } } },
+      select: {
+        playerId: true,
+        assignedAt: true,
+        program: { select: { id: true, name: true, status: true, startDate: true, endDate: true } },
+      },
+      orderBy: { assignedAt: "desc" },
     }),
   ]);
 
@@ -195,11 +200,15 @@ export async function GET(req: NextRequest) {
   }
 
   const programStatusByPlayer = new Map<string, string>();
+  const activeProgramByPlayer = new Map<string, (typeof assignments)[number]>();
   for (const assignment of assignments) {
     const current = programStatusByPlayer.get(assignment.playerId);
     const status = assignment.program.status;
     if (!current || status === "ACTIVE" || (status === "DRAFT" && current === "ARCHIVED")) {
       programStatusByPlayer.set(assignment.playerId, status);
+    }
+    if (status === "ACTIVE" && !activeProgramByPlayer.has(assignment.playerId)) {
+      activeProgramByPlayer.set(assignment.playerId, assignment);
     }
   }
 
@@ -242,6 +251,7 @@ export async function GET(req: NextRequest) {
     const previousAssessment = playerAssessments[1] ?? null;
     const assessmentChange = latestAssessment && previousAssessment ? latestAssessment.score - previousAssessment.score : null;
     const hasData = logs.length > 0 || latestAssessment != null;
+    const activeProgram = activeProgramByPlayer.get(player.id);
     return {
       id: player.id,
       name: player.name,
@@ -269,6 +279,16 @@ export async function GET(req: NextRequest) {
           }
         : null,
       assessmentChange,
+      activeProgram: activeProgram
+        ? {
+            id: activeProgram.program.id,
+            name: activeProgram.program.name,
+            startDate: activeProgram.program.startDate,
+            endDate: activeProgram.program.endDate,
+            assignedAt: activeProgram.assignedAt,
+          }
+        : null,
+      hasActiveAssignment: Boolean(activeProgram),
       programStatus: programStatusByPlayer.get(player.id) ?? "Unassigned",
       overallStatus: statusFromSignals({
         hasData,

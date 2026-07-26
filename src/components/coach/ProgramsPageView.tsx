@@ -291,7 +291,7 @@ export default function ProgramsPageView() {
         />
       )}
 
-      {detailId && <ProgramDetailModal id={detailId} onClose={() => setDetailId(null)} />}
+      {detailId && <ProgramDetailModal id={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
 
       <ConfirmModal
         open={pendingAction !== null}

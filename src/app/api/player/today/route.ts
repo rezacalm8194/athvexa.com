@@ -1,9 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function todayName() {
+  return WEEKDAY_NAMES[new Date().getDay()];
+}
+
+function isCheckInCompleted(log: {
+  sleepHours: number | null;
+  energy: number | null;
+  fatigue: number | null;
+  soreness: number | null;
+  mood: number | null;
+  stress: number | null;
+  sleepQuality: number | null;
+}) {
+  return [log.sleepHours, log.energy, log.fatigue, log.soreness, log.mood, log.stress, log.sleepQuality].some((value) => value != null);
+}
+
+function programProgress(startDate: string | null, endDate: string | null) {
+  if (!startDate || !endDate) return null;
+  const start = new Date(`${startDate}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  const now = new Date(`${todayKey()}T00:00:00`).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  return Math.max(0, Math.min(100, Math.round(((now - start) / (end - start)) * 100)));
 }
 
 function computeScore(log: {
@@ -33,7 +60,9 @@ export async function GET() {
   if (!session || session.role !== "PLAYER") {
     return NextResponse.json({ error: "Players only" }, { status: 403 });
   }
+  await ensureDatabase();
   const date = todayKey();
+  const weekday = todayName();
 
   let log = await db.dailyLog.findUnique({
     where: { playerId_date: { playerId: session.sub, date } },
@@ -60,8 +89,74 @@ export async function GET() {
   }
 
   const note = await db.coachNote.findUnique({ where: { playerId_date: { playerId: session.sub, date } } });
+  const [latestAssessment, activeAssignment] = await Promise.all([
+    db.assessment.findFirst({
+      where: { playerId: session.sub, player: { id: session.sub } },
+      select: { id: true, type: true, score: true, date: true },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    }),
+    db.programAssignment.findFirst({
+      where: {
+        playerId: session.sub,
+        program: {
+          status: "ACTIVE",
+          OR: [{ startDate: null }, { startDate: { lte: date } }],
+          AND: [{ OR: [{ endDate: null }, { endDate: { gte: date } }] }],
+        },
+      },
+      include: {
+        program: {
+          include: {
+            sessions: { orderBy: [{ order: "asc" }, { day: "asc" }] },
+          },
+        },
+      },
+      orderBy: { assignedAt: "desc" },
+    }),
+  ]);
 
-  return NextResponse.json({ log, coachMessage: note?.message ?? null });
+  const sessions = activeAssignment?.program.sessions ?? [];
+  const currentSession = sessions.find((session) => session.day === weekday) ?? null;
+  const nextSession = sessions.find((session) => session.day !== weekday) ?? currentSession;
+  const activeProgram = activeAssignment
+    ? {
+        id: activeAssignment.program.id,
+        name: activeAssignment.program.name,
+        goal: activeAssignment.program.goal,
+        startDate: activeAssignment.program.startDate,
+        endDate: activeAssignment.program.endDate,
+        progress: programProgress(activeAssignment.program.startDate, activeAssignment.program.endDate),
+        nextSession: nextSession
+          ? {
+              id: nextSession.id,
+              title: nextSession.title,
+              day: nextSession.day,
+              durationMinutes: nextSession.durationMinutes,
+              intensity: nextSession.intensity,
+            }
+          : null,
+      }
+    : null;
+
+  return NextResponse.json({
+    log,
+    coachMessage: note?.message ?? null,
+    checkInCompleted: isCheckInCompleted(log),
+    todayDate: date,
+    todaysTraining: currentSession
+      ? {
+          id: currentSession.id,
+          title: currentSession.title,
+          day: currentSession.day,
+          durationMinutes: currentSession.durationMinutes,
+          intensity: currentSession.intensity,
+          notes: currentSession.notes,
+          status: "Scheduled",
+        }
+      : null,
+    currentAssessment: latestAssessment,
+    activeProgram,
+  });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -69,6 +164,7 @@ export async function PATCH(req: NextRequest) {
   if (!session || session.role !== "PLAYER") {
     return NextResponse.json({ error: "Players only" }, { status: 403 });
   }
+  await ensureDatabase();
   const date = todayKey();
   const body = await req.json().catch(() => ({}));
 
