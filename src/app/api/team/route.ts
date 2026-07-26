@@ -22,7 +22,11 @@ export async function GET() {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
-  const team = await db.team.findFirst({ where: { coachId: teamOwnerId }, orderBy: { createdAt: "asc" } });
+  const team = await db.team.findFirst({
+    where: { coachId: teamOwnerId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, sport: true, coachId: true, createdAt: true },
+  });
   return NextResponse.json({ team });
 }
 
@@ -43,7 +47,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const existing = await db.team.findFirst({ where: { coachId: session.sub }, orderBy: { createdAt: "asc" } });
+  const existing = await db.team.findFirst({
+    where: { coachId: session.sub },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
   if (existing) {
     return NextResponse.json({ error: "You already have a team" }, { status: 409 });
   }

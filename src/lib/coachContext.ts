@@ -21,7 +21,11 @@ export async function getCoachContext() {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
-  const team = await db.team.findFirst({ where: { coachId: teamOwnerId }, orderBy: { createdAt: "asc" } });
+  const team = await db.team.findFirst({
+    where: { coachId: teamOwnerId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, sport: true, coachId: true, createdAt: true },
+  });
 
   if (!team && session.role === "COACH") {
     redirect("/dashboard/coach/teams");

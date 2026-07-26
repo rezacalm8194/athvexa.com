@@ -11,7 +11,11 @@ export default async function TeamSetupPage() {
   if (session.role === "ASSISTANT") redirect("/dashboard/coach"); // only the head coach sets this up
 
   await ensureDatabase();
-  const existing = await db.team.findFirst({ where: { coachId: session.sub }, orderBy: { createdAt: "asc" } });
+  const existing = await db.team.findFirst({
+    where: { coachId: session.sub },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
   if (existing) redirect("/dashboard/coach");
 
   return (
