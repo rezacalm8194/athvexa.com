@@ -153,9 +153,9 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
               </p>
             </div>
             {!checkInCompleted && (
-              <a href="#todays-check-in" className="btn-primary w-fit !px-4 !py-2 text-xs">
+              <Link href="/dashboard/player/check-in" className="btn-primary w-fit !px-4 !py-2 text-xs">
                 Complete today's check-in
-              </a>
+              </Link>
             )}
           </div>
         </SummaryCard>
@@ -205,9 +205,9 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
           <Link href="/dashboard/player/training" className="btn-ghost !px-3.5 !py-2 text-xs">
             Open training
           </Link>
-          <a href="#todays-check-in" className="btn-ghost !px-3.5 !py-2 text-xs">
+          <Link href="/dashboard/player/check-in" className="btn-ghost !px-3.5 !py-2 text-xs">
             Complete check-in
-          </a>
+          </Link>
           <a href="#current-assessment" className="btn-ghost !px-3.5 !py-2 text-xs">
             View assessments
           </a>

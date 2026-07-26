@@ -68,12 +68,21 @@ async function ensureSqliteSchema() {
       "mood" INTEGER,
       "stress" INTEGER,
       "sleepQuality" INTEGER,
+      "bodyWeight" REAL,
+      "notes" TEXT,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT "DailyLog_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
   await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "DailyLog_playerId_date_key" ON "DailyLog"("playerId", "date");`);
+  const dailyLogColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("DailyLog");`);
+  if (!dailyLogColumns.some((c) => c.name === "bodyWeight")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "DailyLog" ADD COLUMN "bodyWeight" REAL;`);
+  }
+  if (!dailyLogColumns.some((c) => c.name === "notes")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "DailyLog" ADD COLUMN "notes" TEXT;`);
+  }
 
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Task" (

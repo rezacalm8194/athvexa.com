@@ -69,6 +69,8 @@ model DailyLog {
   mood          Int?     // 1-5
   stress        Int?     // 1-5
   sleepQuality  Int?     // 1-5
+  bodyWeight    Float?
+  notes         String?
 
   tasks         Task[]
 
@@ -234,4 +236,3 @@ model Assessment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
