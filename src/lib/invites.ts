@@ -4,16 +4,11 @@ import type { NextRequest } from "next/server";
  * Resolves the public base URL used to build shareable invite links.
  *
  * Order of preference:
- *  1. NEXT_PUBLIC_APP_URL — the canonical way to configure this app's
- *     public URL. Always wins when set.
- *  2. In production, https://athvexa.com — a safe, correct default so a
- *     missing env var never leaks an internal/dev origin into a link a
- *     player or assistant coach will actually click.
- *  3. The incoming request's own origin — only used outside production
- *     (e.g. local dev, preview deployments), so links generated on
- *     localhost still work on localhost.
+ *  1. NEXT_PUBLIC_APP_URL - the canonical public URL for the app.
+ *  2. In production, https://athvexa.com - a safe default when the env var is missing.
+ *  3. The incoming request origin - only outside production for development and previews.
  *
- * This never falls back to a hardcoded "http://localhost:3000".
+ * This never falls back to a hardcoded development URL.
  */
 export function getAppUrl(req?: Pick<NextRequest, "nextUrl">): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -30,14 +25,14 @@ export function buildInviteUrl(token: string, req?: Pick<NextRequest, "nextUrl">
   return `${getAppUrl(req)}/invite/${token}`;
 }
 
-/** Shortens a URL for display only — the full URL is still what gets copied/sent. */
+/** Shortens a URL for display only - the full URL is still what gets copied/sent. */
 export function shortenUrlForDisplay(url: string, maxLength = 42): string {
   if (url.length <= maxLength) return url;
   const withoutProtocol = url.replace(/^https?:\/\//, "");
   if (withoutProtocol.length <= maxLength) return withoutProtocol;
   const head = withoutProtocol.slice(0, 24);
   const tail = withoutProtocol.slice(-10);
-  return `${head}…${tail}`;
+  return `${head}...${tail}`;
 }
 
 export type InviteRow = {

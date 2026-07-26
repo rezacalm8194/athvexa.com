@@ -33,11 +33,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   if (parsed.data.action === "revoke") {
+    if (invite.usedAt) {
+      return NextResponse.json({ error: "Accepted invitations cannot be revoked" }, { status: 400 });
+    }
     const updated = await db.invite.update({ where: { id: invite.id }, data: { revoked: true } });
     return NextResponse.json({
       id: updated.id,
       status: inviteStatus(updated),
     });
+  }
+
+  if (invite.usedAt) {
+    return NextResponse.json({ error: "Accepted invitations cannot be regenerated" }, { status: 400 });
+  }
+
+  if (invite.role === "ASSISTANT" && session.role !== "COACH") {
+    return NextResponse.json({ error: "Only the head coach can invite an assistant coach" }, { status: 403 });
   }
 
   // Regenerate: retire the old link and mint a fresh one with the same role.
