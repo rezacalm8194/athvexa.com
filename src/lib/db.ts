@@ -313,7 +313,8 @@ async function ensureSqliteSchema() {
     }
   }
   if (!teamColumns.some((column) => column.name === "updatedAt")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Team" ADD COLUMN "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;`);
+    await db.$executeRawUnsafe(`ALTER TABLE "Team" ADD COLUMN "updatedAt" DATETIME;`);
+    await db.$executeRawUnsafe(`UPDATE "Team" SET "updatedAt" = COALESCE("updatedAt", CURRENT_TIMESTAMP);`);
   }
   await db.$executeRawUnsafe(`DROP INDEX IF EXISTS "Team_coachId_key";`);
   await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Team_coachId_idx" ON "Team"("coachId");`);
