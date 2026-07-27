@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
 
     let coachId: string | undefined;
     let inviteIdToLink: string | undefined;
+    let inviteTeamId: string | null = null;
 
     if (inviteToken) {
       const invite = await db.invite.findUnique({ where: { token: inviteToken } });
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
       role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
       coachId = invite.coachId;
       inviteIdToLink = invite.id;
+      inviteTeamId = invite.teamId;
     } else if (role === "ASSISTANT") {
       // Assistant accounts can only be created through a coach's invite link.
       return NextResponse.json(
@@ -70,6 +72,17 @@ export async function POST(req: NextRequest) {
         where: { id: inviteIdToLink },
         data: { usedAt: new Date(), acceptedUserId: user.id },
       });
+      if (inviteTeamId) {
+        await db.teamMember.upsert({
+          where: { teamId_userId: { teamId: inviteTeamId, userId: user.id } },
+          update: { role: role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER" },
+          create: {
+            teamId: inviteTeamId,
+            userId: user.id,
+            role: role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER",
+          },
+        });
+      }
     }
 
     const token = await signSession({ sub: user.id, role, name: user.name }, true);

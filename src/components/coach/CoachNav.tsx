@@ -18,6 +18,7 @@ const TABS = [
   { href: "/dashboard/coach/players", label: "Players", icon: UsersIcon },
   { href: "/dashboard/coach/programs", label: "Programs", icon: ClipboardListIcon },
   { href: "/dashboard/coach/assessments", label: "Assessments", icon: ClipboardCheckIcon },
+  { href: "/dashboard/messages", label: "Messages", icon: MailIcon },
   { href: "/dashboard/coach/reports", label: "Reports", icon: BarChartIcon },
   { href: "/dashboard/coach/invitations", label: "Invitations", icon: MailIcon },
   { href: "/dashboard/coach/settings", label: "Settings", icon: SettingsIcon },

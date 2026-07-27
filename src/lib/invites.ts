@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server";
  * Order of preference:
  *  1. NEXT_PUBLIC_APP_URL - the canonical public URL for the app.
  *  2. In production, https://athvexa.com - a safe default when the env var is missing.
- *  3. The incoming request origin - only outside production for development and previews.
+ *  3. The incoming request origin - only outside production for non-local previews.
  *
  * This never falls back to a hardcoded development URL.
  */
@@ -18,7 +18,12 @@ export function getAppUrl(req?: Pick<NextRequest, "nextUrl">): string {
     return "https://athvexa.com";
   }
 
-  return (req?.nextUrl.origin ?? "https://athvexa.com").replace(/\/+$/, "");
+  const origin = req?.nextUrl.origin?.replace(/\/+$/, "");
+  if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
+    return "https://athvexa.com";
+  }
+
+  return origin;
 }
 
 export function buildInviteUrl(token: string, req?: Pick<NextRequest, "nextUrl">): string {

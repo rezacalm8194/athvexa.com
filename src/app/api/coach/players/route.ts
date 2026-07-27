@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
+import { getCurrentTeamMembership } from "@/lib/teamContext";
 
 function statusFor(score: number) {
   if (score >= 80) return { label: "Excellent", tone: "good" as const };
@@ -17,49 +18,58 @@ export async function GET() {
 
   await ensureDatabase();
 
-  // An assistant coach shares the head coach's roster, not their own.
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
+  const date = new Date().toISOString().slice(0, 10);
+  const membership = await getCurrentTeamMembership(session.sub);
+  if (!membership) {
+    return NextResponse.json({ error: "Select or create a team before viewing players" }, { status: 400 });
   }
 
-  const date = new Date().toISOString().slice(0, 10);
-
-  const members = await db.user.findMany({
-    where: { coachId: teamOwnerId, role: { in: ["PLAYER", "ASSISTANT"] } },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      dailyLogs: { where: { date }, select: { score: true } },
+  const members = await db.teamMember.findMany({
+    where: { teamId: membership.teamId, role: "PLAYER" },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          dailyLogs: {
+            orderBy: { date: "desc" },
+            take: 1,
+            select: { date: true, score: true, createdAt: true },
+          },
+          programAssignments: {
+            where: { program: { status: "ACTIVE" } },
+            orderBy: { assignedAt: "desc" },
+            take: 1,
+            include: { program: { select: { id: true, name: true } } },
+          },
+        },
+      },
     },
-    orderBy: [{ role: "asc" }, { name: "asc" }],
+    orderBy: { createdAt: "asc" },
   });
 
-  const roster = members.map((p) => {
-    if (p.role === "ASSISTANT") {
-      return {
-        id: p.id,
-        name: p.name,
-        email: p.email,
-        role: p.role as "ASSISTANT",
-        score: 0,
-        loggedToday: false,
-        label: "Assistant coach",
-        tone: "good" as const,
-      };
-    }
+  const roster = members.map((member) => {
+    const p = member.user;
     const today = p.dailyLogs[0];
     const score = today?.score ?? 0;
     return {
       id: p.id,
       name: p.name,
       email: p.email,
-      role: p.role as "PLAYER",
+      role: "PLAYER" as const,
+      joinedAt: member.createdAt,
+      latestReadiness: today?.score ?? null,
+      latestCheckIn: today?.date ?? null,
+      activeProgram: p.programAssignments[0]?.program
+        ? {
+            id: p.programAssignments[0].program.id,
+            name: p.programAssignments[0].program.name,
+          }
+        : null,
       score,
-      loggedToday: Boolean(today),
+      loggedToday: today?.date === date,
       ...statusFor(score),
     };
   });

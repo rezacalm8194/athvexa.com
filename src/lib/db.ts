@@ -103,6 +103,40 @@ async function ensureSqliteSchema() {
   await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");`);
 
   await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "MessageConversation" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "coachId" TEXT NOT NULL,
+      "playerId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "MessageConversation_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+      CONSTRAINT "MessageConversation_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "MessageConversation_coachId_playerId_key" ON "MessageConversation"("coachId", "playerId");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "MessageConversation_coachId_idx" ON "MessageConversation"("coachId");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "MessageConversation_playerId_idx" ON "MessageConversation"("playerId");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "MessageConversation_updatedAt_idx" ON "MessageConversation"("updatedAt");`);
+
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Message" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "conversationId" TEXT NOT NULL,
+      "senderId" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "contextType" TEXT,
+      "contextLabel" TEXT,
+      "contextHref" TEXT,
+      "readAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Message_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "MessageConversation" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "Message_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Message_conversationId_createdAt_idx" ON "Message"("conversationId", "createdAt");`);
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Message_senderId_idx" ON "Message"("senderId");`);
+
+  await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Task" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "dailyLogId" TEXT NOT NULL,
@@ -184,7 +218,9 @@ async function ensureSqliteSchema() {
       "id" TEXT NOT NULL PRIMARY KEY,
       "token" TEXT NOT NULL,
       "coachId" TEXT NOT NULL,
+      "teamId" TEXT,
       "role" TEXT NOT NULL DEFAULT 'PLAYER',
+      "email" TEXT,
       "usedAt" DATETIME,
       "revoked" BOOLEAN NOT NULL DEFAULT false,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -203,6 +239,13 @@ async function ensureSqliteSchema() {
   if (!inviteColumns.some((c) => c.name === "acceptedUserId")) {
     await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "acceptedUserId" TEXT;`);
   }
+  if (!inviteColumns.some((c) => c.name === "teamId")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "teamId" TEXT;`);
+  }
+  if (!inviteColumns.some((c) => c.name === "email")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "email" TEXT;`);
+  }
+  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
 
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Program" (

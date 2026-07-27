@@ -4,9 +4,12 @@ import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl } from "@/lib/invites";
+import { getCurrentTeamMembership } from "@/lib/teamContext";
 
 const schema = z.object({
   role: z.enum(["PLAYER", "ASSISTANT"]).default("PLAYER"),
+  email: z.string().email().optional().or(z.literal("")),
+  expiresInDays: z.number().int().min(1).max(90).default(14),
 });
 
 export async function POST(req: NextRequest) {
@@ -20,6 +23,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = schema.safeParse(body);
   const role = parsed.success ? parsed.data.role : "PLAYER";
+  const email = parsed.success && parsed.data.email ? parsed.data.email : null;
+  const expiresInDays = parsed.success ? parsed.data.expiresInDays : 14;
 
   // Only the head coach can bring on another assistant coach.
   if (role === "ASSISTANT" && session.role !== "COACH") {
@@ -37,12 +42,8 @@ export async function POST(req: NextRequest) {
     teamOwnerId = me?.coachId ?? session.sub;
   }
 
-  const team = await db.team.findFirst({
-    where: { coachId: teamOwnerId },
-    orderBy: { createdAt: "asc" },
-    select: { id: true },
-  });
-  if (!team) {
+  const membership = await getCurrentTeamMembership(session.sub);
+  if (!membership || membership.team.coachId !== teamOwnerId) {
     return NextResponse.json(
       { error: "Set up your team before inviting players or assistants" },
       { status: 400 }
@@ -53,8 +54,10 @@ export async function POST(req: NextRequest) {
     data: {
       token: nanoid(12),
       coachId: teamOwnerId,
+      teamId: membership.teamId,
       role,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14), // 14 days
+      email,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * expiresInDays),
     },
   });
 
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
     id: invite.id,
     url: buildInviteUrl(invite.token, req),
     role: invite.role,
+    email: invite.email,
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
   });

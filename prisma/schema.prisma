@@ -29,6 +29,9 @@ model User {
   notifications Notification[]
   invitesSent Invite[]
   invitesAccepted Invite[]    @relation("InviteAcceptedUser")
+  conversationsAsCoach MessageConversation[] @relation("ConversationCoach")
+  conversationsAsPlayer MessageConversation[] @relation("ConversationPlayer")
+  sentMessages Message[]
 
   planItems   PlanItem[]
   habits      Habit[]
@@ -61,6 +64,7 @@ model Team {
   coachId         String?
   coach           User?    @relation("TeamOwner", fields: [coachId], references: [id])
   members         TeamMember[]
+  invites         Invite[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -121,6 +125,40 @@ model Notification {
   dedupeKey   String?   @unique
   readAt      DateTime?
   createdAt   DateTime  @default(now())
+}
+
+model MessageConversation {
+  id        String   @id @default(cuid())
+  coachId   String
+  coach     User     @relation("ConversationCoach", fields: [coachId], references: [id])
+  playerId  String
+  player    User     @relation("ConversationPlayer", fields: [playerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@unique([coachId, playerId])
+  @@index([coachId])
+  @@index([playerId])
+  @@index([updatedAt])
+}
+
+model Message {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   MessageConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User                @relation(fields: [senderId], references: [id])
+  body           String
+  contextType    String?
+  contextLabel   String?
+  contextHref    String?
+  readAt         DateTime?
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }
 
 model Task {
@@ -207,7 +245,10 @@ model Invite {
   token          String   @unique
   coachId        String
   coach          User     @relation(fields: [coachId], references: [id])
+  teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
   role           String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
+  email          String?
   usedAt         DateTime?
   revoked        Boolean  @default(false)
   createdAt      DateTime @default(now())
@@ -217,6 +258,8 @@ model Invite {
   // invitations page show/search/link to who actually joined.
   acceptedUserId String?
   acceptedUser   User?    @relation("InviteAcceptedUser", fields: [acceptedUserId], references: [id])
+
+  @@index([teamId])
 }
 
 // Phase 3 — Coach programs: a structured training program a coach builds

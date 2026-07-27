@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BellIcon, ChevronDownIcon, LogOutIcon, SettingsIcon } from "@/components/icons";
+import { BellIcon, ChevronDownIcon, LogOutIcon, MailIcon, SettingsIcon } from "@/components/icons";
 
 type HeaderTeam = {
   id: string;
@@ -32,6 +32,7 @@ export default function DashboardNav({
   const [teams, setTeams] = useState<HeaderTeam[]>([]);
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(notificationCount);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const teamRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +50,15 @@ export default function DashboardNav({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && typeof data.unreadCount === "number") setUnreadCount(data.unreadCount);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/messages/unread", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.unreadCount === "number") setUnreadMessages(data.unreadCount);
       })
       .catch(() => {});
   }, []);
@@ -172,6 +182,19 @@ export default function DashboardNav({
               )}
             </div>
           )}
+
+          <Link
+            href="/dashboard/messages"
+            aria-label="Messages"
+            className="relative flex h-9 w-9 items-center justify-center rounded-md border border-line-1 text-smoke-4 transition-colors hover:border-smoke-4 hover:text-paper-pure"
+          >
+            <MailIcon className="h-[18px] w-[18px]" />
+            {unreadMessages > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[10px] font-bold text-white">
+                {unreadMessages > 9 ? "9+" : unreadMessages}
+              </span>
+            )}
+          </Link>
 
           <Link
             href="/dashboard/notifications"

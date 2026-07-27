@@ -9,6 +9,7 @@ const TABS = [
   { href: "/dashboard/player/planner", label: "Planner" },
   { href: "/dashboard/player/habits", label: "Habits" },
   { href: "/dashboard/player/goals", label: "Goals" },
+  { href: "/dashboard/messages", label: "Messages" },
 ];
 
 export default function PlayerSubNav() {
