@@ -505,6 +505,10 @@
     margin-bottom: 16px;
   }
 
+  .mobile-module-details {
+    display: none;
+  }
+
   /* ROLE CARDS */
   .roles-section { background: var(--black-2); }
 
@@ -770,6 +774,227 @@
     .modules-grid { grid-template-columns: 1fr; }
     .nav-links { display: none; }
     .hamburger { display: flex; }
+  }
+
+  @media (max-width: 767px) {
+    #modules {
+      overflow-x: hidden;
+    }
+
+    #modules .section-inner {
+      max-width: 480px;
+    }
+
+    #modules .eyebrow,
+    #modules .section-title,
+    #modules .section-sub {
+      text-align: center;
+    }
+
+    #modules .section-title {
+      margin-bottom: 12px;
+    }
+
+    #modules .section-sub {
+      margin: 0 auto 30px !important;
+      max-width: 330px;
+    }
+
+    .modules-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .module-list {
+      display: none;
+    }
+
+    .module-preview {
+      position: relative;
+      top: auto;
+      width: min(100%, 340px);
+      min-height: 0;
+      aspect-ratio: 9 / 16;
+      padding: 14px;
+      border-radius: 34px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02)),
+        var(--black-2);
+      box-shadow: 0 28px 70px rgba(0,0,0,0.45);
+      touch-action: pan-y;
+      overflow: hidden;
+    }
+
+    .module-preview::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      width: 82px;
+      height: 5px;
+      border-radius: 999px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.16);
+      z-index: 2;
+    }
+
+    .module-preview-label {
+      display: none;
+    }
+
+    #previewContent {
+      height: 100%;
+      border-radius: 24px;
+      background: var(--black-1);
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: opacity 300ms ease, transform 300ms ease;
+    }
+
+    .module-preview.switch-next #previewContent,
+    .module-preview.switch-prev #previewContent {
+      opacity: 0;
+    }
+
+    .module-preview.switch-next #previewContent {
+      transform: translateX(16px);
+    }
+
+    .module-preview.switch-prev #previewContent {
+      transform: translateX(-16px);
+    }
+
+    .mobile-module-details {
+      display: block;
+      width: min(100%, 360px);
+      text-align: center;
+    }
+
+    .mobile-module-title {
+      min-height: 29px;
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--white-pure);
+      transition: opacity 280ms ease;
+    }
+
+    .mobile-module-desc {
+      min-height: 44px;
+      max-width: 330px;
+      margin: 8px auto 18px;
+      color: var(--gray-3);
+      font-size: 14px;
+      line-height: 1.55;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      transition: opacity 280ms ease;
+    }
+
+    .mobile-module-details.switching .mobile-module-title,
+    .mobile-module-details.switching .mobile-module-desc {
+      opacity: 0;
+    }
+
+    .module-mobile-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .module-nav-btn {
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      background: var(--black-2);
+      color: var(--white-pure);
+      font-size: 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, opacity 0.2s, color 0.2s;
+    }
+
+    .module-nav-btn:not(:disabled):hover {
+      border-color: rgba(224,32,32,0.55);
+      color: var(--red-glow);
+    }
+
+    .module-nav-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+
+    .module-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .module-dot {
+      width: 10px;
+      height: 10px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--gray-1);
+      cursor: pointer;
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+
+    .module-dot.active {
+      width: 24px;
+      background: var(--red);
+    }
+
+    .module-dot:focus-visible {
+      outline: 2px solid var(--red);
+      outline-offset: 3px;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .module-preview {
+      width: min(100%, 326px);
+    }
+  }
+
+  @media (max-width: 390px) {
+    .module-preview {
+      width: min(100%, 310px);
+      border-radius: 30px;
+    }
+
+    #previewContent {
+      padding: 15px;
+      border-radius: 22px;
+    }
+  }
+
+  @media (max-width: 340px) {
+    .module-preview {
+      width: min(100%, 292px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #previewContent,
+    .mobile-module-title,
+    .mobile-module-desc,
+    .module-dot,
+    .module-nav-btn {
+      transition: none !important;
+    }
   }
 
   @media (max-width: 600px) {
@@ -1048,7 +1273,7 @@
           </div>
         </div>
       </div>
-      <div class="module-preview" id="modulePreview">
+      <div class="module-preview" id="modulePreview" role="img" aria-label="Today Dashboard app preview">
         <div class="module-preview-label" id="previewLabel">Today Dashboard</div>
         <div id="previewContent">
           <div style="display:flex;flex-direction:column;gap:10px">
@@ -1073,6 +1298,15 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="mobile-module-details" id="mobileModuleDetails" aria-live="polite">
+        <h3 class="mobile-module-title" id="mobileModuleTitle">Today Dashboard</h3>
+        <p class="mobile-module-desc" id="mobileModuleDesc">Daily score, tasks, training, sleep, water — everything at a glance</p>
+        <div class="module-mobile-controls">
+          <button class="module-nav-btn" id="modulePrev" type="button" aria-label="Previous app module" disabled>‹</button>
+          <button class="module-nav-btn" id="moduleNext" type="button" aria-label="Next app module">›</button>
+        </div>
+        <div class="module-dots" id="moduleDots" aria-label="App module pagination"></div>
       </div>
     </div>
   </div>
@@ -1297,12 +1531,124 @@ const modulePreviews = [
   { label: 'Coach Dashboard', html: `<div style="display:flex;flex-direction:column;gap:8px"><div style="font-size:12px;color:var(--gray-3);margin-bottom:4px">Team status — today</div>${[{n:'Ali Hassan',score:84,status:'Ready',c:'#4CAF50'},{n:'Omar Khalid',score:71,status:'Fatigued',c:'#FFC107'},{n:'Yusuf Noor',score:92,status:'Excellent',c:'#4CAF50'},{n:'Tariq Salem',score:45,status:'Injured',c:'var(--red)'}].map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--black-3);border-radius:8px;border:1px solid rgba(255,255,255,0.04)"><div style="width:30px;height:30px;border-radius:8px;background:rgba(224,32,32,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--red);flex-shrink:0">${p.n[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--white)">${p.n}</div><div style="font-size:10px;color:${p.c}">${p.status}</div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--white)">${p.score}</div></div>`).join('')}</div>` }
 ];
 
-function activateModule(el, idx) {
-  document.querySelectorAll('.module-item').forEach(m => m.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('previewLabel').textContent = modulePreviews[idx].label;
-  document.getElementById('previewContent').innerHTML = modulePreviews[idx].html;
+let activeModuleIndex = 0;
+const moduleItems = Array.from(document.querySelectorAll('.module-item'));
+const modulePreview = document.getElementById('modulePreview');
+const previewLabel = document.getElementById('previewLabel');
+const previewContent = document.getElementById('previewContent');
+const mobileDetails = document.getElementById('mobileModuleDetails');
+const mobileTitle = document.getElementById('mobileModuleTitle');
+const mobileDesc = document.getElementById('mobileModuleDesc');
+const modulePrev = document.getElementById('modulePrev');
+const moduleNext = document.getElementById('moduleNext');
+const moduleDots = document.getElementById('moduleDots');
+const reduceModuleMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function moduleTitle(idx) {
+  return moduleItems[idx]?.querySelector('.mod-title')?.textContent?.trim() || modulePreviews[idx].label;
 }
+
+function moduleDescription(idx) {
+  return moduleItems[idx]?.querySelector('.mod-desc')?.textContent?.trim() || '';
+}
+
+function renderModuleDots() {
+  if (!moduleDots) return;
+  moduleDots.innerHTML = modulePreviews
+    .map((_, idx) => `<button class="module-dot${idx === activeModuleIndex ? ' active' : ''}" type="button" aria-label="Show ${moduleTitle(idx)}" ${idx === activeModuleIndex ? 'aria-current="true"' : ''} data-module-index="${idx}"></button>`)
+    .join('');
+}
+
+function updateModuleControls() {
+  if (modulePrev) modulePrev.disabled = activeModuleIndex === 0;
+  if (moduleNext) moduleNext.disabled = activeModuleIndex === modulePreviews.length - 1;
+  renderModuleDots();
+}
+
+function setModule(idx, direction = 'next') {
+  const nextIndex = Math.max(0, Math.min(idx, modulePreviews.length - 1));
+  if (nextIndex === activeModuleIndex && previewContent.innerHTML) return;
+
+  activeModuleIndex = nextIndex;
+  moduleItems.forEach((item, itemIndex) => item.classList.toggle('active', itemIndex === activeModuleIndex));
+
+  const apply = () => {
+    previewLabel.textContent = moduleTitle(activeModuleIndex);
+    previewContent.innerHTML = modulePreviews[activeModuleIndex].html;
+    modulePreview.setAttribute('aria-label', `${moduleTitle(activeModuleIndex)} app preview`);
+    if (mobileTitle) mobileTitle.textContent = moduleTitle(activeModuleIndex);
+    if (mobileDesc) mobileDesc.textContent = moduleDescription(activeModuleIndex);
+    updateModuleControls();
+  };
+
+  if (reduceModuleMotion) {
+    apply();
+    return;
+  }
+
+  modulePreview.classList.add(direction === 'prev' ? 'switch-prev' : 'switch-next');
+  mobileDetails?.classList.add('switching');
+  window.setTimeout(() => {
+    apply();
+    modulePreview.classList.remove('switch-prev', 'switch-next');
+    mobileDetails?.classList.remove('switching');
+  }, 160);
+}
+
+function activateModule(el, idx) {
+  setModule(idx, idx < activeModuleIndex ? 'prev' : 'next');
+}
+
+window.setModule = setModule;
+
+modulePrev?.addEventListener('click', () => setModule(activeModuleIndex - 1, 'prev'));
+moduleNext?.addEventListener('click', () => setModule(activeModuleIndex + 1, 'next'));
+moduleDots?.addEventListener('click', (event) => {
+  const target = event.target.closest('.module-dot');
+  if (!target) return;
+  const idx = Number(target.dataset.moduleIndex);
+  setModule(idx, idx < activeModuleIndex ? 'prev' : 'next');
+});
+
+let moduleTouchStartX = 0;
+let moduleTouchStartY = 0;
+let moduleTouchTracking = false;
+
+function finishModuleSwipe(endX, endY) {
+  const dx = endX - moduleTouchStartX;
+  const dy = endY - moduleTouchStartY;
+  if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+  if (dx < 0) setModule(activeModuleIndex + 1, 'next');
+  else setModule(activeModuleIndex - 1, 'prev');
+}
+
+modulePreview?.addEventListener('touchstart', (event) => {
+  if (event.touches.length !== 1) return;
+  moduleTouchStartX = event.touches[0].clientX;
+  moduleTouchStartY = event.touches[0].clientY;
+  moduleTouchTracking = true;
+}, { passive: true });
+
+modulePreview?.addEventListener('touchend', (event) => {
+  if (!moduleTouchTracking || event.changedTouches.length !== 1) return;
+  moduleTouchTracking = false;
+  finishModuleSwipe(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+}, { passive: true });
+
+modulePreview?.addEventListener('pointerdown', (event) => {
+  moduleTouchStartX = event.clientX;
+  moduleTouchStartY = event.clientY;
+  moduleTouchTracking = true;
+}, { passive: true });
+
+modulePreview?.addEventListener('pointerup', (event) => {
+  if (!moduleTouchTracking) return;
+  moduleTouchTracking = false;
+  finishModuleSwipe(event.clientX, event.clientY);
+}, { passive: true });
+
+setModule(0);
+updateModuleControls();
 </script>
 </body>
 </html>
