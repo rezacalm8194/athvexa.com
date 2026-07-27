@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -34,7 +34,10 @@
     --radius-lg: 16px;
   }
 
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
 
   body {
     font-family: var(--font-body);
@@ -555,29 +558,327 @@
   .perm-item { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--gray-4); }
   .perm-check { color: var(--red); font-size: 13px; }
 
-  /* TECH BADGES */
-  .tech-section {}
-  .tech-header { text-align: center; margin-bottom: 48px; }
+  /* BENEFITS */
+  .benefits-header { text-align: center; margin-bottom: 48px; }
 
-  .tech-grid {
+  .benefits-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
 
-  .tech-item {
+  .benefit-card {
     background: var(--black-2);
-    border-radius: 0;
-    padding: 28px 24px;
-    text-align: center;
-    transition: background 0.2s;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: border-color 0.2s, background 0.2s;
   }
-  .tech-item:first-child { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
-  .tech-item:last-child { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; }
-  .tech-item:hover { background: var(--black-3); }
+  .benefit-card:hover {
+    background: var(--black-3);
+    border-color: rgba(224,32,32,0.28);
+  }
+  .benefit-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: rgba(224,32,32,0.12);
+    color: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    font-size: 18px;
+  }
 
-  .tech-name { font-size: 15px; font-weight: 700; color: var(--white-pure); margin-bottom: 6px; }
-  .tech-desc { font-size: 12px; color: var(--gray-3); line-height: 1.5; }
+  .benefit-title { font-size: 16px; font-weight: 750; color: var(--white-pure); margin-bottom: 8px; }
+  .benefit-desc { font-size: 13px; color: var(--gray-3); line-height: 1.6; }
+
+  /* PRODUCT PREVIEW */
+  .product-preview-section { background: var(--black); }
+  .product-preview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(320px, 1.14fr);
+    gap: 42px;
+    align-items: center;
+  }
+  .product-preview-copy {
+    max-width: 430px;
+    min-width: 0;
+  }
+  .product-preview-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 30px;
+    max-width: 100%;
+  }
+  .product-tab {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--gray-3);
+    padding: 14px 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .product-tab:hover,
+  .product-tab[aria-selected="true"] {
+    background: var(--black-2);
+    border-color: rgba(255,255,255,0.08);
+    color: var(--white-pure);
+  }
+  .product-tab[aria-selected="true"] {
+    border-color: rgba(224,32,32,0.42);
+  }
+  .product-tab-title { font-size: 15px; font-weight: 700; }
+  .product-tab-desc { margin-top: 4px; font-size: 12px; line-height: 1.45; color: var(--gray-3); }
+  .product-preview-stage {
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .product-frame {
+    width: min(100%, 430px);
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.015)), var(--black-2);
+    padding: 14px;
+    box-shadow: 0 34px 80px rgba(0,0,0,0.45);
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+  .product-frame-screen {
+    min-height: 500px;
+    border-radius: 20px;
+    background: #0E0E0E;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 18px;
+    overflow: hidden;
+    transition: opacity 300ms ease, transform 300ms ease;
+  }
+  .product-frame.switch-next .product-frame-screen,
+  .product-frame.switch-prev .product-frame-screen { opacity: 0; }
+  .product-frame.switch-next .product-frame-screen { transform: translateX(16px); }
+  .product-frame.switch-prev .product-frame-screen { transform: translateX(-16px); }
+  .product-mobile-info {
+    display: none;
+    text-align: center;
+    max-width: 360px;
+    margin: 18px auto 0;
+  }
+  .product-active-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 850;
+    color: var(--white-pure);
+    line-height: 1.15;
+    transition: opacity 280ms ease;
+  }
+  .product-active-desc {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--gray-3);
+    transition: opacity 280ms ease;
+  }
+  .product-mobile-info.switching .product-active-title,
+  .product-mobile-info.switching .product-active-desc { opacity: 0; }
+  .product-mobile-controls {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .product-nav-btn {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: var(--black-2);
+    color: var(--white-pure);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .product-nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .product-dots {
+    display: none;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .product-dot {
+    width: 10px; height: 10px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--gray-1);
+    cursor: pointer;
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+  .product-dot.active {
+    width: 24px;
+    background: var(--red);
+  }
+  .product-dot:focus-visible,
+  .product-tab:focus-visible,
+  .product-nav-btn:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 3px;
+  }
+  .preview-ui {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 100%;
+  }
+  .preview-kicker {
+    font-size: 12px;
+    color: var(--gray-3);
+    margin-bottom: 2px;
+  }
+  .preview-hero,
+  .preview-score,
+  .preview-card {
+    border-radius: 14px;
+    background: var(--black-3);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 16px;
+  }
+  .preview-hero {
+    background: var(--red);
+    color: #fff;
+  }
+  .preview-hero span,
+  .preview-score span,
+  .preview-card span {
+    display: block;
+    font-size: 11px;
+    color: rgba(255,255,255,0.62);
+    margin-bottom: 4px;
+  }
+  .preview-hero strong,
+  .preview-score strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 48px;
+    line-height: 1;
+    color: var(--white-pure);
+  }
+  .preview-hero small,
+  .preview-score small,
+  .preview-card small {
+    color: var(--gray-3);
+    font-size: 11px;
+  }
+  .preview-hero small {
+    color: rgba(255,255,255,0.75);
+  }
+  .preview-row,
+  .preview-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 12px;
+    background: var(--black-3);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 12px;
+  }
+  .preview-row b,
+  .preview-player b {
+    color: var(--white-pure);
+    font-size: 14px;
+  }
+  .preview-row span,
+  .preview-player span {
+    margin-left: auto;
+    color: var(--gray-3);
+    font-size: 12px;
+  }
+  .preview-row strong {
+    font-family: var(--font-display);
+    font-size: 24px;
+    color: var(--white-pure);
+  }
+  .preview-player .avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(224,32,32,0.16);
+    color: var(--red);
+    font-weight: 800;
+  }
+  .preview-player div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+  }
+  .preview-player div:nth-child(2) span {
+    display: block;
+    margin-left: 0;
+    margin-top: 3px;
+  }
+  .preview-player strong {
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--white-pure);
+  }
+  .good { color: #4CAF50 !important; }
+  .warn { color: #FFC107 !important; }
+  .bad { color: var(--red-glow) !important; }
+  .bad-text { color: var(--red-glow) !important; }
+  .bar {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--black-4);
+    margin: 12px 0 7px;
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--red);
+  }
+  .bar.amber i { background: #FFC107; }
+  .preview-action {
+    margin-top: auto;
+    border: 0;
+    border-radius: 12px;
+    background: var(--red);
+    color: #fff;
+    padding: 12px;
+    font-weight: 700;
+  }
+  .preview-note {
+    border-radius: 12px;
+    background: rgba(224,32,32,0.10);
+    color: var(--red-glow);
+    padding: 12px;
+    font-size: 13px;
+  }
+  .bad-note {
+    background: rgba(224,32,32,0.14);
+  }
+  .trend {
+    height: 150px;
+    border-radius: 14px;
+    background: var(--black-3);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 18px;
+    display: flex;
+    align-items: end;
+    gap: 12px;
+  }
+  .trend i {
+    flex: 1;
+    border-radius: 999px 999px 4px 4px;
+    background: var(--red);
+    min-height: 18px;
+  }
 
   /* AUTH MODAL */
   .modal-backdrop {
@@ -765,11 +1066,21 @@
     .feature-card:nth-child(4), .feature-card:last-child { border-radius: 0; }
     .features-grid { border-radius: var(--radius-lg); overflow: hidden; }
     .roles-grid { grid-template-columns: 1fr; }
-    .tech-grid { grid-template-columns: 1fr 1fr; gap: 2px; }
-    .tech-item:first-child { border-radius: var(--radius-lg) 0 0 0; }
-    .tech-item:last-child { border-radius: 0 0 var(--radius-lg) 0; }
-    .tech-item:nth-child(2) { border-radius: 0 var(--radius-lg) 0 0; }
-    .tech-item:nth-child(3) { border-radius: 0 0 0 var(--radius-lg); }
+    .benefits-grid { grid-template-columns: 1fr 1fr; }
+    .product-preview-grid { grid-template-columns: 1fr; gap: 30px; }
+    .product-preview-copy { max-width: none; text-align: center; }
+    .product-preview-tabs {
+      flex-direction: row;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .product-preview-tabs::-webkit-scrollbar { display: none; }
+    .product-tab {
+      min-width: 156px;
+      text-align: center;
+    }
+    .product-tab-desc { display: none; }
     .roadmap-grid { grid-template-columns: 1fr; }
     .modules-grid { grid-template-columns: 1fr; }
     .nav-links { display: none; }
@@ -961,10 +1272,90 @@
       outline: 2px solid var(--red);
       outline-offset: 3px;
     }
+
+    .benefits-header {
+      text-align: left;
+      margin-bottom: 28px;
+    }
+
+    .benefits-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .benefit-card {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      padding: 18px;
+    }
+
+    .benefit-icon {
+      margin-bottom: 0;
+    }
+
+    .benefit-title {
+      margin-bottom: 5px;
+    }
+
+    .benefit-desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-preview-grid {
+      gap: 20px;
+    }
+
+    .product-preview-copy .section-sub {
+      margin: 0 auto 0 !important;
+      max-width: 330px;
+    }
+
+    .product-preview-tabs {
+      order: 2;
+      width: 100%;
+      justify-content: flex-start;
+      margin-top: 18px;
+    }
+
+    .product-preview-stage {
+      order: 1;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .product-frame {
+      width: min(100%, 334px);
+      border-radius: 28px;
+      padding: 12px;
+    }
+
+    .product-frame-screen {
+      min-height: 410px;
+      padding: 15px;
+      border-radius: 20px;
+    }
+
+    .product-mobile-info,
+    .product-mobile-controls,
+    .product-dots {
+      display: flex;
+    }
+
+    .product-mobile-info {
+      display: block;
+    }
   }
 
   @media (max-width: 430px) {
     .module-preview {
+      width: min(100%, 326px);
+    }
+    .product-frame {
       width: min(100%, 326px);
     }
   }
@@ -979,11 +1370,25 @@
       padding: 15px;
       border-radius: 22px;
     }
+    .product-frame {
+      width: min(100%, 310px);
+    }
+    .product-frame-screen {
+      min-height: 386px;
+      padding: 14px;
+    }
   }
 
   @media (max-width: 340px) {
     .module-preview {
       width: min(100%, 292px);
+    }
+    .product-frame {
+      width: min(100%, 292px);
+    }
+    .product-frame-screen {
+      min-height: 365px;
+      padding: 12px;
     }
   }
 
@@ -993,6 +1398,14 @@
     .mobile-module-desc,
     .module-dot,
     .module-nav-btn {
+      transition: none !important;
+    }
+    .product-frame-screen,
+    .product-active-title,
+    .product-active-desc,
+    .product-dot,
+    .product-tab,
+    .product-nav-btn {
       transition: none !important;
     }
   }
@@ -1014,8 +1427,8 @@
       white-space: nowrap;
     }
     .nav-cta .btn-red { font-size: 0; }
-    .nav-cta .btn-red::before { content: "Start"; font-size: 12px; }
-    .nav-cta .btn-red::after { content: " free"; font-size: 12px; }
+    .nav-cta .btn-red::before { content: "Start free"; font-size: 12px; }
+    .nav-cta .btn-red::after { content: none; }
     .hamburger { padding: 4px; margin-left: 2px; }
   }
 
@@ -1215,103 +1628,33 @@
   </div>
 </section>
 
-<!-- MODULES -->
-<section id="modules">
+<!-- PRODUCT PREVIEW -->
+<section id="modules" class="product-preview-section">
   <div class="section-inner">
-    <div class="eyebrow">App modules</div>
-    <h2 class="section-title">Seven screens.<br>Total control.</h2>
-    <p class="section-sub" style="margin-bottom:56px">Built around the real daily workflow of a football player — from waking up to bedtime.</p>
-    <div class="modules-grid">
-      <div class="module-list">
-        <div class="module-item active" onclick="activateModule(this, 0)">
-          <div class="module-num">1</div>
-          <div class="module-info">
-            <div class="mod-title">Today Dashboard</div>
-            <div class="mod-desc">Daily score, tasks, training, sleep, water — everything at a glance</div>
-          </div>
-        </div>
-        <div class="module-item" onclick="activateModule(this, 1)">
-          <div class="module-num">2</div>
-          <div class="module-info">
-            <div class="mod-title">Daily Routine</div>
-            <div class="mod-desc">Wake-up to bedtime planner with meal, school, training, and recovery blocks</div>
-          </div>
-        </div>
-        <div class="module-item" onclick="activateModule(this, 2)">
-          <div class="module-num">3</div>
-          <div class="module-info">
-            <div class="mod-title">Weekly Planner</div>
-            <div class="mod-desc">7-day calendar, match schedule, recovery days, weekly completion %</div>
-          </div>
-        </div>
-        <div class="module-item" onclick="activateModule(this, 3)">
-          <div class="module-num">4</div>
-          <div class="module-info">
-            <div class="mod-title">Habits Tracker</div>
-            <div class="mod-desc">Sleep, hydration, meals, stretching, screen time — with streak tracking</div>
-          </div>
-        </div>
-        <div class="module-item" onclick="activateModule(this, 4)">
-          <div class="module-num">5</div>
-          <div class="module-info">
-            <div class="mod-title">Goals</div>
-            <div class="mod-desc">Short, monthly, and long-term goals with progress % and coach feedback</div>
-          </div>
-        </div>
-        <div class="module-item" onclick="activateModule(this, 5)">
-          <div class="module-num">6</div>
-          <div class="module-info">
-            <div class="mod-title">Daily Wellness Check-in</div>
-            <div class="mod-desc">Energy, fatigue, soreness, mood, body pain map — readiness score before training</div>
-          </div>
-        </div>
-        <div class="module-item" onclick="activateModule(this, 6)">
-          <div class="module-num">7</div>
-          <div class="module-info">
-            <div class="mod-title">Coach Dashboard</div>
-            <div class="mod-desc">Player list, injury alerts, performance analytics, assign training and goals</div>
-          </div>
-        </div>
+    <div class="product-preview-grid">
+      <div class="product-preview-copy">
+        <div class="eyebrow">Product preview</div>
+        <h2 class="section-title">See your team in action.</h2>
+        <p class="section-sub" style="margin:0">Explore the core tools coaches use throughout the day.</p>
+        <div class="product-preview-tabs" role="tablist" aria-label="Coach product preview tabs" id="productPreviewTabs"></div>
       </div>
-      <div class="module-preview" id="modulePreview" role="img" aria-label="Today Dashboard app preview">
-        <div class="module-preview-label" id="previewLabel">Today Dashboard</div>
-        <div id="previewContent">
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="background:var(--red);border-radius:12px;padding:16px;color:#fff">
-              <div style="font-size:10px;opacity:0.7;font-weight:600;letter-spacing:0.06em;margin-bottom:4px">DAILY SCORE</div>
-              <div style="font-family:var(--font-display);font-size:48px;font-weight:900;line-height:1">84</div>
-              <div style="font-size:11px;opacity:0.7">+6 pts vs yesterday</div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div style="background:var(--black-3);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05)">
-                <div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em">Sleep</div>
-                <div style="font-size:20px;font-weight:700;color:#4CAF50;margin-top:2px">7.5h</div>
-              </div>
-              <div style="background:var(--black-3);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05)">
-                <div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em">Water</div>
-                <div style="font-size:20px;font-weight:700;color:#FFC107;margin-top:2px">1.8L</div>
-              </div>
-            </div>
-            <div style="background:var(--black-3);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05)">
-              <div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Coach message</div>
-              <div style="font-size:13px;color:var(--white);line-height:1.5">"Great effort in the gym today. Focus on recovery tonight."</div>
-            </div>
-          </div>
+      <div class="product-preview-stage">
+        <div class="product-frame" id="productFrame">
+          <div class="product-frame-screen" id="productPreviewScreen" role="img" aria-label="Dashboard preview"></div>
         </div>
-      </div>
-      <div class="mobile-module-details" id="mobileModuleDetails" aria-live="polite">
-        <h3 class="mobile-module-title" id="mobileModuleTitle">Today Dashboard</h3>
-        <p class="mobile-module-desc" id="mobileModuleDesc">Daily score, tasks, training, sleep, water — everything at a glance</p>
-        <div class="module-mobile-controls">
-          <button class="module-nav-btn" id="modulePrev" type="button" aria-label="Previous app module" disabled>‹</button>
-          <button class="module-nav-btn" id="moduleNext" type="button" aria-label="Next app module">›</button>
+        <div class="product-mobile-info" id="productMobileInfo" aria-live="polite">
+          <h3 class="product-active-title" id="productActiveTitle">Dashboard</h3>
+          <p class="product-active-desc" id="productActiveDesc">See team readiness, alerts, check-ins, and today’s priorities at a glance.</p>
         </div>
-        <div class="module-dots" id="moduleDots" aria-label="App module pagination"></div>
+        <div class="product-mobile-controls">
+          <button class="product-nav-btn" id="productPrev" type="button" aria-label="Previous product preview" disabled>‹</button>
+          <button class="product-nav-btn" id="productNext" type="button" aria-label="Next product preview">›</button>
+        </div>
+        <div class="product-dots" id="productDots" aria-label="Product preview pagination"></div>
       </div>
     </div>
   </div>
 </section>
-
 <!-- ROLES -->
 <section class="roles-section" id="roles">
   <div class="section-inner">
@@ -1358,30 +1701,56 @@
   </div>
 </section>
 
-<!-- TECH STACK HINT -->
+<!-- CUSTOMER BENEFITS -->
 <section>
   <div class="section-inner">
-    <div class="tech-header">
-      <div class="eyebrow">Built to last</div>
-      <h2 class="section-title">Production-ready stack</h2>
-      <p class="section-sub" style="margin:0 auto">Self-hosted on your own server, fast, secure, and designed to scale from one team to thousands.</p>
+    <div class="benefits-header">
+      <div class="eyebrow">WHY ATHVEXA</div>
+      <h2 class="section-title">Run your team with less guesswork.</h2>
+      <p class="section-sub" style="margin:0 auto">Everything coaches need to monitor players, organize training, and make better decisions from one place.</p>
     </div>
-    <div class="tech-grid">
-      <div class="tech-item">
-        <div class="tech-name">Next.js / React</div>
-        <div class="tech-desc">Mobile-first UI, fully responsive, PWA-ready</div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">⏱</div>
+        <div>
+          <div class="benefit-title">Save time every day</div>
+          <div class="benefit-desc">Replace scattered messages, notes, and spreadsheets with one organized workspace.</div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">Node.js + PostgreSQL</div>
-        <div class="tech-desc">Fast API, relational data, full backup support</div>
+      <div class="benefit-card">
+        <div class="benefit-icon">⚠</div>
+        <div>
+          <div class="benefit-title">Catch problems earlier</div>
+          <div class="benefit-desc">Spot low readiness, poor sleep, fatigue, and soreness before performance drops.</div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">JWT + HTTPS</div>
-        <div class="tech-desc">Secure auth, auto-login tokens, remember me</div>
+      <div class="benefit-card">
+        <div class="benefit-icon">✓</div>
+        <div>
+          <div class="benefit-title">Keep players accountable</div>
+          <div class="benefit-desc">Track check-ins, assigned programs, completed sessions, and missed work.</div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">PWA + IndexedDB</div>
-        <div class="tech-desc">Works offline, syncs on reconnect</div>
+      <div class="benefit-card">
+        <div class="benefit-icon">👥</div>
+        <div>
+          <div class="benefit-title">See the whole team clearly</div>
+          <div class="benefit-desc">Review every player’s status, progress, and alerts from one dashboard.</div>
+        </div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">📋</div>
+        <div>
+          <div class="benefit-title">Keep player history</div>
+          <div class="benefit-desc">Assessments, programs, check-ins, and coach notes remain connected to each player.</div>
+        </div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">↗</div>
+        <div>
+          <div class="benefit-title">Grow from one team</div>
+          <div class="benefit-desc">Manage one squad, multiple teams, or a full academy from the same account.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1439,7 +1808,7 @@
 <!-- AUTH MODAL -->
 <div class="modal-backdrop" id="authModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <button class="modal-close" onclick="closeAuth()">×</button>
     <div class="modal-logo">ATH<span>VEXA</span></div>
     <div class="form-tabs">
       <button class="form-tab active" id="tabLogin" onclick="switchTab('login')">Sign in</button>
@@ -1486,7 +1855,7 @@
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">ATH<span>VEXA</span></div>
-    <div class="footer-copy">© 2025 Athvexa. Football Performance Platform.</div>
+    <div class="footer-copy">Â© 2025 Athvexa. Football Performance Platform.</div>
     <div class="footer-links">
       <a href="#">Privacy</a>
       <a href="#">Terms</a>
@@ -1521,134 +1890,161 @@ function toggleMobile() {
   document.getElementById('mobileMenu').classList.toggle('open');
 }
 
-const modulePreviews = [
-  { label: 'Today Dashboard', html: `<div style="display:flex;flex-direction:column;gap:10px"><div style="background:var(--red);border-radius:12px;padding:16px;color:#fff"><div style="font-size:10px;opacity:0.7;font-weight:600;letter-spacing:0.06em;margin-bottom:4px">DAILY SCORE</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;line-height:1">84</div><div style="font-size:11px;opacity:0.7">+6 pts vs yesterday</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="background:var(--black-3);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05)"><div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em">Sleep</div><div style="font-size:20px;font-weight:700;color:#4CAF50;margin-top:2px">7.5h</div></div><div style="background:var(--black-3);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05)"><div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em">Water</div><div style="font-size:20px;font-weight:700;color:#FFC107;margin-top:2px">1.8L</div></div></div><div style="background:var(--black-3);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05)"><div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Coach message</div><div style="font-size:13px;color:var(--white);line-height:1.5">"Great effort in the gym today. Focus on recovery tonight."</div></div></div>` },
-  { label: 'Daily Routine', html: `<div style="display:flex;flex-direction:column;gap:8px"><div style="font-size:12px;color:var(--gray-3);margin-bottom:4px">Monday schedule</div>${['06:00 — Wake up & weigh-in','07:00 — Breakfast + supplements','09:00 — School / Study','13:00 — Lunch & rest','16:00 — Football training','18:30 — Gym session','20:00 — Recovery & stretch','22:00 — Sleep target'].map((t,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:10px;background:var(--black-3);border-radius:8px;border:1px solid rgba(255,255,255,0.04)"><div style="width:4px;height:4px;border-radius:50%;background:${i<3?'#4CAF50':i===4||i===5?'var(--red)':'var(--gray-3)'}"></div><div style="font-size:12px;color:var(--white)">${t}</div></div>`).join('')}</div>` },
-  { label: 'Weekly Planner', html: `<div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px">${['M','T','W','T','F','S','S'].map((d,i)=>`<div style="text-align:center;font-size:10px;padding:6px 2px;border-radius:6px;background:${i===0?'var(--red)':'var(--black-3)'};color:${i===0?'#fff':'var(--gray-3)'}">${d}</div>`).join('')}</div><div style="display:flex;flex-direction:column;gap:6px">${[{t:'Football training',d:'Mon Wed Fri',c:'var(--red)'},{t:'Gym session',d:'Mon Thu Sat',c:'#FFC107'},{t:'Recovery',d:'Tue Sun',c:'#4CAF50'},{t:'Match',d:'Saturday',c:'#E91E63'}].map(x=>`<div style="display:flex;gap:10px;align-items:center;padding:10px;background:var(--black-3);border-radius:8px;border-left:3px solid ${x.c}"><div><div style="font-size:12px;font-weight:600;color:var(--white)">${x.t}</div><div style="font-size:10px;color:var(--gray-3)">${x.d}</div></div></div>`).join('')}</div></div>` },
-  { label: 'Habits Tracker', html: `<div style="display:flex;flex-direction:column;gap:8px">${[{n:'Sleep before 22:30',done:true,streak:12},{n:'Drink 2.5L water',done:true,streak:7},{n:'Eat healthy meals',done:true,streak:5},{n:'Morning stretching',done:false,streak:0},{n:'Individual practice',done:false,streak:3},{n:'Screen time < 2h',done:true,streak:2}].map(h=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--black-3);border-radius:8px;border:1px solid rgba(255,255,255,0.04)"><div style="width:18px;height:18px;border-radius:5px;${h.done?'background:var(--red);':'border:1.5px solid var(--gray-2);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:#fff">${h.done?'✓':''}</div><div style="flex:1;font-size:12px;color:${h.done?'var(--white)':'var(--gray-3)'};${h.done?'':'text-decoration:line-through'}">${h.n}</div><div style="font-size:10px;color:var(--red);font-weight:600">${h.streak ? h.streak+'d':'—'}</div></div>`).join('')}</div>` },
-  { label: 'Goals', html: `<div style="display:flex;flex-direction:column;gap:10px">${[{t:'Improve sprint speed',d:'30 days',p:65,c:'var(--red)'},{t:'Increase squat 1RM',d:'60 days',p:40,c:'#FFC107'},{t:'Earn starting position',d:'Season',p:25,c:'#4CAF50'}].map(g=>`<div style="padding:14px;background:var(--black-3);border-radius:10px;border:1px solid rgba(255,255,255,0.05)"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-size:13px;font-weight:600;color:var(--white)">${g.t}</div><div style="font-size:10px;color:var(--gray-3)">${g.d}</div></div><div style="height:4px;background:var(--black-4);border-radius:2px;margin-bottom:4px"><div style="height:4px;border-radius:2px;background:${g.c};width:${g.p}%"></div></div><div style="font-size:10px;color:${g.c}">${g.p}% complete</div></div>`).join('')}</div>` },
-  { label: 'Daily Wellness', html: `<div style="display:flex;flex-direction:column;gap:8px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${[{l:'Energy',v:4,max:5,c:'#4CAF50'},{l:'Fatigue',v:2,max:5,c:'var(--red)'},{l:'Soreness',v:3,max:5,c:'#FFC107'},{l:'Mood',v:4,max:5,c:'#2196F3'},{l:'Stress',v:2,max:5,c:'var(--red)'},{l:'Sleep quality',v:4,max:5,c:'#9C27B0'}].map(m=>`<div style="padding:10px;background:var(--black-3);border-radius:8px;border:1px solid rgba(255,255,255,0.04)"><div style="font-size:9px;color:var(--gray-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">${m.l}</div><div style="display:flex;gap:3px">${Array.from({length:m.max},(_,i)=>`<div style="width:100%;height:4px;border-radius:2px;background:${i<m.v?m.c:'var(--black-4)'}"></div>`).join('')}</div></div>`).join('')}</div><div style="padding:12px;background:var(--red);border-radius:10px;text-align:center;color:#fff"><div style="font-size:10px;opacity:0.8;font-weight:600;letter-spacing:0.06em">READINESS SCORE</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900">88</div><div style="font-size:11px;opacity:0.8">Ready to train</div></div></div>` },
-  { label: 'Coach Dashboard', html: `<div style="display:flex;flex-direction:column;gap:8px"><div style="font-size:12px;color:var(--gray-3);margin-bottom:4px">Team status — today</div>${[{n:'Ali Hassan',score:84,status:'Ready',c:'#4CAF50'},{n:'Omar Khalid',score:71,status:'Fatigued',c:'#FFC107'},{n:'Yusuf Noor',score:92,status:'Excellent',c:'#4CAF50'},{n:'Tariq Salem',score:45,status:'Injured',c:'var(--red)'}].map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--black-3);border-radius:8px;border:1px solid rgba(255,255,255,0.04)"><div style="width:30px;height:30px;border-radius:8px;background:rgba(224,32,32,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--red);flex-shrink:0">${p.n[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--white)">${p.n}</div><div style="font-size:10px;color:${p.c}">${p.status}</div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--white)">${p.score}</div></div>`).join('')}</div>` }
+const productPreviews = [
+  {
+    key: 'dashboard',
+    title: 'Dashboard',
+    description: 'See team readiness, alerts, check-ins, and today’s priorities at a glance.',
+    alt: 'Dashboard preview showing team readiness, alerts, and daily priorities',
+    html: `<div class="preview-ui"><div class="preview-kicker">Team status — today</div><div class="preview-hero"><span>Readiness</span><strong>78</strong><small>4 alerts to review</small></div><div class="preview-row"><b>Ali Hassan</b><span class="good">Ready</span><strong>84</strong></div><div class="preview-row"><b>Omar Khalid</b><span class="warn">Fatigued</span><strong>71</strong></div><div class="preview-row"><b>Tariq Salem</b><span class="bad">Needs attention</span><strong>45</strong></div><div class="preview-note">3 check-ins missing before training</div></div>`
+  },
+  {
+    key: 'players',
+    title: 'Players',
+    description: 'Open any player profile and review their status, history, programs, and assessments.',
+    alt: 'Players preview showing roster cards with readiness and profile status',
+    html: `<div class="preview-ui"><div class="preview-kicker">Players</div><div class="preview-search">Search players</div><div class="preview-player"><div class="avatar">A</div><div><b>Ali Hassan</b><span>Forward · Active program</span></div><strong>84</strong></div><div class="preview-player"><div class="avatar">Y</div><div><b>Yusuf Noor</b><span>Midfielder · Assessment due</span></div><strong>92</strong></div><div class="preview-player"><div class="avatar">T</div><div><b>Tariq Salem</b><span>Recovery watch</span></div><strong class="bad-text">45</strong></div></div>`
+  },
+  {
+    key: 'programs',
+    title: 'Programs',
+    description: 'Create training plans, assign them to players, and monitor completion.',
+    alt: 'Programs preview showing active training plan progress and assigned players',
+    html: `<div class="preview-ui"><div class="preview-kicker">Programs</div><div class="preview-card"><b>Pre-season speed block</b><span>12 players assigned</span><div class="bar"><i style="width:68%"></i></div><small>68% completion</small></div><div class="preview-card"><b>Recovery week</b><span>5 sessions · low intensity</span><div class="bar amber"><i style="width:42%"></i></div><small>42% completion</small></div><button class="preview-action">Assign program</button></div>`
+  },
+  {
+    key: 'assessments',
+    title: 'Assessments',
+    description: 'Record performance tests and compare progress over time.',
+    alt: 'Assessments preview showing performance tests and score changes over time',
+    html: `<div class="preview-ui"><div class="preview-kicker">Assessments</div><div class="preview-score"><span>Sprint speed</span><strong>88</strong><small>+6 since last test</small></div><div class="preview-row"><b>Strength</b><span class="good">82/100</span></div><div class="preview-row"><b>Endurance</b><span class="warn">69/100</span></div><div class="preview-row"><b>Mobility</b><span class="good">91/100</span></div></div>`
+  },
+  {
+    key: 'reports',
+    title: 'Reports',
+    description: 'Identify players who need attention and review team trends.',
+    alt: 'Reports preview showing attention list and team readiness trend',
+    html: `<div class="preview-ui"><div class="preview-kicker">Reports</div><div class="trend"><i style="height:52%"></i><i style="height:66%"></i><i style="height:44%"></i><i style="height:72%"></i><i style="height:61%"></i></div><div class="preview-note bad-note">2 players need attention</div><div class="preview-row"><b>Low sleep</b><span>Omar Khalid</span></div><div class="preview-row"><b>Soreness spike</b><span>Tariq Salem</span></div></div>`
+  }
 ];
 
-let activeModuleIndex = 0;
-const moduleItems = Array.from(document.querySelectorAll('.module-item'));
-const modulePreview = document.getElementById('modulePreview');
-const previewLabel = document.getElementById('previewLabel');
-const previewContent = document.getElementById('previewContent');
-const mobileDetails = document.getElementById('mobileModuleDetails');
-const mobileTitle = document.getElementById('mobileModuleTitle');
-const mobileDesc = document.getElementById('mobileModuleDesc');
-const modulePrev = document.getElementById('modulePrev');
-const moduleNext = document.getElementById('moduleNext');
-const moduleDots = document.getElementById('moduleDots');
-const reduceModuleMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let activeProductIndex = 0;
+const productTabs = document.getElementById('productPreviewTabs');
+const productFrame = document.getElementById('productFrame');
+const productScreen = document.getElementById('productPreviewScreen');
+const productMobileInfo = document.getElementById('productMobileInfo');
+const productActiveTitle = document.getElementById('productActiveTitle');
+const productActiveDesc = document.getElementById('productActiveDesc');
+const productPrev = document.getElementById('productPrev');
+const productNext = document.getElementById('productNext');
+const productDots = document.getElementById('productDots');
+const reduceProductMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function moduleTitle(idx) {
-  return moduleItems[idx]?.querySelector('.mod-title')?.textContent?.trim() || modulePreviews[idx].label;
+function renderProductTabs() {
+  if (!productTabs) return;
+  productTabs.innerHTML = productPreviews.map((item, idx) => `
+    <button class="product-tab" id="product-tab-${item.key}" role="tab" type="button" aria-selected="${idx === activeProductIndex}" aria-controls="productPreviewScreen" tabindex="${idx === activeProductIndex ? '0' : '-1'}" data-product-index="${idx}">
+      <div class="product-tab-title">${item.title}</div>
+      <div class="product-tab-desc">${item.description}</div>
+    </button>`).join('');
 }
 
-function moduleDescription(idx) {
-  return moduleItems[idx]?.querySelector('.mod-desc')?.textContent?.trim() || '';
+function renderProductDots() {
+  if (!productDots) return;
+  productDots.innerHTML = productPreviews.map((item, idx) => `<button class="product-dot${idx === activeProductIndex ? ' active' : ''}" type="button" aria-label="Show ${item.title} preview" ${idx === activeProductIndex ? 'aria-current="true"' : ''} data-product-index="${idx}"></button>`).join('');
 }
 
-function renderModuleDots() {
-  if (!moduleDots) return;
-  moduleDots.innerHTML = modulePreviews
-    .map((_, idx) => `<button class="module-dot${idx === activeModuleIndex ? ' active' : ''}" type="button" aria-label="Show ${moduleTitle(idx)}" ${idx === activeModuleIndex ? 'aria-current="true"' : ''} data-module-index="${idx}"></button>`)
-    .join('');
+function updateProductControls() {
+  if (productPrev) productPrev.disabled = activeProductIndex === 0;
+  if (productNext) productNext.disabled = activeProductIndex === productPreviews.length - 1;
+  renderProductTabs();
+  renderProductDots();
 }
 
-function updateModuleControls() {
-  if (modulePrev) modulePrev.disabled = activeModuleIndex === 0;
-  if (moduleNext) moduleNext.disabled = activeModuleIndex === modulePreviews.length - 1;
-  renderModuleDots();
-}
-
-function setModule(idx, direction = 'next') {
-  const nextIndex = Math.max(0, Math.min(idx, modulePreviews.length - 1));
-  if (nextIndex === activeModuleIndex && previewContent.innerHTML) return;
-
-  activeModuleIndex = nextIndex;
-  moduleItems.forEach((item, itemIndex) => item.classList.toggle('active', itemIndex === activeModuleIndex));
-
+function setProductPreview(idx, direction = 'next') {
+  const nextIndex = Math.max(0, Math.min(idx, productPreviews.length - 1));
+  if (nextIndex === activeProductIndex && productScreen.innerHTML) return;
+  activeProductIndex = nextIndex;
+  const item = productPreviews[activeProductIndex];
   const apply = () => {
-    previewLabel.textContent = moduleTitle(activeModuleIndex);
-    previewContent.innerHTML = modulePreviews[activeModuleIndex].html;
-    modulePreview.setAttribute('aria-label', `${moduleTitle(activeModuleIndex)} app preview`);
-    if (mobileTitle) mobileTitle.textContent = moduleTitle(activeModuleIndex);
-    if (mobileDesc) mobileDesc.textContent = moduleDescription(activeModuleIndex);
-    updateModuleControls();
+    productScreen.innerHTML = item.html;
+    productScreen.setAttribute('aria-label', item.alt);
+    productActiveTitle.textContent = item.title;
+    productActiveDesc.textContent = item.description;
+    updateProductControls();
   };
-
-  if (reduceModuleMotion) {
+  if (reduceProductMotion) {
     apply();
     return;
   }
-
-  modulePreview.classList.add(direction === 'prev' ? 'switch-prev' : 'switch-next');
-  mobileDetails?.classList.add('switching');
+  productFrame.classList.add(direction === 'prev' ? 'switch-prev' : 'switch-next');
+  productMobileInfo?.classList.add('switching');
   window.setTimeout(() => {
     apply();
-    modulePreview.classList.remove('switch-prev', 'switch-next');
-    mobileDetails?.classList.remove('switching');
+    productFrame.classList.remove('switch-prev', 'switch-next');
+    productMobileInfo?.classList.remove('switching');
   }, 160);
 }
 
-function activateModule(el, idx) {
-  setModule(idx, idx < activeModuleIndex ? 'prev' : 'next');
-}
-
-window.setModule = setModule;
-
-modulePrev?.addEventListener('click', () => setModule(activeModuleIndex - 1, 'prev'));
-moduleNext?.addEventListener('click', () => setModule(activeModuleIndex + 1, 'next'));
-moduleDots?.addEventListener('click', (event) => {
-  const target = event.target.closest('.module-dot');
-  if (!target) return;
-  const idx = Number(target.dataset.moduleIndex);
-  setModule(idx, idx < activeModuleIndex ? 'prev' : 'next');
+productTabs?.addEventListener('click', (event) => {
+  const tab = event.target.closest('.product-tab');
+  if (!tab) return;
+  const idx = Number(tab.dataset.productIndex);
+  setProductPreview(idx, idx < activeProductIndex ? 'prev' : 'next');
 });
 
-let moduleTouchStartX = 0;
-let moduleTouchStartY = 0;
-let moduleTouchTracking = false;
+productTabs?.addEventListener('keydown', (event) => {
+  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+  event.preventDefault();
+  const dir = event.key === 'ArrowRight' ? 1 : -1;
+  const nextIndex = Math.max(0, Math.min(activeProductIndex + dir, productPreviews.length - 1));
+  setProductPreview(nextIndex, dir < 0 ? 'prev' : 'next');
+  window.setTimeout(() => document.getElementById(`product-tab-${productPreviews[nextIndex].key}`)?.focus(), 0);
+});
 
-function finishModuleSwipe(endX, endY) {
-  const dx = endX - moduleTouchStartX;
-  const dy = endY - moduleTouchStartY;
+productPrev?.addEventListener('click', () => setProductPreview(activeProductIndex - 1, 'prev'));
+productNext?.addEventListener('click', () => setProductPreview(activeProductIndex + 1, 'next'));
+productDots?.addEventListener('click', (event) => {
+  const dot = event.target.closest('.product-dot');
+  if (!dot) return;
+  const idx = Number(dot.dataset.productIndex);
+  setProductPreview(idx, idx < activeProductIndex ? 'prev' : 'next');
+});
+
+let productStartX = 0;
+let productStartY = 0;
+let productTracking = false;
+function finishProductSwipe(endX, endY) {
+  const dx = endX - productStartX;
+  const dy = endY - productStartY;
   if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
-  if (dx < 0) setModule(activeModuleIndex + 1, 'next');
-  else setModule(activeModuleIndex - 1, 'prev');
+  if (dx < 0) setProductPreview(activeProductIndex + 1, 'next');
+  else setProductPreview(activeProductIndex - 1, 'prev');
 }
-
-modulePreview?.addEventListener('touchstart', (event) => {
+productFrame?.addEventListener('touchstart', (event) => {
   if (event.touches.length !== 1) return;
-  moduleTouchStartX = event.touches[0].clientX;
-  moduleTouchStartY = event.touches[0].clientY;
-  moduleTouchTracking = true;
+  productStartX = event.touches[0].clientX;
+  productStartY = event.touches[0].clientY;
+  productTracking = true;
+}, { passive: true });
+productFrame?.addEventListener('touchend', (event) => {
+  if (!productTracking || event.changedTouches.length !== 1) return;
+  productTracking = false;
+  finishProductSwipe(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+}, { passive: true });
+productFrame?.addEventListener('pointerdown', (event) => {
+  productStartX = event.clientX;
+  productStartY = event.clientY;
+  productTracking = true;
+}, { passive: true });
+productFrame?.addEventListener('pointerup', (event) => {
+  if (!productTracking) return;
+  productTracking = false;
+  finishProductSwipe(event.clientX, event.clientY);
 }, { passive: true });
 
-modulePreview?.addEventListener('touchend', (event) => {
-  if (!moduleTouchTracking || event.changedTouches.length !== 1) return;
-  moduleTouchTracking = false;
-  finishModuleSwipe(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
-}, { passive: true });
-
-modulePreview?.addEventListener('pointerdown', (event) => {
-  moduleTouchStartX = event.clientX;
-  moduleTouchStartY = event.clientY;
-  moduleTouchTracking = true;
-}, { passive: true });
-
-modulePreview?.addEventListener('pointerup', (event) => {
-  if (!moduleTouchTracking) return;
-  moduleTouchTracking = false;
-  finishModuleSwipe(event.clientX, event.clientY);
-}, { passive: true });
-
-setModule(0);
-updateModuleControls();
-</script>
+setProductPreview(0);</script>
 </body>
 </html>
+
+
