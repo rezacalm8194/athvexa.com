@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const router = useRouter();
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -23,7 +24,15 @@ export default function LoginForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Try again.");
+        const message =
+          res.status === 401
+            ? "Incorrect email or password. Please check your credentials and try again."
+            : data.error ?? "Something went wrong. Try again.";
+        setError(message);
+        if (res.status === 401) {
+          setPassword("");
+          passwordRef.current?.focus();
+        }
         return;
       }
       router.push(data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
@@ -40,6 +49,7 @@ export default function LoginForm() {
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-medium text-smoke-4">Email address</span>
         <input
+          ref={passwordRef}
           className="input-field"
           type="email"
           value={email}
@@ -72,7 +82,15 @@ export default function LoginForm() {
         Keep me signed in
       </label>
 
-      {error && <p className="text-sm text-red-glow">{error}</p>}
+      {error && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="rounded-lg border border-red/50 bg-red/10 px-3 py-2.5 text-sm font-medium text-red-glow"
+        >
+          {error}
+        </div>
+      )}
 
       <button type="submit" className="btn-primary mt-1" disabled={loading}>
         {loading ? "Signing in…" : "Sign in to Athvexa"}
