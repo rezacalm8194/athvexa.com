@@ -7,6 +7,8 @@ const APP_ORIGIN = "https://app.athvexa.com";
 
 function withAppAuthLinks(html: string) {
   return html
+    .replace(/href="\/login"/g, `href="${APP_ORIGIN}/login"`)
+    .replace(/href="\/register"/g, `href="${APP_ORIGIN}/register"`)
     .replace(/href="#" onclick="openAuth\('login'\)"/g, `href="${APP_ORIGIN}/login"`)
     .replace(/href="#" onclick="openAuth\('register'\)"/g, `href="${APP_ORIGIN}/register"`)
     .replace(/href="#" onclick="toggleMobile\(\); openAuth\('login'\)"/g, `href="${APP_ORIGIN}/login"`)
