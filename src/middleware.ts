@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE, verifySession } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/auth";
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  const session = token ? await verifySession(token) : null;
   const { pathname } = req.nextUrl;
   const hostname = req.nextUrl.hostname.toLowerCase();
   const siteMode = process.env.ATHVEXA_SITE_MODE?.trim().toLowerCase();
@@ -27,23 +26,16 @@ export async function middleware(req: NextRequest) {
 
   if (isAppHost && pathname === "/") {
     const url = req.nextUrl.clone();
-    url.pathname = session ? "/dashboard" : "/login";
+    url.pathname = token ? "/dashboard" : "/login";
     return NextResponse.redirect(url);
   }
 
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
   const isDashboard = pathname.startsWith("/dashboard");
 
-  if (isDashboard && !session) {
+  if (isDashboard && !token) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (isAuthPage && session) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
