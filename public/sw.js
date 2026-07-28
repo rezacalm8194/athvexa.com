@@ -2,7 +2,7 @@
 // still opens offline. Phase 2 will add an IndexedDB write-queue so
 // check-ins made offline sync once the connection returns.
 
-const CACHE = "athvexa-shell-v3";
+const CACHE = "athvexa-shell-v4";
 const SHELL = ["/dashboard/player", "/dashboard/coach", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -29,6 +29,14 @@ self.addEventListener("fetch", (event) => {
 
   // Network-first for API calls, so data is always fresh when online.
   if (request.url.includes("/api/")) {
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
+    return;
+  }
+
+  // Next.js chunks are content-hashed and must stay in sync with the HTML
+  // produced by the current deployment. Prefer the network so an old service
+  // worker can never pair a new page with stale client-side JavaScript.
+  if (new URL(request.url).pathname.startsWith("/_next/")) {
     event.respondWith(fetch(request).catch(() => caches.match(request)));
     return;
   }

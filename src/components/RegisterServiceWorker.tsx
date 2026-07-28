@@ -5,7 +5,7 @@ import { useEffect } from "react";
 export default function RegisterServiceWorker() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {
         // Offline support is a nice-to-have — fail silently in dev/unsupported browsers.
       });
     }
