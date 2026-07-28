@@ -5,6 +5,13 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
   const { pathname } = req.nextUrl;
+  const hostname = req.nextUrl.hostname.toLowerCase();
+
+  if (hostname === "app.athvexa.com" && pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = session ? "/dashboard" : "/login";
+    return NextResponse.redirect(url);
+  }
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
   const isDashboard = pathname.startsWith("/dashboard");
@@ -26,5 +33,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/register"],
+  matcher: ["/", "/dashboard/:path*", "/login", "/register"],
 };

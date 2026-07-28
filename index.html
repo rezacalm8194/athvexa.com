@@ -1866,7 +1866,9 @@
 
 <script>
 function openAuth(tab) {
-  window.location.href = tab === 'register' ? '/register' : '/login';
+  window.location.href = tab === 'register'
+    ? 'https://app.athvexa.com/register'
+    : 'https://app.athvexa.com/login';
 }
 function closeAuth() {
   document.getElementById('authModal').classList.remove('open');
@@ -1880,7 +1882,7 @@ function switchTab(tab) {
   document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
 }
 function goToApp() {
-  window.location.href = '/dashboard';
+  window.location.href = 'https://app.athvexa.com/dashboard';
 }
 document.getElementById('authModal').addEventListener('click', function(e) {
   if (e.target === this) closeAuth();
