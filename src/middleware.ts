@@ -6,7 +6,11 @@ export async function middleware(req: NextRequest) {
   const session = token ? await verifySession(token) : null;
   const { pathname } = req.nextUrl;
   const hostname = req.nextUrl.hostname.toLowerCase();
-  const isMarketingHost = hostname === "athvexa.com" || hostname === "www.athvexa.com";
+  const siteMode = process.env.ATHVEXA_SITE_MODE?.trim().toLowerCase();
+  const isMarketingHost =
+    siteMode === "marketing" ||
+    (siteMode !== "app" && (hostname === "athvexa.com" || hostname === "www.athvexa.com"));
+  const isAppHost = siteMode === "app" || hostname === "app.athvexa.com";
   const isAppPath =
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
@@ -21,7 +25,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (hostname === "app.athvexa.com" && pathname === "/") {
+  if (isAppHost && pathname === "/") {
     const url = req.nextUrl.clone();
     url.pathname = session ? "/dashboard" : "/login";
     return NextResponse.redirect(url);
