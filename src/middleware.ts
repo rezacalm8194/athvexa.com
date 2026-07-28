@@ -6,6 +6,20 @@ export async function middleware(req: NextRequest) {
   const session = token ? await verifySession(token) : null;
   const { pathname } = req.nextUrl;
   const hostname = req.nextUrl.hostname.toLowerCase();
+  const isMarketingHost = hostname === "athvexa.com" || hostname === "www.athvexa.com";
+  const isAppPath =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/invite");
+
+  if (isMarketingHost && isAppPath) {
+    const url = req.nextUrl.clone();
+    url.hostname = "app.athvexa.com";
+    url.protocol = "https:";
+    url.port = "";
+    return NextResponse.redirect(url);
+  }
 
   if (hostname === "app.athvexa.com" && pathname === "/") {
     const url = req.nextUrl.clone();
@@ -33,5 +47,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/login", "/register"],
+  matcher: ["/", "/dashboard/:path*", "/login", "/register", "/invite/:path*"],
 };
