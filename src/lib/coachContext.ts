@@ -25,7 +25,19 @@ export async function getCoachContext() {
     .findFirst({
       where: { coachId: teamOwnerId },
       orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, sport: true, coachId: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        sport: true,
+        ageGroup: true,
+        season: true,
+        country: true,
+        timeZone: true,
+        units: true,
+        defaultLanguage: true,
+        coachId: true,
+        createdAt: true,
+      },
     })
     .catch((error) => {
       console.error("Coach team lookup failed", error);

@@ -11,7 +11,9 @@ import {
   TrashIcon,
   UsersIcon,
 } from "@/components/icons";
+import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getCoachContext } from "@/lib/coachContext";
+import { getCurrentTeamMembership, teamRoleLabel } from "@/lib/teamContext";
 
 function SettingCard({
   title,
@@ -73,7 +75,9 @@ function TogglePlaceholder({ label, checked = false }: { label: string; checked?
 }
 
 export default async function SettingsPage() {
-  const { session, team, roleLabel, canManageRoles } = await getCoachContext();
+  const { session, team: fallbackTeam, roleLabel, canManageRoles } = await getCoachContext();
+  const membership = await getCurrentTeamMembership(session.sub);
+  const team = membership?.team ?? fallbackTeam;
 
   return (
     <main className="min-h-screen bg-ink">
@@ -112,18 +116,12 @@ export default async function SettingsPage() {
 
           <div className="space-y-5">
             <div id="team-profile">
-              <SettingCard
-                title="Team Profile"
-                description="Review the public identity and core sport context for this team. Editing will be enabled in a later backend pass."
-                action={<PlaceholderButton>Save changes</PlaceholderButton>}
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <SettingRow label="Team name" value={team?.name ?? "No team name set"} />
-                  <SettingRow label="Sport" value={team?.sport ?? "Not set"} />
-                  <SettingRow label="Owner" value={session.name} />
-                  <SettingRow label="Role" value={roleLabel} />
-                </div>
-              </SettingCard>
+              <TeamProfileSettings
+                team={team}
+                ownerName={session.name}
+                roleLabel={membership ? teamRoleLabel(membership.role) : roleLabel}
+                canEdit={canManageRoles || membership?.role === "OWNER" || membership?.role === "HEAD_COACH"}
+              />
             </div>
 
             <div id="staff-management">
