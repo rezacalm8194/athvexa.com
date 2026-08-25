@@ -93,6 +93,12 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
     loadPlayers();
   }, []);
 
+  useEffect(() => {
+    if (window.location.hash === "#invite-panel") {
+      openInvite();
+    }
+  }, []);
+
   function openInvite() {
     setInviteOpen(true);
     setInviteError(null);

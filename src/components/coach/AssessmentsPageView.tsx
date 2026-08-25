@@ -429,10 +429,25 @@ export default function AssessmentsPageView() {
           <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">Assessments</h1>
           <p className="mt-2 text-sm text-smoke-3">Track player performance and development.</p>
         </div>
-        <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={openCreate} disabled={loading || players.length === 0}>
-          <PlusIcon className="h-4 w-4" />
-          New assessment
-        </button>
+        {!loading && players.length === 0 ? (
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <Link href="/dashboard/coach/players#invite-panel" className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm">
+              <PlusIcon className="h-4 w-4" />
+              Add your first player
+            </Link>
+            <Link
+              href="/dashboard/coach/players"
+              className="text-center text-xs font-semibold text-smoke-3 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+            >
+              Go to Players
+            </Link>
+          </div>
+        ) : (
+          <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={openCreate} disabled={loading}>
+            <PlusIcon className="h-4 w-4" />
+            New assessment
+          </button>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -498,10 +513,18 @@ export default function AssessmentsPageView() {
               description={players.length === 0 ? "Add players to your team before creating assessments." : "Create an assessment to start tracking player development."}
               action={
                 players.length === 0 ? (
-                  <Link href="/dashboard/coach/players" className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm">
-                    <PlusIcon className="h-4 w-4" />
-                    Add player
-                  </Link>
+                  <div className="mt-2 flex flex-col items-center gap-2">
+                    <Link href="/dashboard/coach/players#invite-panel" className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm">
+                      <PlusIcon className="h-4 w-4" />
+                      Add your first player
+                    </Link>
+                    <Link
+                      href="/dashboard/coach/players"
+                      className="text-xs font-semibold text-smoke-3 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red focus-visible:ring-offset-2 focus-visible:ring-offset-ink-3"
+                    >
+                      Go to Players
+                    </Link>
+                  </div>
                 ) : (
                   <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={openCreate}>
                     <PlusIcon className="h-4 w-4" />
