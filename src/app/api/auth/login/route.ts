@@ -44,6 +44,10 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (error) {
     console.error("Login failed", error);
+    const detail = error instanceof Error ? error.message : "";
+    if (detail.includes("JWT_SECRET")) {
+      return NextResponse.json({ error: "Server auth secret is not configured." }, { status: 500 });
+    }
     return NextResponse.json(
       { error: "Could not sign in. Make sure the database is configured and migrated." },
       { status: 500 }

@@ -3,7 +3,24 @@ import { PrismaClient } from "@prisma/client";
 // Prevent hot-reload from spawning a new PrismaClient on every save in dev.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const db = globalForPrisma.prisma ?? new PrismaClient();
+function resolveSqliteUrl() {
+  const raw = (process.env.DATABASE_URL ?? "").trim();
+  if (raw.startsWith("file:")) return raw;
+  if (raw) {
+    console.error(
+      "[db] DATABASE_URL is not a SQLite file: URL. Prisma schema is sqlite; using file:./dev.db so login can run."
+    );
+  }
+  return "file:./dev.db";
+}
+
+const sqliteUrl = resolveSqliteUrl();
+
+export const db =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: { db: { url: sqliteUrl } },
+  });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 
@@ -11,17 +28,24 @@ let sqliteReady: Promise<void> | null = null;
 
 /**
  * SQLite table bootstrap. Runs at most once per process — not on every query.
- * No-op when DATABASE_URL is not a file: SQLite path.
+ * Always runs: a Postgres DATABASE_URL must not skip setup or be passed to the sqlite client.
  */
 export function ensureDatabase() {
-  const databaseUrl = process.env.DATABASE_URL ?? "";
-  if (!databaseUrl.startsWith("file:")) return Promise.resolve();
-
-  sqliteReady ??= ensureSqliteSchema();
+  sqliteReady ??= ensureSqliteSchema().catch((error) => {
+    sqliteReady = null;
+    throw error;
+  });
   return sqliteReady;
 }
 
 async function ensureSqliteSchema() {
+  await db.$executeRawUnsafe(`PRAGMA busy_timeout = 5000;`);
+  try {
+    await db.$executeRawUnsafe(`PRAGMA journal_mode = WAL;`);
+  } catch {
+    // Some hosts reject WAL; continue with the default journal.
+  }
+
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "User" (
       "id" TEXT NOT NULL PRIMARY KEY,
@@ -39,27 +63,32 @@ async function ensureSqliteSchema() {
   // Early SQLite databases required email. Rebuild this small root table once so
   // accounts may use a phone number without inventing a fake email address.
   if (userColumns.find((c) => c.name === "email")?.notnull === 1) {
-    await db.$executeRawUnsafe(`PRAGMA foreign_keys = OFF;`);
-    await db.$executeRawUnsafe(`
-      CREATE TABLE "User_contact_migration" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "name" TEXT NOT NULL,
-        "email" TEXT,
-        "phone" TEXT,
-        "passwordHash" TEXT NOT NULL,
-        "role" TEXT NOT NULL DEFAULT 'PLAYER',
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "coachId" TEXT,
-        CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User_contact_migration" ("id") ON DELETE SET NULL ON UPDATE CASCADE
-      );
-    `);
-    await db.$executeRawUnsafe(`
-      INSERT INTO "User_contact_migration" ("id", "name", "email", "passwordHash", "role", "createdAt", "coachId")
-      SELECT "id", "name", "email", "passwordHash", "role", "createdAt", "coachId" FROM "User";
-    `);
-    await db.$executeRawUnsafe(`DROP TABLE "User";`);
-    await db.$executeRawUnsafe(`ALTER TABLE "User_contact_migration" RENAME TO "User";`);
-    await db.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`);
+    try {
+      await db.$executeRawUnsafe(`PRAGMA foreign_keys = OFF;`);
+      await db.$executeRawUnsafe(`
+        CREATE TABLE "User_contact_migration" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "name" TEXT NOT NULL,
+          "email" TEXT,
+          "phone" TEXT,
+          "passwordHash" TEXT NOT NULL,
+          "role" TEXT NOT NULL DEFAULT 'PLAYER',
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "coachId" TEXT,
+          CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User_contact_migration" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+        );
+      `);
+      await db.$executeRawUnsafe(`
+        INSERT INTO "User_contact_migration" ("id", "name", "email", "passwordHash", "role", "createdAt", "coachId")
+        SELECT "id", "name", "email", "passwordHash", "role", "createdAt", "coachId" FROM "User";
+      `);
+      await db.$executeRawUnsafe(`DROP TABLE "User";`);
+      await db.$executeRawUnsafe(`ALTER TABLE "User_contact_migration" RENAME TO "User";`);
+    } catch (error) {
+      console.error("[db] Skipping User email-null rebuild so login can proceed", error);
+    } finally {
+      await db.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`).catch(() => undefined);
+    }
     userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
   }
   if (!userColumns.some((c) => c.name === "phone")) {
