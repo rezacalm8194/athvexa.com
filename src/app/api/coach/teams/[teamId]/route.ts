@@ -26,13 +26,14 @@ function canEditTeam(sessionRole: string, membershipRole: string) {
   return sessionRole === "COACH" || sessionRole === "ASSISTANT" || membershipRole === "OWNER" || membershipRole === "HEAD_COACH";
 }
 
-export async function GET(_: Request, { params }: { params: { teamId: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = await params;
   const session = await getSession();
   if (!session || session.role === "PLAYER") {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
 
-  const membership = await requireTeamMembership(session.sub, params.teamId);
+  const membership = await requireTeamMembership(session.sub, teamId);
   if (!membership) {
     return NextResponse.json({ error: "Team not found" }, { status: 404 });
   }
@@ -46,13 +47,14 @@ export async function GET(_: Request, { params }: { params: { teamId: string } }
   });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { teamId: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = await params;
   const session = await getSession();
   if (!session || session.role === "PLAYER") {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
 
-  const membership = await requireTeamMembership(session.sub, params.teamId);
+  const membership = await requireTeamMembership(session.sub, teamId);
   if (!membership) {
     return NextResponse.json({ error: "Team not found" }, { status: 404 });
   }
@@ -68,7 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { teamId: st
 
   const data = parsed.data;
   const team = await db.team.update({
-    where: { id: params.teamId },
+    where: { id: teamId },
     data: {
       name: data.name,
       sport: clean(data.sport),

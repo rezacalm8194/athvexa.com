@@ -3,12 +3,13 @@ import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { canAccessConversation } from "@/lib/messages";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
   await ensureDatabase();
-  const conversation = await canAccessConversation(session, params.id);
+  const conversation = await canAccessConversation(session, id);
   if (!conversation) return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
 
   await db.message.updateMany({

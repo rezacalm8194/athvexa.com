@@ -5,12 +5,13 @@ import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getSession } from "@/lib/session";
 import { requireTeamMembership, teamRoleLabel } from "@/lib/teamContext";
 
-export default async function TeamSettingsPage({ params }: { params: { teamId: string } }) {
+export default async function TeamSettingsPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = await params;
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.role === "PLAYER") redirect("/dashboard/player");
 
-  const membership = await requireTeamMembership(session.sub, params.teamId);
+  const membership = await requireTeamMembership(session.sub, teamId);
   if (!membership) notFound();
 
   const canEdit = session.role === "COACH" || session.role === "ASSISTANT" || membership.role === "OWNER" || membership.role === "HEAD_COACH";

@@ -14,7 +14,8 @@ function serialize(status: string, completedAt: Date | null, notes: string | nul
   return { status, completedAt, notes };
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session || session.role !== "PLAYER") {
     return NextResponse.json({ error: "Players only" }, { status: 403 });
@@ -28,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const programSession = await db.programSession.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     select: { id: true, programId: true, title: true },
   });
   if (!programSession) return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -40,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!assignment) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
   const existing = await db.programSessionProgress.findUnique({
-    where: { playerId_programSessionId: { playerId: session.sub, programSessionId: params.id } },
+    where: { playerId_programSessionId: { playerId: session.sub, programSessionId: id } },
   });
 
   if (parsed.data.action === "complete" && existing?.status === "COMPLETED") {
@@ -58,11 +59,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const notes = parsed.data.notes?.trim() || null;
 
   const progress = await db.programSessionProgress.upsert({
-    where: { playerId_programSessionId: { playerId: session.sub, programSessionId: params.id } },
+    where: { playerId_programSessionId: { playerId: session.sub, programSessionId: id } },
     update: { status, completedAt, notes },
     create: {
       playerId: session.sub,
-      programSessionId: params.id,
+      programSessionId: id,
       status,
       completedAt,
       notes,

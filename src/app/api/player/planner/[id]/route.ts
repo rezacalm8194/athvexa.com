@@ -8,12 +8,13 @@ async function ownedItem(id: string, playerId: string) {
   return item;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session || session.role !== "PLAYER") {
     return NextResponse.json({ error: "Players only" }, { status: 403 });
   }
-  const existing = await ownedItem(params.id, session.sub);
+  const existing = await ownedItem(id, session.sub);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json().catch(() => ({}));
@@ -22,18 +23,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (typeof body.label === "string" && body.label.trim()) data.label = body.label.trim();
   if (typeof body.category === "string" && body.category) data.category = body.category;
 
-  const item = await db.planItem.update({ where: { id: params.id }, data });
+  const item = await db.planItem.update({ where: { id: id }, data });
   return NextResponse.json({ item });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session || session.role !== "PLAYER") {
     return NextResponse.json({ error: "Players only" }, { status: 403 });
   }
-  const existing = await ownedItem(params.id, session.sub);
+  const existing = await ownedItem(id, session.sub);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await db.planItem.delete({ where: { id: params.id } });
+  await db.planItem.delete({ where: { id: id } });
   return NextResponse.json({ ok: true });
 }

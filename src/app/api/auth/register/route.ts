@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
-import { hashPassword, signSession, SESSION_COOKIE } from "@/lib/auth";
+import { hashPassword, signSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { normalizeEmail, normalizePhone } from "@/lib/contact";
 
 const schema = z.object({
@@ -107,13 +107,7 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({
       user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role },
     });
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(60 * 60 * 24 * 30));
     return res;
   } catch (error) {
     console.error("Registration failed", error);

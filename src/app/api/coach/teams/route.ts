@@ -61,7 +61,7 @@ export async function GET() {
   const memberCountFor = (teamId: string, role: string) =>
     memberCounts.filter((row) => row.teamId === teamId && row.role === role).reduce((sum, row) => sum + row._count._all, 0);
 
-  const cookieValue = cookies().get(TEAM_COOKIE)?.value;
+  const cookieValue = (await cookies()).get(TEAM_COOKIE)?.value;
   const currentTeamId = memberships.find((membership) => membership.teamId === cookieValue)?.teamId ?? memberships[0]?.teamId ?? null;
   const teams = memberships.map((membership) => {
     const legacyPlayerCount = membership.team.coachId ? legacyPlayersByCoach.get(membership.team.coachId) ?? 0 : 0;

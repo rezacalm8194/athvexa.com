@@ -50,18 +50,19 @@ function statusForPlayer(role: string): { label: string; tone: Tone } {
   return { label: "Active", tone: "good" };
 }
 
-export default async function PlayerProfilePage({ params }: { params: { playerId: string } }) {
+export default async function PlayerProfilePage({ params }: { params: Promise<{ playerId: string }> }) {
+  const { playerId } = await params;
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.role === "PLAYER") redirect("/dashboard/player");
 
   await ensureDatabase();
   await ensureLegacyTeamMemberships(session.sub);
-  await ensureLegacyTeamMemberships(params.playerId);
+  await ensureLegacyTeamMemberships(playerId);
 
   const membership = await db.teamMember.findFirst({
     where: {
-      userId: params.playerId,
+      userId: playerId,
       role: "PLAYER",
       team: {
         members: {
@@ -78,7 +79,7 @@ export default async function PlayerProfilePage({ params }: { params: { playerId
   if (!membership) notFound();
 
   const player = await db.user.findFirst({
-    where: { id: params.playerId, role: "PLAYER" },
+    where: { id: playerId, role: "PLAYER" },
     include: {
       dailyLogs: {
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
@@ -95,7 +96,7 @@ export default async function PlayerProfilePage({ params }: { params: { playerId
                 orderBy: { order: "asc" },
                 include: {
                   progress: {
-                    where: { playerId: params.playerId },
+                    where: { playerId: playerId },
                   },
                 },
               },

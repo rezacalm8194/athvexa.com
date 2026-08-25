@@ -33,12 +33,13 @@ async function loadOwnedProgram(id: string, teamOwnerId: string) {
   return program;
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
 
   const program = await db.program.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     include: {
       sessions: { orderBy: { order: "asc" } },
       assignments: { include: { player: { select: { id: true, name: true, email: true } } } },
@@ -78,12 +79,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
   const { teamOwnerId } = auth;
 
-  const existing = await loadOwnedProgram(params.id, teamOwnerId);
+  const existing = await loadOwnedProgram(id, teamOwnerId);
   if (!existing) return NextResponse.json({ error: "Program not found" }, { status: 404 });
 
   const body = await req.json().catch(() => null);
@@ -102,16 +104,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ).map((p) => p.id)
     : [];
   const previousAssignments = await db.programAssignment.findMany({
-    where: { programId: params.id },
+    where: { programId: id },
     select: { playerId: true },
   });
   const previousPlayerIds = new Set(previousAssignments.map((assignment) => assignment.playerId));
 
   await db.$transaction([
-    db.programSession.deleteMany({ where: { programId: params.id } }),
-    db.programAssignment.deleteMany({ where: { programId: params.id } }),
+    db.programSession.deleteMany({ where: { programId: id } }),
+    db.programAssignment.deleteMany({ where: { programId: id } }),
     db.program.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         name: data.name,
         description: data.description ?? null,
@@ -147,8 +149,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         description: isNew ? `${data.name} has been assigned to you.` : `${data.name} has been updated by your coach.`,
         type: isNew ? "PROGRAM_ASSIGNED" : "PROGRAM_UPDATED",
         actionHref: "/dashboard/player/training",
-        relatedId: params.id,
-        dedupeKey: isNew ? `program-assigned:${params.id}:${playerId}` : null,
+        relatedId: id,
+        dedupeKey: isNew ? `program-assigned:${id}:${playerId}` : null,
       };
     })
   );
@@ -160,18 +162,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     title: "Assistant updated a program",
     description: `updated the program “${data.name}”.`,
     actionHref: "/dashboard/coach/programs",
-    relatedId: params.id,
+    relatedId: id,
   });
 
-  return NextResponse.json({ id: params.id });
+  return NextResponse.json({ id: id });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
   const { teamOwnerId } = auth;
 
-  const existing = await loadOwnedProgram(params.id, teamOwnerId);
+  const existing = await loadOwnedProgram(id, teamOwnerId);
   if (!existing) return NextResponse.json({ error: "Program not found" }, { status: 404 });
 
   const body = await req.json().catch(() => ({}));
@@ -222,11 +225,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ id: copy.id }, { status: 201 });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
 
-  const existing = await loadOwnedProgram(params.id, auth.teamOwnerId);
+  const existing = await loadOwnedProgram(id, auth.teamOwnerId);
   if (!existing) return NextResponse.json({ error: "Program not found" }, { status: 404 });
 
   await db.$transaction([

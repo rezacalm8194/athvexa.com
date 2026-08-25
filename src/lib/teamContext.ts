@@ -82,7 +82,7 @@ export async function getCurrentTeamMembership(userId: string) {
   const memberships = await getAccessibleTeams(userId);
   if (memberships.length === 0) return null;
 
-  const cookieTeamId = cookies().get(TEAM_COOKIE)?.value;
+  const cookieTeamId = (await cookies()).get(TEAM_COOKIE)?.value;
   return memberships.find((membership) => membership.teamId === cookieTeamId) ?? memberships[0];
 }
 

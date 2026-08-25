@@ -8,7 +8,8 @@ import { getTeamOwnerId } from "@/lib/teamContext";
 
 const schema = z.object({ action: z.enum(["revoke", "regenerate"]) });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session || (session.role !== "COACH" && session.role !== "ASSISTANT")) {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const teamOwnerId = await getTeamOwnerId(session.sub);
 
-  const invite = await db.invite.findUnique({ where: { id: params.id } });
+  const invite = await db.invite.findUnique({ where: { id } });
   if (!invite || invite.coachId !== teamOwnerId) {
     return NextResponse.json({ error: "Invitation not found" }, { status: 404 });
   }

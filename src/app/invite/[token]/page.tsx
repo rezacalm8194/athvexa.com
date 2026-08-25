@@ -2,10 +2,11 @@ import AuthShell from "@/components/AuthShell";
 import RegisterForm from "@/components/RegisterForm";
 import { db, ensureDatabase } from "@/lib/db";
 
-export default async function InvitePage({ params }: { params: { token: string } }) {
+export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   await ensureDatabase();
   const invite = await db.invite.findUnique({
-    where: { token: params.token },
+    where: { token },
     include: { coach: { select: { name: true } } },
   });
 
@@ -43,7 +44,7 @@ export default async function InvitePage({ params }: { params: { token: string }
           : "Create your player account to get today's training and check in."
       }
     >
-      <RegisterForm inviteToken={params.token} inviteRole={role} />
+      <RegisterForm inviteToken={token} inviteRole={role} />
     </AuthShell>
   );
 }

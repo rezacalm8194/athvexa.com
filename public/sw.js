@@ -2,7 +2,7 @@
 // still opens offline. Phase 2 will add an IndexedDB write-queue so
 // check-ins made offline sync once the connection returns.
 
-const CACHE = "athvexa-shell-v4";
+const CACHE = "athvexa-shell-v5";
 const SHELL = ["/dashboard/player", "/dashboard/coach", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -17,32 +17,65 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+function isCacheableGet(request, response) {
+  if (request.method !== "GET" || !response.ok) return false;
+  if (new URL(request.url).origin !== self.location.origin) return false;
+  return true;
+}
+
+async function putInCache(request, response) {
+  if (!isCacheableGet(request, response)) return;
+  const cache = await caches.open(CACHE);
+  await cache.put(request, response.clone());
+}
+
+async function fromCacheOrOffline(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  return new Response("You're offline.", {
+    status: 503,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    await putInCache(request, response);
+    return response;
+  } catch {
+    return fromCacheOrOffline(request);
+  }
+}
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    await putInCache(request, response);
+    return response;
+  } catch {
+    return fromCacheOrOffline(request);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET") return; // writes (PATCH/POST) pass through untouched
+  if (request.method !== "GET") return;
 
-  // Always ask the server for page navigations so old redirects never get stuck.
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(request)));
+    event.respondWith(networkFirst(request));
     return;
   }
 
-  // Network-first for API calls, so data is always fresh when online.
-  if (request.url.includes("/api/")) {
-    event.respondWith(fetch(request).catch(() => caches.match(request)));
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
-  // Next.js chunks are content-hashed and must stay in sync with the HTML
-  // produced by the current deployment. Prefer the network so an old service
-  // worker can never pair a new page with stale client-side JavaScript.
-  if (new URL(request.url).pathname.startsWith("/_next/")) {
-    event.respondWith(fetch(request).catch(() => caches.match(request)));
-    return;
-  }
-
-  // Cache-first for the app shell / static assets.
-  event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).catch(() => caches.match("/dashboard/player")))
-  );
+  event.respondWith(cacheFirst(request));
 });

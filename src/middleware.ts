@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/auth";
+import { expiredSessionCookieOptions, SESSION_COOKIE, verifySession } from "@/lib/jwt";
+
+function redirectToLogin(req: NextRequest, pathname: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = "/login";
+  url.searchParams.set("next", pathname);
+  const res = NextResponse.redirect(url);
+  res.cookies.set(SESSION_COOKIE, "", expiredSessionCookieOptions());
+  return res;
+}
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
+  const session = token ? await verifySession(token) : null;
   const { pathname } = req.nextUrl;
   const hostname = req.nextUrl.hostname.toLowerCase();
   const siteMode = process.env.ATHVEXA_SITE_MODE?.trim().toLowerCase();
@@ -26,20 +36,25 @@ export async function middleware(req: NextRequest) {
 
   if (isAppHost && pathname === "/") {
     const url = req.nextUrl.clone();
-    url.pathname = token ? "/dashboard" : "/login";
-    return NextResponse.redirect(url);
+    url.pathname = session ? "/dashboard" : "/login";
+    const res = NextResponse.redirect(url);
+    if (token && !session) {
+      res.cookies.set(SESSION_COOKIE, "", expiredSessionCookieOptions());
+    }
+    return res;
   }
 
   const isDashboard = pathname.startsWith("/dashboard");
 
-  if (isDashboard && !token) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+  if (isDashboard && !session) {
+    return redirectToLogin(req, pathname);
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  if (token && !session) {
+    res.cookies.set(SESSION_COOKIE, "", expiredSessionCookieOptions());
+  }
+  return res;
 }
 
 export const config = {

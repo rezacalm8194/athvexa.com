@@ -30,11 +30,12 @@ async function ensurePlayerBelongsToCoach(playerId: string, teamOwnerId: string)
   return Boolean(player);
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
 
-  const assessment = await loadOwnedAssessment(params.id, auth.teamOwnerId);
+  const assessment = await loadOwnedAssessment(id, auth.teamOwnerId);
   if (!assessment) return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
 
   const previous = await db.assessment.findFirst({
@@ -70,11 +71,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
 
-  const existing = await loadOwnedAssessment(params.id, auth.teamOwnerId);
+  const existing = await loadOwnedAssessment(id, auth.teamOwnerId);
   if (!existing) return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
 
   const body = await req.json().catch(() => null);
@@ -102,11 +104,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ id: existing.id });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
 
-  const existing = await loadOwnedAssessment(params.id, auth.teamOwnerId);
+  const existing = await loadOwnedAssessment(id, auth.teamOwnerId);
   if (!existing) return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
 
   await db.assessment.delete({ where: { id: existing.id } });

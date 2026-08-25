@@ -5,12 +5,13 @@ import { db, ensureDatabase } from "@/lib/db";
 
 const schema = z.object({ role: z.enum(["PLAYER", "ASSISTANT"]) });
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session || session.role !== "COACH") {
     return NextResponse.json({ error: "Only the head coach can change roles" }, { status: 403 });
   }
-  if (params.id === session.sub) {
+  if (id === session.sub) {
     return NextResponse.json({ error: "You can't change your own role" }, { status: 400 });
   }
 
@@ -22,13 +23,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 
-  const member = await db.user.findUnique({ where: { id: params.id } });
+  const member = await db.user.findUnique({ where: { id: id } });
   if (!member || member.coachId !== session.sub) {
     return NextResponse.json({ error: "Team member not found" }, { status: 404 });
   }
 
   const updated = await db.user.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { role: parsed.data.role },
   });
 

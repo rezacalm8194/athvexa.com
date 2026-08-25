@@ -10,7 +10,7 @@ and keep this Next.js app on the `app.` subdomain.
 
 ## Stack
 
-- Next.js 14 (App Router) + TypeScript
+- Next.js 15 (App Router) + TypeScript
 - Tailwind CSS — theme tokens in `tailwind.config.ts` mirror the landing
   page's palette (`#E02020` red / `#0A0A0A` black) and fonts (Barlow
   Condensed for display, Inter for body)
@@ -49,7 +49,7 @@ any other field, and that choice decides which dashboard they land on:
 - `COACH` / `ASSISTANT` → `/dashboard/coach` — the roster view
 
 `/dashboard` itself is just a role router (`src/app/dashboard/page.tsx`);
-`middleware.ts` gates all of `/dashboard/*` behind a valid session cookie.
+`middleware.ts` gates all of `/dashboard/*` behind a cryptographically verified session cookie.
 
 A coach can generate a shareable invite link ("Invite a player" button on
 their dashboard → `POST /api/invite`). Whoever opens `/invite/[token]` gets
@@ -118,8 +118,11 @@ transparent formula meant to be replaced by a coach-tunable model later).
 
 ## PWA — what's built vs. what's next
 
-`public/sw.js` caches the dashboard shell so the app still opens offline and
-serves cached data if a GET request fails. What's **not** built yet: an
+`public/sw.js` precaches the player and coach dashboard shells, then stores
+successful same-origin GET responses (`cache.put`) so navigations, hashed
+`/_next/` assets, and API reads can be served from cache when the network
+fails. Offline fallbacks stay on the requested URL (or a 503) instead of
+sending every miss to `/dashboard/player`. What's **not** built yet: an
 IndexedDB write-queue so a check-in made while offline syncs once the
 connection returns — that's real, standalone work and belongs in Phase 2.
 You'll also want to drop real `icon-192.png` / `icon-512.png` files into

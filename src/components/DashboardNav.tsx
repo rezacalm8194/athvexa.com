@@ -83,7 +83,7 @@ export default function DashboardNav({
   }
 
   async function signOut() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/login");
     router.refresh();
   }
