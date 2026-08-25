@@ -8,7 +8,7 @@ export default function KpiCard({
   loading = false,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: ComponentType<{ className?: string }>;
   tone?: "neutral" | "warn";
   loading?: boolean;

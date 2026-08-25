@@ -420,6 +420,7 @@ export default function AssessmentsPageView() {
   };
 
   const hasFilters = search.trim() !== "" || type !== "all" || month !== "";
+  const assessmentCoverage = players.length === 0 ? 0 : Math.round((kpis.playersAssessed / players.length) * 100);
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -450,14 +451,28 @@ export default function AssessmentsPageView() {
         )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total assessments" value={kpis.totalAssessments} icon={ClipboardCheckIcon} loading={loading} />
-        <KpiCard label="Assessments this month" value={kpis.assessmentsThisMonth} icon={CalendarIcon} loading={loading} />
-        <KpiCard label="Players assessed" value={kpis.playersAssessed} icon={UsersIcon} loading={loading} />
-        <KpiCard label="Players not assessed" value={kpis.playersNotAssessed} icon={AlertIcon} tone="warn" loading={loading} />
-      </div>
+      {!loading && !error && players.length === 0 ? (
+        <div className="mt-8 flex items-start gap-4 rounded-lg border border-line-1 bg-ink-3 p-5 sm:max-w-2xl sm:p-6">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-red/15 text-red">
+            <UsersIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-black text-white">Start with your first player</h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-smoke-3">
+              Add a player to your team. Once they join, you can create assessments and track their development here.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard label="Players needing assessment" value={kpis.playersNotAssessed} icon={AlertIcon} tone="warn" loading={loading} />
+            <KpiCard label="Team assessment coverage" value={`${assessmentCoverage}%`} icon={UsersIcon} loading={loading} />
+            <KpiCard label="Assessments this month" value={kpis.assessmentsThisMonth} icon={CalendarIcon} loading={loading} />
+            <KpiCard label="Total assessments" value={kpis.totalAssessments} icon={ClipboardCheckIcon} loading={loading} />
+          </div>
 
-      <div className="mt-5 rounded-lg border border-line-1 bg-ink-3 p-4">
+          <div className="mt-5 rounded-lg border border-line-1 bg-ink-3 p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_180px]">
           <SearchInput value={search} onChange={setSearch} placeholder="Search player" />
           <select
@@ -481,9 +496,9 @@ export default function AssessmentsPageView() {
             aria-label="Month"
           />
         </div>
-      </div>
+          </div>
 
-      <div className="mt-5 rounded-lg border border-line-1 bg-ink-3">
+          <div className="mt-5 rounded-lg border border-line-1 bg-ink-3">
         <div className="flex items-center justify-between border-b border-line-1 px-4 py-4">
           <div>
             <h2 className="font-display text-lg font-black text-white">Assessment list</h2>
@@ -509,28 +524,13 @@ export default function AssessmentsPageView() {
           {!loading && !error && assessments.length === 0 ? (
             <EmptyState
               icon={BarChartIcon}
-              title={players.length === 0 ? "No players yet" : hasFilters ? "No matching assessments" : "No assessments yet"}
-              description={players.length === 0 ? "Add players to your team before creating assessments." : "Create an assessment to start tracking player development."}
+              title={hasFilters ? "No matching assessments" : "No assessments yet"}
+              description="Create an assessment to start tracking player development."
               action={
-                players.length === 0 ? (
-                  <div className="mt-2 flex flex-col items-center gap-2">
-                    <Link href="/dashboard/coach/players#invite-panel" className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm">
-                      <PlusIcon className="h-4 w-4" />
-                      Add your first player
-                    </Link>
-                    <Link
-                      href="/dashboard/coach/players"
-                      className="text-xs font-semibold text-smoke-3 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red focus-visible:ring-offset-2 focus-visible:ring-offset-ink-3"
-                    >
-                      Go to Players
-                    </Link>
-                  </div>
-                ) : (
-                  <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={openCreate}>
-                    <PlusIcon className="h-4 w-4" />
-                    New assessment
-                  </button>
-                )
+                <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={openCreate}>
+                  <PlusIcon className="h-4 w-4" />
+                  New assessment
+                </button>
               }
             />
           ) : null}
@@ -585,7 +585,9 @@ export default function AssessmentsPageView() {
             </div>
           ) : null}
         </div>
-      </div>
+          </div>
+        </>
+      )}
 
       <AssessmentModal
         open={modal != null}
