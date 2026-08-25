@@ -44,12 +44,14 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (error) {
     console.error("Login failed", error);
-    const detail = error instanceof Error ? error.message : "";
+    const detail = error instanceof Error ? error.message : "Unknown database error";
     if (detail.includes("JWT_SECRET")) {
-      return NextResponse.json({ error: "Server auth secret is not configured." }, { status: 500 });
+      return NextResponse.json({ error: "Server auth secret is not configured. Set JWT_SECRET in Pachim (32+ characters)." }, { status: 500 });
     }
     return NextResponse.json(
-      { error: "Could not sign in. Make sure the database is configured and migrated." },
+      {
+        error: `Could not sign in. ${detail}`,
+      },
       { status: 500 }
     );
   }

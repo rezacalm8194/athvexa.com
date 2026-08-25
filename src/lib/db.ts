@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
 // Prevent hot-reload from spawning a new PrismaClient on every save in dev.
@@ -5,13 +7,33 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function resolveSqliteUrl() {
   const raw = (process.env.DATABASE_URL ?? "").trim();
-  if (raw.startsWith("file:")) return raw;
-  if (raw) {
-    console.error(
-      "[db] DATABASE_URL is not a SQLite file: URL. Prisma schema is sqlite; using file:./dev.db so login can run."
-    );
-  }
-  return "file:./dev.db";
+  const requested = raw.startsWith("file:") ? raw.slice("file:".length).replace(/^\.\//, "") : "dev.db";
+  const cwd = process.cwd();
+  const candidates = [
+    path.resolve(cwd, requested),
+    path.resolve(cwd, "dev.db"),
+    path.resolve(cwd, "prisma", "dev.db"),
+    path.resolve(cwd, "prisma", requested),
+  ];
+  const unique = [...new Set(candidates)];
+  const existing = unique
+    .filter((filePath) => {
+      try {
+        return fs.existsSync(filePath);
+      } catch {
+        return false;
+      }
+    })
+    .sort((a, b) => {
+      try {
+        return fs.statSync(b).size - fs.statSync(a).size;
+      } catch {
+        return 0;
+      }
+    });
+  const chosen = existing[0] ?? path.resolve(cwd, "prisma", "dev.db");
+  fs.mkdirSync(path.dirname(chosen), { recursive: true });
+  return `file:${chosen.replace(/\\/g, "/")}`;
 }
 
 const sqliteUrl = resolveSqliteUrl();
@@ -26,13 +48,21 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 
 let sqliteReady: Promise<void> | null = null;
 
+function isIgnorableSchemaError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /readonly|SQLITE_READONLY|SQLITE_BUSY|already exists|duplicate column/i.test(message);
+}
+
 /**
  * SQLite table bootstrap. Runs at most once per process — not on every query.
- * Always runs: a Postgres DATABASE_URL must not skip setup or be passed to the sqlite client.
  */
 export function ensureDatabase() {
   sqliteReady ??= ensureSqliteSchema().catch((error) => {
     sqliteReady = null;
+    if (isIgnorableSchemaError(error)) {
+      console.error("[db] Schema bootstrap skipped", error);
+      return;
+    }
     throw error;
   });
   return sqliteReady;
@@ -60,39 +90,11 @@ async function ensureSqliteSchema() {
     );
   `);
   let userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
-  // Early SQLite databases required email. Rebuild this small root table once so
-  // accounts may use a phone number without inventing a fake email address.
-  if (userColumns.find((c) => c.name === "email")?.notnull === 1) {
-    try {
-      await db.$executeRawUnsafe(`PRAGMA foreign_keys = OFF;`);
-      await db.$executeRawUnsafe(`
-        CREATE TABLE "User_contact_migration" (
-          "id" TEXT NOT NULL PRIMARY KEY,
-          "name" TEXT NOT NULL,
-          "email" TEXT,
-          "phone" TEXT,
-          "passwordHash" TEXT NOT NULL,
-          "role" TEXT NOT NULL DEFAULT 'PLAYER',
-          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "coachId" TEXT,
-          CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User_contact_migration" ("id") ON DELETE SET NULL ON UPDATE CASCADE
-        );
-      `);
-      await db.$executeRawUnsafe(`
-        INSERT INTO "User_contact_migration" ("id", "name", "email", "passwordHash", "role", "createdAt", "coachId")
-        SELECT "id", "name", "email", "passwordHash", "role", "createdAt", "coachId" FROM "User";
-      `);
-      await db.$executeRawUnsafe(`DROP TABLE "User";`);
-      await db.$executeRawUnsafe(`ALTER TABLE "User_contact_migration" RENAME TO "User";`);
-    } catch (error) {
-      console.error("[db] Skipping User email-null rebuild so login can proceed", error);
-    } finally {
-      await db.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`).catch(() => undefined);
-    }
-    userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
-  }
+  // Do not rebuild/drop User on a live database — that takes the app down.
+  // Phone-only accounts work once the optional column exists.
   if (!userColumns.some((c) => c.name === "phone")) {
     await db.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN "phone" TEXT;`);
+    userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
   }
   await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");`);
   await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_phone_key" ON "User"("phone");`);

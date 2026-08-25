@@ -3,7 +3,8 @@
 // to "postgresql" + DATABASE_URL when moving off file-based SQLite.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x", "debian-openssl-1.1.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
