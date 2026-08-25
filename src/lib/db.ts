@@ -32,7 +32,11 @@ function resolveSqliteUrl() {
       }
     });
   const chosen = existing[0] ?? path.resolve(cwd, "prisma", "dev.db");
-  fs.mkdirSync(path.dirname(chosen), { recursive: true });
+  try {
+    fs.mkdirSync(path.dirname(chosen), { recursive: true });
+  } catch (error) {
+    console.error("[db] could not ensure sqlite directory", error);
+  }
   return `file:${chosen.replace(/\\/g, "/")}`;
 }
 
