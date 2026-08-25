@@ -7,13 +7,17 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: true,
 });
 
 const barlow = Barlow_Condensed({
   subsets: ["latin"],
   variable: "--font-barlow",
-  weight: ["700", "800", "900"],
+  weight: ["700"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

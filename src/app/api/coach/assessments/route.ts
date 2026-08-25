@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
+import { previousScoresById } from "@/lib/assessmentPrevious";
 import { createNotification, notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const assessmentSchema = z.object({
@@ -59,13 +60,25 @@ export async function GET(req: NextRequest) {
     ...(search
       ? {
           player: {
-            OR: [{ name: { contains: search } }, { email: { contains: search } }],
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { email: { contains: search, mode: "insensitive" } },
+            ],
           },
         }
       : {}),
   };
 
-  const [assessments, totalAssessments, thisMonthCount, assessedPlayers] = await Promise.all([
+  const historySelect = {
+    id: true,
+    playerId: true,
+    type: true,
+    date: true,
+    createdAt: true,
+    score: true,
+  } as const;
+
+  const [assessments, totalAssessments, thisMonthCount, history] = await Promise.all([
     db.assessment.findMany({
       where,
       include: { player: { select: { id: true, name: true, email: true } } },
@@ -75,31 +88,13 @@ export async function GET(req: NextRequest) {
     db.assessment.count({ where: { coachId: teamOwnerId, playerId: { in: playerIds }, date: currentMonth } }),
     db.assessment.findMany({
       where: { coachId: teamOwnerId, playerId: { in: playerIds } },
-      select: { playerId: true },
-      distinct: ["playerId"],
+      select: historySelect,
+      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     }),
   ]);
 
-  const previousById = new Map<string, number | null>();
-  await Promise.all(
-    assessments.map(async (assessment) => {
-      const previous = await db.assessment.findFirst({
-        where: {
-          coachId: teamOwnerId,
-          playerId: assessment.playerId,
-          type: assessment.type,
-          OR: [
-            { date: { lt: assessment.date } },
-            { date: assessment.date, createdAt: { lt: assessment.createdAt } },
-          ],
-          NOT: { id: assessment.id },
-        },
-        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-        select: { score: true },
-      });
-      previousById.set(assessment.id, previous?.score ?? null);
-    })
-  );
+  const previousById = previousScoresById(assessments, history);
+  const assessedPlayers = new Set(history.map((row) => row.playerId)).size;
 
   return NextResponse.json({
     players,
@@ -122,8 +117,8 @@ export async function GET(req: NextRequest) {
     kpis: {
       totalAssessments,
       assessmentsThisMonth: thisMonthCount,
-      playersAssessed: assessedPlayers.length,
-      playersNotAssessed: Math.max(players.length - assessedPlayers.length, 0),
+      playersAssessed: assessedPlayers,
+      playersNotAssessed: Math.max(players.length - assessedPlayers, 0),
     },
     types: ASSESSMENT_TYPES,
   });

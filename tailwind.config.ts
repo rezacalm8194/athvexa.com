@@ -34,6 +34,10 @@ const config: Config = {
         display: ["var(--font-barlow)", "sans-serif"],
         body: ["var(--font-inter)", "sans-serif"],
       },
+      fontWeight: {
+        extrabold: "700",
+        black: "700",
+      },
       borderRadius: {
         md: "10px",
         lg: "16px",

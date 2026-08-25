@@ -1,13 +1,12 @@
 // Athvexa — Phase 1 data model
-// Dev uses SQLite for zero-setup. Switch provider to "postgresql" + set
-// DATABASE_URL to go to Postgres for production (see .env.example).
+// PostgreSQL only. Local: docker compose up -d (see docker-compose.yml).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -126,6 +125,8 @@ model Notification {
   dedupeKey   String?   @unique
   readAt      DateTime?
   createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model MessageConversation {
@@ -341,4 +342,8 @@ model Assessment {
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([coachId, playerId, type, date, createdAt])
+  @@index([coachId, date])
+  @@index([playerId])
 }

@@ -40,15 +40,15 @@ export async function getMessageContacts(session: MessageSession) {
   if (session.role === "PLAYER") {
     const memberships = await getAccessibleTeams(session.sub);
     const coachIds = new Set<string>();
-    for (const membership of memberships) {
+    const teamIds = memberships.map((membership) => membership.teamId);
+    if (teamIds.length > 0) {
       const members = await db.teamMember.findMany({
         where: {
-          teamId: membership.teamId,
+          teamId: { in: teamIds },
           role: { in: ["OWNER", "HEAD_COACH", "ASSISTANT_COACH"] },
           userId: { not: session.sub },
         },
-        include: { user: { select: { id: true, name: true, role: true } } },
-        orderBy: { createdAt: "asc" },
+        select: { userId: true },
       });
       members.forEach((member) => coachIds.add(member.userId));
     }

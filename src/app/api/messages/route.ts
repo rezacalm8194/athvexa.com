@@ -42,25 +42,23 @@ export async function GET() {
         coach: { select: { id: true, name: true } },
         player: { select: { id: true, name: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1 },
+        _count: {
+          select: {
+            messages: {
+              where: {
+                senderId: { not: session.sub },
+                readAt: null,
+              },
+            },
+          },
+        },
       },
       orderBy: { updatedAt: "desc" },
     }),
     getMessageContacts(session),
   ]);
 
-  const unreadByConversation = await Promise.all(
-    conversations.map((conversation) =>
-      db.message.count({
-        where: {
-          conversationId: conversation.id,
-          senderId: { not: session.sub },
-          readAt: null,
-        },
-      })
-    )
-  );
-
-  const items = conversations.map((conversation, index) => {
+  const items = conversations.map((conversation) => {
     const lastMessage = conversation.messages[0] ?? null;
     return {
       id: conversation.id,
@@ -68,14 +66,14 @@ export async function GET() {
       participantName: otherParticipantName(conversation, session.sub),
       lastMessage: lastMessage?.body ?? "",
       lastMessageTime: lastMessage?.createdAt ?? conversation.updatedAt,
-      unreadCount: unreadByConversation[index],
+      unreadCount: conversation._count.messages,
     };
   });
 
   return NextResponse.json({
     conversations: items,
     contacts,
-    unreadCount: unreadByConversation.reduce((sum, count) => sum + count, 0),
+    unreadCount: items.reduce((sum, item) => sum + item.unreadCount, 0),
   });
 }
 
