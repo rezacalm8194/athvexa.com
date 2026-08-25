@@ -53,11 +53,35 @@ function isIgnorableSchemaError(error: unknown) {
   return /readonly|SQLITE_READONLY|SQLITE_BUSY|already exists|duplicate column|returned results/i.test(message);
 }
 
+async function sqliteExec(sql: string) {
+  try {
+    await db.$executeRawUnsafe(sql);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/returned results/i.test(message)) {
+      await db.$queryRawUnsafe(sql);
+      return;
+    }
+    if (isIgnorableSchemaError(error)) {
+      console.error("[db] ignored schema statement", message.slice(0, 180));
+      return;
+    }
+    throw error;
+  }
+}
+
 /**
  * SQLite table bootstrap. Runs at most once per process — not on every query.
+ * If the User table already exists (production), skip DDL so login cannot 500.
  */
 export function ensureDatabase() {
-  sqliteReady ??= ensureSqliteSchema().catch((error) => {
+  sqliteReady ??= (async () => {
+    const tables = await db.$queryRawUnsafe<{ name: string }[]>(
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'User' LIMIT 1`
+    );
+    if (tables.length > 0) return;
+    await ensureSqliteSchema();
+  })().catch((error) => {
     sqliteReady = null;
     if (isIgnorableSchemaError(error)) {
       console.error("[db] Schema bootstrap skipped", error);
@@ -77,7 +101,7 @@ async function ensureSqliteSchema() {
     // Some hosts reject WAL; continue with the default journal.
   }
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "User" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "name" TEXT NOT NULL,
@@ -94,13 +118,13 @@ async function ensureSqliteSchema() {
   // Do not rebuild/drop User on a live database — that takes the app down.
   // Phone-only accounts work once the optional column exists.
   if (!userColumns.some((c) => c.name === "phone")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN "phone" TEXT;`);
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "phone" TEXT;`);
     userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
   }
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");`);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_phone_key" ON "User"("phone");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "User_phone_key" ON "User"("phone");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "DailyLog" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "date" TEXT NOT NULL,
@@ -121,16 +145,16 @@ async function ensureSqliteSchema() {
       CONSTRAINT "DailyLog_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "DailyLog_playerId_date_key" ON "DailyLog"("playerId", "date");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "DailyLog_playerId_date_key" ON "DailyLog"("playerId", "date");`);
   const dailyLogColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("DailyLog");`);
   if (!dailyLogColumns.some((c) => c.name === "bodyWeight")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "DailyLog" ADD COLUMN "bodyWeight" REAL;`);
+    await sqliteExec(`ALTER TABLE "DailyLog" ADD COLUMN "bodyWeight" REAL;`);
   }
   if (!dailyLogColumns.some((c) => c.name === "notes")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "DailyLog" ADD COLUMN "notes" TEXT;`);
+    await sqliteExec(`ALTER TABLE "DailyLog" ADD COLUMN "notes" TEXT;`);
   }
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Notification" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "userId" TEXT NOT NULL,
@@ -145,10 +169,10 @@ async function ensureSqliteSchema() {
       CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Notification_dedupeKey_key" ON "Notification"("dedupeKey");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "Notification_dedupeKey_key" ON "Notification"("dedupeKey");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "MessageConversation" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "coachId" TEXT NOT NULL,
@@ -159,12 +183,12 @@ async function ensureSqliteSchema() {
       CONSTRAINT "MessageConversation_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "MessageConversation_coachId_playerId_key" ON "MessageConversation"("coachId", "playerId");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "MessageConversation_coachId_idx" ON "MessageConversation"("coachId");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "MessageConversation_playerId_idx" ON "MessageConversation"("playerId");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "MessageConversation_updatedAt_idx" ON "MessageConversation"("updatedAt");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "MessageConversation_coachId_playerId_key" ON "MessageConversation"("coachId", "playerId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "MessageConversation_coachId_idx" ON "MessageConversation"("coachId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "MessageConversation_playerId_idx" ON "MessageConversation"("playerId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "MessageConversation_updatedAt_idx" ON "MessageConversation"("updatedAt");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Message" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "conversationId" TEXT NOT NULL,
@@ -179,10 +203,10 @@ async function ensureSqliteSchema() {
       CONSTRAINT "Message_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Message_conversationId_createdAt_idx" ON "Message"("conversationId", "createdAt");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Message_senderId_idx" ON "Message"("senderId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Message_conversationId_createdAt_idx" ON "Message"("conversationId", "createdAt");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Message_senderId_idx" ON "Message"("senderId");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Task" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "dailyLogId" TEXT NOT NULL,
@@ -193,7 +217,7 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "CoachNote" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "playerId" TEXT NOT NULL,
@@ -203,9 +227,9 @@ async function ensureSqliteSchema() {
       CONSTRAINT "CoachNote_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "CoachNote_playerId_date_key" ON "CoachNote"("playerId", "date");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "CoachNote_playerId_date_key" ON "CoachNote"("playerId", "date");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "PlanItem" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "playerId" TEXT NOT NULL,
@@ -219,7 +243,7 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Habit" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "playerId" TEXT NOT NULL,
@@ -233,7 +257,7 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "HabitLog" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "habitId" TEXT NOT NULL,
@@ -241,9 +265,9 @@ async function ensureSqliteSchema() {
       CONSTRAINT "HabitLog_habitId_fkey" FOREIGN KEY ("habitId") REFERENCES "Habit" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "HabitLog_habitId_date_key" ON "HabitLog"("habitId", "date");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "HabitLog_habitId_date_key" ON "HabitLog"("habitId", "date");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Goal" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "playerId" TEXT NOT NULL,
@@ -259,7 +283,7 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Invite" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "token" TEXT NOT NULL,
@@ -277,32 +301,32 @@ async function ensureSqliteSchema() {
       CONSTRAINT "Invite_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Invite_token_key" ON "Invite"("token");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "Invite_token_key" ON "Invite"("token");`);
   const inviteColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Invite");`);
   if (!inviteColumns.some((c) => c.name === "revoked")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "revoked" BOOLEAN NOT NULL DEFAULT false;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "revoked" BOOLEAN NOT NULL DEFAULT false;`);
   }
   if (!inviteColumns.some((c) => c.name === "acceptedUserId")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "acceptedUserId" TEXT;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "acceptedUserId" TEXT;`);
   }
   if (!inviteColumns.some((c) => c.name === "teamId")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "teamId" TEXT;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "teamId" TEXT;`);
   }
   if (!inviteColumns.some((c) => c.name === "email")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "email" TEXT;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "email" TEXT;`);
   }
   if (!inviteColumns.some((c) => c.name === "phone")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "phone" TEXT;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "phone" TEXT;`);
   }
   if (!inviteColumns.some((c) => c.name === "maxUses")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "maxUses" INTEGER NOT NULL DEFAULT 1;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "maxUses" INTEGER NOT NULL DEFAULT 1;`);
   }
   if (!inviteColumns.some((c) => c.name === "useCount")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "useCount" INTEGER NOT NULL DEFAULT 0;`);
+    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "useCount" INTEGER NOT NULL DEFAULT 0;`);
   }
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Program" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "coachId" TEXT NOT NULL,
@@ -320,7 +344,7 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "ProgramSession" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "programId" TEXT NOT NULL,
@@ -334,7 +358,7 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "ProgramSessionProgress" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "playerId" TEXT NOT NULL,
@@ -348,9 +372,9 @@ async function ensureSqliteSchema() {
       CONSTRAINT "ProgramSessionProgress_programSessionId_fkey" FOREIGN KEY ("programSessionId") REFERENCES "ProgramSession" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramSessionProgress_playerId_programSessionId_key" ON "ProgramSessionProgress"("playerId", "programSessionId");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramSessionProgress_playerId_programSessionId_key" ON "ProgramSessionProgress"("playerId", "programSessionId");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "ProgramAssignment" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "programId" TEXT NOT NULL,
@@ -360,9 +384,9 @@ async function ensureSqliteSchema() {
       CONSTRAINT "ProgramAssignment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramAssignment_programId_playerId_key" ON "ProgramAssignment"("programId", "playerId");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramAssignment_programId_playerId_key" ON "ProgramAssignment"("programId", "playerId");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Assessment" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "coachId" TEXT NOT NULL,
@@ -377,11 +401,11 @@ async function ensureSqliteSchema() {
       CONSTRAINT "Assessment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Assessment_coachId_playerId_type_date_createdAt_idx" ON "Assessment"("coachId", "playerId", "type", "date", "createdAt");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Assessment_coachId_date_idx" ON "Assessment"("coachId", "date");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Assessment_playerId_idx" ON "Assessment"("playerId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_coachId_playerId_type_date_createdAt_idx" ON "Assessment"("coachId", "playerId", "type", "date", "createdAt");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_coachId_date_idx" ON "Assessment"("coachId", "date");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_playerId_idx" ON "Assessment"("playerId");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Team" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "name" TEXT NOT NULL,
@@ -410,17 +434,17 @@ async function ensureSqliteSchema() {
     ["defaultLanguage", "TEXT"],
   ] as const) {
     if (!teamColumns.some((column) => column.name === name)) {
-      await db.$executeRawUnsafe(`ALTER TABLE "Team" ADD COLUMN "${name}" ${type};`);
+      await sqliteExec(`ALTER TABLE "Team" ADD COLUMN "${name}" ${type};`);
     }
   }
   if (!teamColumns.some((column) => column.name === "updatedAt")) {
-    await db.$executeRawUnsafe(`ALTER TABLE "Team" ADD COLUMN "updatedAt" DATETIME;`);
-    await db.$executeRawUnsafe(`UPDATE "Team" SET "updatedAt" = COALESCE("updatedAt", CURRENT_TIMESTAMP);`);
+    await sqliteExec(`ALTER TABLE "Team" ADD COLUMN "updatedAt" DATETIME;`);
+    await sqliteExec(`UPDATE "Team" SET "updatedAt" = COALESCE("updatedAt", CURRENT_TIMESTAMP);`);
   }
-  await db.$executeRawUnsafe(`DROP INDEX IF EXISTS "Team_coachId_key";`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Team_coachId_idx" ON "Team"("coachId");`);
+  await sqliteExec(`DROP INDEX IF EXISTS "Team_coachId_key";`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Team_coachId_idx" ON "Team"("coachId");`);
 
-  await db.$executeRawUnsafe(`
+  await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "TeamMember" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "teamId" TEXT NOT NULL,
@@ -432,7 +456,7 @@ async function ensureSqliteSchema() {
       CONSTRAINT "TeamMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     );
   `);
-  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "TeamMember_teamId_userId_key" ON "TeamMember"("teamId", "userId");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TeamMember_userId_idx" ON "TeamMember"("userId");`);
-  await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TeamMember_teamId_idx" ON "TeamMember"("teamId");`);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "TeamMember_teamId_userId_key" ON "TeamMember"("teamId", "userId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "TeamMember_userId_idx" ON "TeamMember"("userId");`);
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "TeamMember_teamId_idx" ON "TeamMember"("teamId");`);
 }
