@@ -64,6 +64,11 @@ if errorlevel 1 (
 
 echo.
 echo Done. GitHub is updated.
-echo On Pachim: wait for deploy to finish, Node start args = start, PORT=3002 in env.
-echo Deploy command should include: npm run build
+echo.
+echo Pachim checklist:
+echo   1. Deployments: wait until status is green ^(تمام شده^)
+echo   2. Nodejs args: start -- --port 3002
+echo   3. Env: PORT=3002 and JWT_SECRET=... ^(32+ chars^)
+echo   4. Commands / deploy hook: npm run build
+echo   5. Nodejs: Restart, then open Logs if site is still 404
 pause
