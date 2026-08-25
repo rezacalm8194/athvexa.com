@@ -21,7 +21,7 @@ import {
   WhatsAppIcon,
 } from "@/components/icons";
 
-type InviteRole = "PLAYER" | "ASSISTANT";
+type InviteRole = "PLAYER" | "ASSISTANT" | "COACH";
 type RoleFilter = "all" | InviteRole;
 type InviteStatusValue = "pending" | "accepted" | "revoked" | "expired";
 type StatusFilter = "all" | InviteStatusValue;
@@ -34,6 +34,8 @@ type Invite = {
   createdAt: string;
   expiresAt: string;
   usedAt: string | null;
+  email: string | null;
+  phone: string | null;
   acceptedUser: { id: string; name: string; email: string } | null;
 };
 
@@ -59,6 +61,7 @@ const STATUS_LABEL: Record<InviteStatusValue, string> = {
 const ROLE_LABEL: Record<InviteRole, string> = {
   PLAYER: "Player",
   ASSISTANT: "Assistant coach",
+  COACH: "Coach",
 };
 
 const emptyKpis: Record<InviteStatusValue, number> = {
@@ -96,6 +99,11 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("PLAYER");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [expiration, setExpiration] = useState("14");
+  const [customExpiresAt, setCustomExpiresAt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -132,17 +140,28 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
   const kpis = data?.kpis ?? emptyKpis;
   const hasFilters = roleFilter !== "all" || statusFilter !== "all" || search.trim() !== "";
 
-  async function createInvite() {
+  async function createInvite(event?: React.FormEvent) {
+    event?.preventDefault();
     setGenerating(true);
     try {
       const res = await fetch("/api/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: inviteRole }),
+        body: JSON.stringify({
+          role: inviteRole,
+          email: inviteEmail.trim() || undefined,
+          phone: invitePhone.trim().replace(/[\s()-]/g, "") || undefined,
+          ...(expiration === "custom"
+            ? { expiresAt: new Date(customExpiresAt).toISOString() }
+            : { expiresInDays: Number(expiration) }),
+        }),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Could not create invitation");
       showToast("Invitation created.");
+      setInviteOpen(false);
+      setInviteEmail("");
+      setInvitePhone("");
       await loadInvites();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not create invitation", "error");
@@ -159,18 +178,19 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
   }
 
   function shareMessage(invite: Invite) {
-    return invite.role === "ASSISTANT"
+    return invite.role === "ASSISTANT" || invite.role === "COACH"
       ? `${coachName} invited you to join their coaching staff on Athvexa: ${invite.url}`
       : `${coachName} invited you to join their team on Athvexa: ${invite.url}`;
   }
 
   function sendViaWhatsApp(invite: Invite) {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage(invite))}`, "_blank");
+    const recipient = invite.phone?.replace(/\D/g, "") ?? "";
+    window.open(`https://wa.me/${recipient}?text=${encodeURIComponent(shareMessage(invite))}`, "_blank");
   }
 
   function sendViaTelegram(invite: Invite) {
     const caption =
-      invite.role === "ASSISTANT"
+      invite.role === "ASSISTANT" || invite.role === "COACH"
         ? `${coachName} invited you to join their coaching staff on Athvexa`
         : `${coachName} invited you to join their team on Athvexa`;
     window.open(`https://t.me/share/url?url=${encodeURIComponent(invite.url)}&text=${encodeURIComponent(caption)}`, "_blank");
@@ -225,18 +245,9 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
           <p className="mt-2 text-sm text-smoke-3">Invite players and assistant coaches and manage team access.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select
-            className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red"
-            value={inviteRole}
-            onChange={(event) => setInviteRole(event.target.value as InviteRole)}
-            aria-label="Invitation role"
-          >
-            <option value="PLAYER">Player</option>
-            {canManageRoles ? <option value="ASSISTANT">Assistant coach</option> : null}
-          </select>
-          <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={createInvite} disabled={generating}>
+          <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setInviteOpen(true)}>
             <PlusIcon className="h-4 w-4" />
-            {generating ? "Creating..." : "Create invitation"}
+            Create invitation
           </button>
         </div>
       </div>
@@ -259,6 +270,7 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
             <option value="all">All roles</option>
             <option value="PLAYER">Player</option>
             <option value="ASSISTANT">Assistant coach</option>
+            <option value="COACH">Coach</option>
           </select>
           <select
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red"
@@ -276,8 +288,8 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none placeholder:text-smoke-4 focus:border-red"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search accepted user name or email"
-            aria-label="Search accepted user name or email"
+            placeholder="Search name, email or mobile"
+            aria-label="Search invitations by name, email or mobile"
           />
         </div>
       </div>
@@ -312,7 +324,7 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
               description={hasFilters ? "Try clearing filters or changing your search." : "Create an invitation to start adding players or assistant coaches."}
               action={
                 !hasFilters ? (
-                  <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={createInvite} disabled={generating}>
+                  <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setInviteOpen(true)}>
                     <PlusIcon className="h-4 w-4" />
                     Create invitation
                   </button>
@@ -359,7 +371,10 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
                               <div className="text-xs text-smoke-4">{invite.acceptedUser.email}</div>
                             </div>
                           ) : (
-                            <span className="text-smoke-4">-</span>
+                            <div className="text-xs text-smoke-4">
+                              <div>{invite.email ?? "-"}</div>
+                              {invite.phone ? <div className="mt-1">{invite.phone}</div> : null}
+                            </div>
                           )}
                         </td>
                         <td className="px-3 py-4">
@@ -414,6 +429,56 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
         onCancel={() => setRevoking(null)}
         onConfirm={confirmRevoke}
       />
+      {inviteOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+          <div className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-xl shadow-black/50">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <div className="eyebrow">Invitation</div>
+                <h2 className="mt-1 font-display text-2xl font-bold text-white">Invite a team member</h2>
+              </div>
+              <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setInviteOpen(false)}>Close</button>
+            </div>
+            <form className="space-y-4" onSubmit={createInvite}>
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">Role</span>
+                <select className="input-field mt-1" value={inviteRole} onChange={(event) => setInviteRole(event.target.value as InviteRole)}>
+                  <option value="PLAYER">Player</option>
+                  {canManageRoles ? <option value="ASSISTANT">Assistant coach</option> : null}
+                  {canManageRoles ? <option value="COACH">Coach</option> : null}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">Email optional</span>
+                <input className="input-field mt-1" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="member@example.com" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">Mobile number optional</span>
+                <input className="input-field mt-1" type="tel" inputMode="tel" autoComplete="tel" value={invitePhone} onChange={(event) => setInvitePhone(event.target.value)} placeholder="+989121234567" />
+                <span className="mt-1 block text-xs text-smoke-4">Include the country code.</span>
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">Expiration time</span>
+                <select className="input-field mt-1" value={expiration} onChange={(event) => setExpiration(event.target.value)}>
+                  <option value="1">24 hours</option>
+                  <option value="7">7 days</option>
+                  <option value="14">14 days</option>
+                  <option value="30">30 days</option>
+                  <option value="custom">Custom date and time</option>
+                </select>
+              </label>
+              {expiration === "custom" ? (
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">Custom expiration</span>
+                  <input className="input-field mt-1" type="datetime-local" value={customExpiresAt} min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)} onChange={(event) => setCustomExpiresAt(event.target.value)} required />
+                  <span className="mt-1 block text-xs text-smoke-4">Uses your current device time zone.</span>
+                </label>
+              ) : null}
+              <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating..." : "Create invitation"}</button>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -4,12 +4,14 @@ import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl } from "@/lib/invites";
-import { getCurrentTeamMembership } from "@/lib/teamContext";
+import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 
 const schema = z.object({
-  role: z.enum(["PLAYER", "ASSISTANT"]).default("PLAYER"),
+  role: z.enum(["PLAYER", "ASSISTANT", "COACH"]).default("PLAYER"),
   email: z.string().email().optional().or(z.literal("")),
-  expiresInDays: z.number().int().min(1).max(90).default(14),
+  phone: z.string().trim().regex(/^\+?[1-9]\d{7,14}$/, "Enter a valid mobile number with country code").optional().or(z.literal("")),
+  expiresInDays: z.number().int().min(1).max(90).optional(),
+  expiresAt: z.string().datetime().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -22,25 +24,34 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const parsed = schema.safeParse(body);
-  const role = parsed.success ? parsed.data.role : "PLAYER";
-  const email = parsed.success && parsed.data.email ? parsed.data.email : null;
-  const expiresInDays = parsed.success ? parsed.data.expiresInDays : 14;
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid invitation details" }, { status: 400 });
+  }
+  const role = parsed.data.role;
+  const email = parsed.data.email || null;
+  const phone = parsed.data.phone || null;
+  const expiresAt = parsed.data.expiresAt
+    ? new Date(parsed.data.expiresAt)
+    : new Date(Date.now() + 1000 * 60 * 60 * 24 * (parsed.data.expiresInDays ?? 14));
+
+  if (expiresAt.getTime() <= Date.now() + 5 * 60 * 1000) {
+    return NextResponse.json({ error: "Expiration must be at least 5 minutes in the future" }, { status: 400 });
+  }
+  if (expiresAt.getTime() > Date.now() + 366 * 24 * 60 * 60 * 1000) {
+    return NextResponse.json({ error: "Expiration cannot be more than one year away" }, { status: 400 });
+  }
 
   // Only the head coach can bring on another assistant coach.
-  if (role === "ASSISTANT" && session.role !== "COACH") {
+  if ((role === "ASSISTANT" || role === "COACH") && session.role !== "COACH") {
     return NextResponse.json(
-      { error: "Only the head coach can invite an assistant coach" },
+      { error: "Only the head coach can invite coaching staff" },
       { status: 403 }
     );
   }
 
   // Invites always attach to the team's head coach, even when an assistant
   // is the one sending them — so new members land on the same roster.
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
 
   const membership = await getCurrentTeamMembership(session.sub);
   if (!membership || membership.team.coachId !== teamOwnerId) {
@@ -57,7 +68,8 @@ export async function POST(req: NextRequest) {
       teamId: membership.teamId,
       role,
       email,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * expiresInDays),
+      phone,
+      expiresAt,
     },
   });
 
@@ -66,6 +78,7 @@ export async function POST(req: NextRequest) {
     url: buildInviteUrl(invite.token, req),
     role: invite.role,
     email: invite.email,
+    phone: invite.phone,
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
   });

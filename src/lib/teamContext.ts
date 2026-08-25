@@ -26,6 +26,11 @@ export function teamRoleLabel(role: string) {
     .join(" ");
 }
 
+export async function getTeamOwnerId(userId: string) {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { coachId: true } });
+  return user?.coachId ?? userId;
+}
+
 export async function ensureLegacyTeamMemberships(userId: string) {
   await ensureDatabase();
 

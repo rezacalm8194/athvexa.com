@@ -249,6 +249,7 @@ model Invite {
   team           Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
   role           String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
   email          String?
+  phone          String?
   usedAt         DateTime?
   revoked        Boolean  @default(false)
   createdAt      DateTime @default(now())

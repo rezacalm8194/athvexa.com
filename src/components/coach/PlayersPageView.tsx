@@ -25,8 +25,9 @@ type Player = {
 type CreatedInvite = {
   id: string;
   url: string;
-  role: "PLAYER";
+  role: "PLAYER" | "ASSISTANT" | "COACH";
   email: string | null;
+  phone: string | null;
   expiresAt: string;
 };
 
@@ -65,7 +66,10 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
   const [error, setError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [expiresInDays, setExpiresInDays] = useState(14);
+  const [phone, setPhone] = useState("");
+  const [inviteRole, setInviteRole] = useState<"PLAYER" | "ASSISTANT" | "COACH">("PLAYER");
+  const [expiration, setExpiration] = useState("14");
+  const [customExpiresAt, setCustomExpiresAt] = useState("");
   const [creating, setCreating] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [createdInvite, setCreatedInvite] = useState<CreatedInvite | null>(null);
@@ -114,9 +118,12 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        role: "PLAYER",
+        role: inviteRole,
         email: email.trim() || undefined,
-        expiresInDays,
+        phone: phone.trim().replace(/[\s()-]/g, "") || undefined,
+        ...(expiration === "custom"
+          ? { expiresAt: new Date(customExpiresAt).toISOString() }
+          : { expiresInDays: Number(expiration) }),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -128,8 +135,9 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
     setCreatedInvite({
       id: data.id,
       url: data.url,
-      role: "PLAYER",
+      role: data.role,
       email: data.email ?? null,
+      phone: data.phone ?? null,
       expiresAt: data.expiresAt,
     });
   }
@@ -143,7 +151,8 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
 
   function shareWhatsApp() {
     if (!createdInvite) return;
-    window.open(`https://wa.me/?text=${encodeURIComponent(inviteMessage(createdInvite))}`, "_blank");
+    const recipient = createdInvite.phone?.replace(/\D/g, "") ?? "";
+    window.open(`https://wa.me/${recipient}?text=${encodeURIComponent(inviteMessage(createdInvite))}`, "_blank");
   }
 
   function shareTelegram() {
@@ -264,7 +273,7 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Invitation</div>
-                <h2 className="mt-1 font-display text-2xl font-bold text-white">Invite your first player</h2>
+                <h2 className="mt-1 font-display text-2xl font-bold text-white">Invite a team member</h2>
               </div>
               <button type="button" onClick={closeInvite} className="btn-ghost !px-3 !py-2 text-xs">
                 Close
@@ -275,7 +284,28 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
               <form onSubmit={createInvite} className="space-y-4">
                 <label className="block">
                   <span className="text-xs font-semibold text-smoke-3">Role</span>
-                  <input className="input-field mt-1" value="Player" readOnly />
+                  <select
+                    className="input-field mt-1"
+                    value={inviteRole}
+                    onChange={(event) => setInviteRole(event.target.value as "PLAYER" | "ASSISTANT" | "COACH")}
+                  >
+                    <option value="PLAYER">Player</option>
+                    {_canManageRoles ? <option value="ASSISTANT">Assistant coach</option> : null}
+                    {_canManageRoles ? <option value="COACH">Coach</option> : null}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">Mobile number optional</span>
+                  <input
+                    className="input-field mt-1"
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    placeholder="+989121234567"
+                    autoComplete="tel"
+                  />
+                  <span className="mt-1 block text-xs text-smoke-4">Include the country code.</span>
                 </label>
                 <label className="block">
                   <span className="text-xs font-semibold text-smoke-3">Email optional</span>
@@ -291,16 +321,31 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
                   <span className="text-xs font-semibold text-smoke-3">Expiration time</span>
                   <select
                     className="input-field mt-1"
-                    value={expiresInDays}
-                    onChange={(event) => setExpiresInDays(Number(event.target.value))}
+                    value={expiration}
+                    onChange={(event) => setExpiration(event.target.value)}
                   >
                     {EXPIRATION_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
                     ))}
+                    <option value="custom">Custom date and time</option>
                   </select>
                 </label>
+                {expiration === "custom" ? (
+                  <label className="block">
+                    <span className="text-xs font-semibold text-smoke-3">Custom expiration</span>
+                    <input
+                      className="input-field mt-1"
+                      type="datetime-local"
+                      value={customExpiresAt}
+                      min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)}
+                      onChange={(event) => setCustomExpiresAt(event.target.value)}
+                      required
+                    />
+                    <span className="mt-1 block text-xs text-smoke-4">Uses your current device time zone.</span>
+                  </label>
+                ) : null}
                 {inviteError ? <p className="text-sm text-red-glow">{inviteError}</p> : null}
                 <button type="submit" className="btn-primary w-full !py-3 text-sm" disabled={creating}>
                   {creating ? "Creating..." : "Create invitation"}

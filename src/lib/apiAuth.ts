@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
+import { getTeamOwnerId } from "@/lib/teamContext";
 
 /**
  * Shared guard for coach-scoped API routes. Confirms the caller is a coach
@@ -18,11 +19,7 @@ export async function requireCoachApi() {
 
   await ensureDatabase();
 
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
 
   return { session, teamOwnerId, error: null } as const;
 }

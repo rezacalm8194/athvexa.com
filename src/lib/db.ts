@@ -221,6 +221,7 @@ async function ensureSqliteSchema() {
       "teamId" TEXT,
       "role" TEXT NOT NULL DEFAULT 'PLAYER',
       "email" TEXT,
+      "phone" TEXT,
       "usedAt" DATETIME,
       "revoked" BOOLEAN NOT NULL DEFAULT false,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -244,6 +245,9 @@ async function ensureSqliteSchema() {
   }
   if (!inviteColumns.some((c) => c.name === "email")) {
     await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "email" TEXT;`);
+  }
+  if (!inviteColumns.some((c) => c.name === "phone")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "phone" TEXT;`);
   }
   await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
 

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       }
       // Trust the invite's role from the database, not whatever the client sent —
       // otherwise anyone could self-promote to ASSISTANT by editing the request.
-      role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
+      role = invite.role === "COACH" ? "COACH" : invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
       coachId = invite.coachId;
       inviteIdToLink = invite.id;
       inviteTeamId = invite.teamId;
@@ -75,11 +75,11 @@ export async function POST(req: NextRequest) {
       if (inviteTeamId) {
         await db.teamMember.upsert({
           where: { teamId_userId: { teamId: inviteTeamId, userId: user.id } },
-          update: { role: role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER" },
+          update: { role: role === "COACH" ? "HEAD_COACH" : role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER" },
           create: {
             teamId: inviteTeamId,
             userId: user.id,
-            role: role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER",
+            role: role === "COACH" ? "HEAD_COACH" : role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER",
           },
         });
       }

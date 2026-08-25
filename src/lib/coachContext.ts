@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
+import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 
 /**
  * Shared guard for every page under /dashboard/coach/*: confirms the
@@ -15,11 +16,8 @@ export async function getCoachContext() {
 
   await ensureDatabase();
 
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
+  const membership = await getCurrentTeamMembership(session.sub);
 
   const team = await db.team
     .findFirst({
@@ -51,7 +49,7 @@ export async function getCoachContext() {
   return {
     session,
     team,
-    canManageRoles: session.role === "COACH",
-    roleLabel: session.role === "COACH" ? "Coach" : "Assistant coach",
+    canManageRoles: session.role === "COACH" && membership?.role !== "ASSISTANT_COACH",
+    roleLabel: membership?.role === "HEAD_COACH" ? "Coach" : session.role === "COACH" ? "Coach" : "Assistant coach",
   };
 }

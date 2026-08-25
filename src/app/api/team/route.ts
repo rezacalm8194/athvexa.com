@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
+import { getTeamOwnerId } from "@/lib/teamContext";
 
 const schema = z.object({
   name: z.string().min(2, "Team name is too short").max(60, "Team name is too long"),
@@ -16,11 +17,7 @@ export async function GET() {
 
   await ensureDatabase();
 
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
 
   const team = await db.team.findFirst({
     where: { coachId: teamOwnerId },

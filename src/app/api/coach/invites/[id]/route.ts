@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl, inviteStatus } from "@/lib/invites";
+import { getTeamOwnerId } from "@/lib/teamContext";
 
 const schema = z.object({ action: z.enum(["revoke", "regenerate"]) });
 
@@ -15,11 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   await ensureDatabase();
 
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
 
   const invite = await db.invite.findUnique({ where: { id: params.id } });
   if (!invite || invite.coachId !== teamOwnerId) {
@@ -47,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "Accepted invitations cannot be regenerated" }, { status: 400 });
   }
 
-  if (invite.role === "ASSISTANT" && session.role !== "COACH") {
+  if ((invite.role === "ASSISTANT" || invite.role === "COACH") && session.role !== "COACH") {
     return NextResponse.json({ error: "Only the head coach can invite an assistant coach" }, { status: 403 });
   }
 
@@ -57,7 +54,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     data: {
       token: nanoid(12),
       coachId: teamOwnerId,
+      teamId: invite.teamId,
       role: invite.role,
+      email: invite.email,
+      phone: invite.phone,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
     },
   });

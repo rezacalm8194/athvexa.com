@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { inviteStatus } from "@/lib/invites";
+import { getTeamOwnerId } from "@/lib/teamContext";
 
 function statusFor(score: number) {
   if (score >= 80) return { label: "Excellent", tone: "good" as const };
@@ -18,11 +19,7 @@ export async function GET() {
 
   await ensureDatabase();
 
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
 
   const date = new Date().toISOString().slice(0, 10);
 

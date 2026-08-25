@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl, inviteStatus, type InviteStatus } from "@/lib/invites";
+import { getTeamOwnerId } from "@/lib/teamContext";
 
-const ROLE_FILTERS = ["all", "PLAYER", "ASSISTANT"] as const;
+const ROLE_FILTERS = ["all", "PLAYER", "ASSISTANT", "COACH"] as const;
 const STATUS_FILTERS = ["all", "pending", "accepted", "expired", "revoked"] as const;
 
 type RoleFilter = (typeof ROLE_FILTERS)[number];
@@ -25,11 +26,7 @@ export async function GET(req: NextRequest) {
 
   await ensureDatabase();
 
-  let teamOwnerId = session.sub;
-  if (session.role === "ASSISTANT") {
-    const me = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
-    teamOwnerId = me?.coachId ?? session.sub;
-  }
+  const teamOwnerId = await getTeamOwnerId(session.sub);
 
   const roleFilter = readRoleFilter(req.nextUrl.searchParams.get("role"));
   const statusFilter = readStatusFilter(req.nextUrl.searchParams.get("status"));
@@ -63,7 +60,7 @@ export async function GET(req: NextRequest) {
   const filteredInvites = invites.filter((invite) => {
     const status = inviteStatus(invite);
     const matchesStatus = statusFilter === "all" || status === statusFilter;
-    const acceptedUserText = `${invite.acceptedUser?.name ?? ""} ${invite.acceptedUser?.email ?? ""}`.toLowerCase();
+    const acceptedUserText = `${invite.acceptedUser?.name ?? ""} ${invite.acceptedUser?.email ?? ""} ${invite.email ?? ""} ${invite.phone ?? ""}`.toLowerCase();
     const matchesSearch = !search || acceptedUserText.includes(search);
     return matchesStatus && matchesSearch;
   });
@@ -77,6 +74,8 @@ export async function GET(req: NextRequest) {
       createdAt: invite.createdAt,
       expiresAt: invite.expiresAt,
       usedAt: invite.usedAt,
+      email: invite.email,
+      phone: invite.phone,
       acceptedUser: invite.acceptedUser
         ? {
             id: invite.acceptedUser.id,

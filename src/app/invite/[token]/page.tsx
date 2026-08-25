@@ -24,7 +24,7 @@ export default async function InvitePage({ params }: { params: { token: string }
     );
   }
 
-  const role = invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
+  const role = invite.role === "COACH" ? "COACH" : invite.role === "ASSISTANT" ? "ASSISTANT" : "PLAYER";
   const team = invite.teamId
     ? await db.team.findUnique({ where: { id: invite.teamId }, select: { name: true } })
     : await db.team.findFirst({ where: { coachId: invite.coachId }, orderBy: { createdAt: "asc" }, select: { name: true } });
@@ -33,13 +33,13 @@ export default async function InvitePage({ params }: { params: { token: string }
   return (
     <AuthShell
       title={
-        role === "ASSISTANT"
+        role === "ASSISTANT" || role === "COACH"
           ? `Join ${teamLabel}'s staff on Athvexa`
           : `Join ${teamLabel} on Athvexa`
       }
       subtitle={
-        role === "ASSISTANT"
-          ? "Create your assistant coach account to help manage the roster."
+        role === "ASSISTANT" || role === "COACH"
+          ? `Create your ${role === "COACH" ? "coach" : "assistant coach"} account to help manage the roster.`
           : "Create your player account to get today's training and check in."
       }
     >

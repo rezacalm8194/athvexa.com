@@ -10,7 +10,7 @@ export default function RegisterForm({
   inviteRole,
 }: {
   inviteToken?: string;
-  inviteRole?: "PLAYER" | "ASSISTANT";
+  inviteRole?: "PLAYER" | "ASSISTANT" | "COACH";
 }) {
   const router = useRouter();
   const [role, setRole] = useState<Role | null>(inviteToken ? inviteRole ?? "PLAYER" : null);
