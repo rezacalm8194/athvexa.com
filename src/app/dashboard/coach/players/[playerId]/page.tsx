@@ -200,7 +200,7 @@ export default async function PlayerProfilePage({ params }: { params: { playerId
           <Section id="overview" title="Overview">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
               <InfoCard title="Basic information" rows={[["Name", player.name], ["Age", "Not set"], ["Position", "Not set"], ["Jersey number", "Not set"], ["Status", status.label]]} />
-              <InfoCard title="Contact information" rows={[["Email", player.email], ["Phone", "Not set"], ["Address", "Not set"]]} />
+              <InfoCard title="Contact information" rows={[["Email", player.email ?? "Not set"], ["Phone", player.phone ?? "Not set"], ["Address", "Not set"]]} />
               <InfoCard title="Emergency contact" rows={[["Name", "Not set"], ["Relationship", "Not set"], ["Phone", "Not set"]]} />
               <InfoCard title="Join date" rows={[["Joined", formatDate(membership.createdAt)], ["Team", membership.team.name]]} />
             </div>

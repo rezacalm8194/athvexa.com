@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Role = "PLAYER" | "COACH" | "ASSISTANT";
+type ContactType = "email" | "phone";
 
 export default function RegisterForm({
   inviteToken,
@@ -15,7 +16,8 @@ export default function RegisterForm({
   const router = useRouter();
   const [role, setRole] = useState<Role | null>(inviteToken ? inviteRole ?? "PLAYER" : null);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [contactType, setContactType] = useState<ContactType>("email");
+  const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export default function RegisterForm({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, inviteToken }),
+        body: JSON.stringify({ name, contactType, contact, password, role, inviteToken }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -84,14 +86,28 @@ export default function RegisterForm({
           required
         />
       </Field>
-      <Field label="Email address">
+      <div className="grid grid-cols-2 gap-1 rounded-md border border-line-1 bg-ink-2 p-1" role="group" aria-label="Registration method">
+        {(["email", "phone"] as const).map((type) => (
+          <button
+            key={type}
+            type="button"
+            aria-pressed={contactType === type}
+            onClick={() => { setContactType(type); setContact(""); setError(null); }}
+            className={`min-h-11 rounded px-3 text-sm font-medium transition-colors ${contactType === type ? "bg-ink-4 text-white shadow-sm" : "text-smoke-3 hover:text-white"}`}
+          >
+            {type === "email" ? "Email" : "Phone number"}
+          </button>
+        ))}
+      </div>
+      <Field label={contactType === "email" ? "Email address" : "Phone number"}>
         <input
           className="input-field"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@email.com"
-          autoComplete="email"
+          type={contactType === "email" ? "email" : "tel"}
+          inputMode={contactType === "email" ? "email" : "tel"}
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          placeholder={contactType === "email" ? "you@email.com" : "+98 912 123 4567"}
+          autoComplete={contactType === "email" ? "email" : "tel"}
           required
         />
       </Field>

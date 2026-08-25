@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function LoginForm() {
   const router = useRouter();
   const passwordRef = useRef<HTMLInputElement>(null);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,13 +20,13 @@ export default function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
+        body: JSON.stringify({ identifier, password, remember }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const message =
           res.status === 401
-            ? "Incorrect email or password. Please check your credentials and try again."
+            ? "Incorrect email, phone number, or password. Please check your credentials and try again."
             : data.error ?? "Something went wrong. Try again.";
         setError(message);
         if (res.status === 401) {
@@ -47,21 +47,22 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-smoke-4">Email address</span>
+        <span className="text-xs font-medium text-smoke-4">Email address or phone number</span>
         <input
-          ref={passwordRef}
           className="input-field"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="coach@email.com"
-          autoComplete="email"
+          type="text"
+          inputMode="email"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder="you@email.com or +98 912 123 4567"
+          autoComplete="username"
           required
         />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-medium text-smoke-4">Password</span>
         <input
+          ref={passwordRef}
           className="input-field"
           type="password"
           value={password}

@@ -44,7 +44,8 @@ async function ensureSqliteSchema() {
     CREATE TABLE IF NOT EXISTS "User" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "name" TEXT NOT NULL,
-      "email" TEXT NOT NULL,
+      "email" TEXT,
+      "phone" TEXT,
       "passwordHash" TEXT NOT NULL,
       "role" TEXT NOT NULL DEFAULT 'PLAYER',
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -52,7 +53,38 @@ async function ensureSqliteSchema() {
       CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
     );
   `);
+  let userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
+  // Early SQLite databases required email. Rebuild this small root table once so
+  // accounts may use a phone number without inventing a fake email address.
+  if (userColumns.find((c) => c.name === "email")?.notnull === 1) {
+    await db.$executeRawUnsafe(`PRAGMA foreign_keys = OFF;`);
+    await db.$executeRawUnsafe(`
+      CREATE TABLE "User_contact_migration" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "name" TEXT NOT NULL,
+        "email" TEXT,
+        "phone" TEXT,
+        "passwordHash" TEXT NOT NULL,
+        "role" TEXT NOT NULL DEFAULT 'PLAYER',
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "coachId" TEXT,
+        CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User_contact_migration" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+      );
+    `);
+    await db.$executeRawUnsafe(`
+      INSERT INTO "User_contact_migration" ("id", "name", "email", "passwordHash", "role", "createdAt", "coachId")
+      SELECT "id", "name", "email", "passwordHash", "role", "createdAt", "coachId" FROM "User";
+    `);
+    await db.$executeRawUnsafe(`DROP TABLE "User";`);
+    await db.$executeRawUnsafe(`ALTER TABLE "User_contact_migration" RENAME TO "User";`);
+    await db.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`);
+    userColumns = await db.$queryRawUnsafe<{ name: string; notnull: number }[]>(`PRAGMA table_info("User");`);
+  }
+  if (!userColumns.some((c) => c.name === "phone")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN "phone" TEXT;`);
+  }
   await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");`);
+  await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_phone_key" ON "User"("phone");`);
 
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "DailyLog" (
