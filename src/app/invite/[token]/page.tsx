@@ -9,7 +9,7 @@ export default async function InvitePage({ params }: { params: { token: string }
     include: { coach: { select: { name: true } } },
   });
 
-  const isValid = Boolean(invite && !invite.usedAt && invite.expiresAt > new Date());
+  const isValid = Boolean(invite && !invite.revoked && invite.useCount < invite.maxUses && invite.expiresAt > new Date());
 
   if (!invite || !isValid) {
     return (

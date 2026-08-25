@@ -13,6 +13,7 @@ const schema = z.object({
   phone: z.string().trim().regex(/^\+?[1-9]\d{7,14}$/, "Enter a valid mobile number with country code").optional().or(z.literal("")),
   expiresInDays: z.number().int().min(1).max(90).optional(),
   expiresAt: z.string().datetime().optional(),
+  maxUses: z.number().int().min(1).max(100).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
       role,
       email,
       phone,
+      maxUses: role === "PLAYER" ? (parsed.data.maxUses ?? 1) : 1,
       expiresAt,
     },
   });
@@ -90,6 +92,8 @@ export async function POST(req: NextRequest) {
     role: invite.role,
     email: invite.email,
     phone: invite.phone,
+    maxUses: invite.maxUses,
+    useCount: invite.useCount,
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
   });

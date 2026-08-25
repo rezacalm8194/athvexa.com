@@ -34,10 +34,15 @@ type Invite = {
   createdAt: string;
   expiresAt: string;
   usedAt: string | null;
+  maxUses: number;
+  useCount: number;
   email: string | null;
   phone: string | null;
   acceptedUser: { id: string; name: string; email: string } | null;
 };
+
+type InviteMode = "single" | "bulk" | "link";
+type BulkSummary = { created: number; duplicate: number; invalid: number };
 
 type InviteResponse = {
   invites: Invite[];
@@ -100,11 +105,16 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
   const [search, setSearch] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("PLAYER");
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteMode, setInviteMode] = useState<InviteMode>("single");
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
   const [expiration, setExpiration] = useState("14");
   const [customExpiresAt, setCustomExpiresAt] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [bulkContacts, setBulkContacts] = useState("");
+  const [bulkSummary, setBulkSummary] = useState<BulkSummary | null>(null);
+  const [groupCapacity, setGroupCapacity] = useState("25");
+  const [createdGroupInvite, setCreatedGroupInvite] = useState<{ url: string; maxUses: number } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<Invite | null>(null);
@@ -165,6 +175,64 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
       await loadInvites();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not create invitation", "error");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function expirationPayload() {
+    return expiration === "custom"
+      ? { expiresAt: new Date(customExpiresAt).toISOString() }
+      : { expiresInDays: Number(expiration) };
+  }
+
+  async function createBulkInvites(event: React.FormEvent) {
+    event.preventDefault();
+    const contacts = bulkContacts
+      .split(/[\n,;\t]+/)
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (contacts.length === 0) {
+      showToast("Add at least one email address or mobile number.", "error");
+      return;
+    }
+    setGenerating(true);
+    setBulkSummary(null);
+    try {
+      const res = await fetch("/api/invite/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contacts, ...expirationPayload() }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Could not create player invitations");
+      setBulkSummary(payload.summary);
+      showToast(`${payload.summary.created} player invitation${payload.summary.created === 1 ? "" : "s"} created.`);
+      await loadInvites();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not create player invitations", "error");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function createGroupInvite(event: React.FormEvent) {
+    event.preventDefault();
+    setGenerating(true);
+    setCreatedGroupInvite(null);
+    try {
+      const res = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "PLAYER", maxUses: Number(groupCapacity), ...expirationPayload() }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Could not create team link");
+      setCreatedGroupInvite({ url: payload.url, maxUses: payload.maxUses });
+      showToast("Team join link created.");
+      await loadInvites();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not create team link", "error");
     } finally {
       setGenerating(false);
     }
@@ -247,7 +315,7 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setInviteOpen(true)}>
             <PlusIcon className="h-4 w-4" />
-            Create invitation
+            Add team members
           </button>
         </div>
       </div>
@@ -372,7 +440,7 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
                             </div>
                           ) : (
                             <div className="text-xs text-smoke-4">
-                              <div>{invite.email ?? "-"}</div>
+                              <div>{invite.maxUses > 1 ? `Team link · ${invite.useCount}/${invite.maxUses} joined` : invite.email ?? "-"}</div>
                               {invite.phone ? <div className="mt-1">{invite.phone}</div> : null}
                             </div>
                           )}
@@ -430,16 +498,34 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
         onConfirm={confirmRevoke}
       />
       {inviteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-xl shadow-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
+          <div className="card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 shadow-xl shadow-black/50">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Invitation</div>
-                <h2 className="mt-1 font-display text-2xl font-bold text-white">Invite a team member</h2>
+                <h2 id="invite-modal-title" className="mt-1 font-display text-2xl font-bold text-white">Add team members</h2>
               </div>
-              <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setInviteOpen(false)}>Close</button>
+              <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setInviteOpen(false)} aria-label="Close invitation dialog">Close</button>
             </div>
-            <form className="space-y-4" onSubmit={createInvite}>
+            <div className="mb-5 grid grid-cols-3 gap-2 rounded-lg border border-line-1 bg-ink-2 p-1" role="tablist" aria-label="Invitation type">
+              {([
+                ["single", "One person"],
+                ["bulk", "Player list"],
+                ["link", "Team link"],
+              ] as const).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={inviteMode === mode}
+                  className={`min-h-11 rounded-md px-3 py-2 text-sm font-semibold transition ${inviteMode === mode ? "bg-red text-white" : "text-smoke-3 hover:bg-white/5 hover:text-white"}`}
+                  onClick={() => setInviteMode(mode)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {inviteMode === "single" ? <form className="space-y-4" onSubmit={createInvite}>
               <label className="block">
                 <span className="text-xs font-semibold text-smoke-3">Role</span>
                 <select className="input-field mt-1" value={inviteRole} onChange={(event) => setInviteRole(event.target.value as InviteRole)}>
@@ -475,7 +561,59 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
                 </label>
               ) : null}
               <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating..." : "Create invitation"}</button>
-            </form>
+            </form> : null}
+            {inviteMode === "bulk" ? (
+              <form className="space-y-4" onSubmit={createBulkInvites}>
+                <div>
+                  <label htmlFor="bulk-player-contacts" className="text-xs font-semibold text-smoke-3">Player emails or mobile numbers</label>
+                  <textarea
+                    id="bulk-player-contacts"
+                    className="input-field mt-1 min-h-40 resize-y font-mono text-sm leading-7"
+                    value={bulkContacts}
+                    onChange={(event) => { setBulkContacts(event.target.value); setBulkSummary(null); }}
+                    placeholder={"player1@example.com\n+989121234567\nplayer3@example.com"}
+                    aria-describedby="bulk-player-help"
+                    autoFocus
+                  />
+                  <p id="bulk-player-help" className="mt-2 text-xs text-smoke-4">Enter one contact per line, or paste a column from Excel. Up to 100 players.</p>
+                </div>
+                {bulkSummary ? (
+                  <div className="grid grid-cols-3 gap-2 rounded-lg border border-line-1 bg-ink-2 p-3 text-center" aria-live="polite">
+                    <div><div className="text-lg font-bold text-white">{bulkSummary.created}</div><div className="text-xs text-smoke-4">Created</div></div>
+                    <div><div className="text-lg font-bold text-[#FFC107]">{bulkSummary.duplicate}</div><div className="text-xs text-smoke-4">Already invited</div></div>
+                    <div><div className="text-lg font-bold text-red-glow">{bulkSummary.invalid}</div><div className="text-xs text-smoke-4">Invalid</div></div>
+                  </div>
+                ) : null}
+                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating invitations..." : "Create player invitations"}</button>
+              </form>
+            ) : null}
+            {inviteMode === "link" ? (
+              <form className="space-y-4" onSubmit={createGroupInvite}>
+                <div className="rounded-lg border border-line-1 bg-ink-2 p-4">
+                  <h3 className="font-semibold text-white">One link for the whole team</h3>
+                  <p className="mt-1 text-sm text-smoke-3">Share it in WhatsApp or Telegram. Each player can use it once until the capacity or expiration is reached.</p>
+                </div>
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">Maximum players</span>
+                  <input className="input-field mt-1" type="number" min="2" max="100" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} required />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">Expiration time</span>
+                  <select className="input-field mt-1" value={expiration} onChange={(event) => setExpiration(event.target.value)}>
+                    <option value="1">24 hours</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="custom">Custom date and time</option>
+                  </select>
+                </label>
+                {expiration === "custom" ? <input className="input-field" type="datetime-local" value={customExpiresAt} min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)} onChange={(event) => setCustomExpiresAt(event.target.value)} required /> : null}
+                {createdGroupInvite ? (
+                  <div className="rounded-lg border border-[#4CAF50]/40 bg-[#4CAF50]/10 p-4" aria-live="polite">
+                    <p className="text-sm font-semibold text-white">Ready for up to {createdGroupInvite.maxUses} players</p>
+                    <code className="mt-2 block break-all text-xs text-smoke-2">{createdGroupInvite.url}</code>
+                    <button type="button" className="btn-ghost mt-3 !px-3 !py-2 text-xs" onClick={() => navigator.clipboard.writeText(createdGroupInvite.url).then(() => showToast("Team link copied."))}><CopyIcon className="h-4 w-4" /> Copy team link</button>
+                  </div>
+                ) : null}
+                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating link..." : "Create team link"}</button>
+              </form>
+            ) : null}
           </div>
         </div>
       ) : null}

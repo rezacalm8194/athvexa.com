@@ -255,6 +255,8 @@ async function ensureSqliteSchema() {
       "email" TEXT,
       "phone" TEXT,
       "usedAt" DATETIME,
+      "maxUses" INTEGER NOT NULL DEFAULT 1,
+      "useCount" INTEGER NOT NULL DEFAULT 0,
       "revoked" BOOLEAN NOT NULL DEFAULT false,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "expiresAt" DATETIME NOT NULL,
@@ -280,6 +282,12 @@ async function ensureSqliteSchema() {
   }
   if (!inviteColumns.some((c) => c.name === "phone")) {
     await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "phone" TEXT;`);
+  }
+  if (!inviteColumns.some((c) => c.name === "maxUses")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "maxUses" INTEGER NOT NULL DEFAULT 1;`);
+  }
+  if (!inviteColumns.some((c) => c.name === "useCount")) {
+    await db.$executeRawUnsafe(`ALTER TABLE "Invite" ADD COLUMN "useCount" INTEGER NOT NULL DEFAULT 0;`);
   }
   await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
 

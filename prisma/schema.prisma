@@ -252,6 +252,8 @@ model Invite {
   email          String?
   phone          String?
   usedAt         DateTime?
+  maxUses        Int      @default(1)
+  useCount       Int      @default(0)
   revoked        Boolean  @default(false)
   createdAt      DateTime @default(now())
   expiresAt      DateTime

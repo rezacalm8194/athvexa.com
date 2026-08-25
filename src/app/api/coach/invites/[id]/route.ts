@@ -58,6 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       role: invite.role,
       email: invite.email,
       phone: invite.phone,
+      maxUses: invite.maxUses,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
     },
   });
@@ -70,5 +71,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     createdAt: fresh.createdAt,
     expiresAt: fresh.expiresAt,
     usedAt: fresh.usedAt,
+    maxUses: fresh.maxUses,
+    useCount: fresh.useCount,
   });
 }

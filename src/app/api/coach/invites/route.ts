@@ -74,6 +74,8 @@ export async function GET(req: NextRequest) {
       createdAt: invite.createdAt,
       expiresAt: invite.expiresAt,
       usedAt: invite.usedAt,
+      maxUses: invite.maxUses,
+      useCount: invite.useCount,
       email: invite.email,
       phone: invite.phone,
       acceptedUser: invite.acceptedUser

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     if (inviteToken) {
       const invite = await db.invite.findUnique({ where: { token: inviteToken } });
-      const isValid = Boolean(invite && !invite.usedAt && invite.expiresAt > new Date());
+      const isValid = Boolean(invite && !invite.revoked && invite.useCount < invite.maxUses && invite.expiresAt > new Date());
       if (!invite || !isValid) {
         return NextResponse.json(
           { error: "This invite link has expired or already been used" },
@@ -79,9 +79,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (inviteIdToLink) {
+      const inviteToUse = await db.invite.findUniqueOrThrow({ where: { id: inviteIdToLink } });
+      const nextUseCount = inviteToUse.useCount + 1;
       await db.invite.update({
         where: { id: inviteIdToLink },
-        data: { usedAt: new Date(), acceptedUserId: user.id },
+        data: {
+          useCount: { increment: 1 },
+          usedAt: nextUseCount >= inviteToUse.maxUses ? new Date() : null,
+          acceptedUserId: user.id,
+        },
       });
       if (inviteTeamId) {
         await db.teamMember.upsert({
