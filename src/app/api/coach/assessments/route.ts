@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
-import { createNotification } from "@/lib/notifications";
+import { createNotification, notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const assessmentSchema = z.object({
   playerId: z.string().min(1, "Player is required"),
@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
-  const { teamOwnerId } = auth;
+  const { teamOwnerId, session } = auth;
 
   const body = await req.json().catch(() => null);
   const parsed = assessmentSchema.safeParse(body);
@@ -160,6 +160,16 @@ export async function POST(req: NextRequest) {
     description: `${parsed.data.type} assessment recorded: ${parsed.data.score}/100.`,
     type: "ASSESSMENT_ADDED",
     actionHref: "/dashboard/player",
+    relatedId: assessment.id,
+  });
+
+  await notifyOwnerOfAssistantAction({
+    actorRole: session.role,
+    actorName: session.name,
+    ownerId: teamOwnerId,
+    title: "Assistant added an assessment",
+    description: `recorded a ${parsed.data.type} assessment (${parsed.data.score}/100).`,
+    actionHref: "/dashboard/coach/assessments",
     relatedId: assessment.id,
   });
 

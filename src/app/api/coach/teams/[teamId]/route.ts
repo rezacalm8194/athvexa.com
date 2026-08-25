@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { requireTeamMembership, teamRoleLabel } from "@/lib/teamContext";
+import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const updateSchema = z.object({
   name: z.string().trim().min(2, "Team name is too short").max(80, "Team name is too long"),
@@ -22,7 +23,7 @@ function clean(value?: string) {
 }
 
 function canEditTeam(sessionRole: string, membershipRole: string) {
-  return sessionRole === "COACH" || membershipRole === "OWNER" || membershipRole === "HEAD_COACH";
+  return sessionRole === "COACH" || sessionRole === "ASSISTANT" || membershipRole === "OWNER" || membershipRole === "HEAD_COACH";
 }
 
 export async function GET(_: Request, { params }: { params: { teamId: string } }) {
@@ -80,6 +81,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { teamId: st
       defaultLanguage: data.defaultLanguage ?? membership.team.defaultLanguage ?? "en",
     },
   });
+
+  if (membership.team.coachId) {
+    await notifyOwnerOfAssistantAction({
+      actorRole: session.role,
+      actorName: session.name,
+      ownerId: membership.team.coachId,
+      title: "Assistant updated team settings",
+      description: `updated the operational settings for “${team.name}”.`,
+      actionHref: `/dashboard/coach/teams/${team.id}/settings`,
+      relatedId: team.id,
+    });
+  }
 
   return NextResponse.json({ team });
 }

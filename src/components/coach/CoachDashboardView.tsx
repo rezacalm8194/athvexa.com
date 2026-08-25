@@ -13,7 +13,17 @@ import { UsersIcon, MailIcon, ClipboardCheckIcon, AlertIcon } from "@/components
 type Overview = {
   kpis: { activePlayers: number; pendingInvitations: number; reportsToday: number; needsAttention: number };
   playersNeedingAttention: { id: string; name: string; loggedToday: boolean; score: number; label: string }[];
-  recentActivity: { id: string; playerName: string; score: number; updatedAt: string; tone: "good" | "warn" | "bad" }[];
+  recentActivity: {
+    id: string;
+    kind?: "CHECK_IN" | "ASSISTANT_ACTIVITY";
+    playerName?: string;
+    score?: number;
+    title?: string;
+    description?: string;
+    actionHref?: string | null;
+    updatedAt: string;
+    tone: "good" | "warn" | "bad" | "neutral";
+  }[];
 };
 
 export default function CoachDashboardView({

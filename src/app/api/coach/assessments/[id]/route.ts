@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
+import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const assessmentSchema = z.object({
   playerId: z.string().min(1, "Player is required"),
@@ -96,6 +97,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     },
   });
 
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant updated an assessment", description: `updated ${existing.player.name}’s ${parsed.data.type} assessment.`, actionHref: "/dashboard/coach/assessments", relatedId: existing.id });
+
   return NextResponse.json({ id: existing.id });
 }
 
@@ -107,6 +110,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!existing) return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
 
   await db.assessment.delete({ where: { id: existing.id } });
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant deleted an assessment", description: `deleted ${existing.player.name}’s ${existing.type} assessment.`, actionHref: "/dashboard/coach/assessments" });
   return NextResponse.json({ ok: true });
 }
-

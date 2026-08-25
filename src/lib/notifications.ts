@@ -42,6 +42,35 @@ export async function createManyNotifications(items: NotificationInput[]) {
   }
 }
 
+export async function notifyOwnerOfAssistantAction({
+  actorRole,
+  actorName,
+  ownerId,
+  title,
+  description,
+  actionHref,
+  relatedId,
+}: {
+  actorRole: string;
+  actorName: string;
+  ownerId: string;
+  title: string;
+  description: string;
+  actionHref?: string | null;
+  relatedId?: string | null;
+}) {
+  if (actorRole !== "ASSISTANT") return null;
+
+  return createNotification({
+    userId: ownerId,
+    title,
+    description: `${actorName} ${description}`,
+    type: "ASSISTANT_ACTIVITY",
+    actionHref,
+    relatedId,
+  });
+}
+
 export async function ensurePlayerReminderNotifications(userId: string) {
   const date = todayKey();
   const log = await db.dailyLog.findUnique({
@@ -85,7 +114,7 @@ export async function ensurePlayerReminderNotifications(userId: string) {
   }
 }
 
-export async function ensureCoachReminderNotifications(coachId: string) {
+export async function ensureCoachReminderNotifications(coachId: string, recipientId = coachId) {
   const date = todayKey();
   const players = await db.user.findMany({
     where: { coachId, role: "PLAYER" },
@@ -95,13 +124,13 @@ export async function ensureCoachReminderNotifications(coachId: string) {
   for (const player of players) {
     if (player.dailyLogs.length === 0) {
       await createNotification({
-        userId: coachId,
+        userId: recipientId,
         title: "Player has not checked in today",
         description: `${player.name} has not completed today's check-in.`,
         type: "PLAYER_NO_CHECK_IN",
         actionHref: `/dashboard/coach/players?playerId=${player.id}`,
         relatedId: player.id,
-        dedupeKey: `coach-no-check-in:${coachId}:${player.id}:${date}`,
+        dedupeKey: `coach-no-check-in:${recipientId}:${player.id}:${date}`,
       });
     }
   }

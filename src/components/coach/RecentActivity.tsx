@@ -1,18 +1,24 @@
 import { relativeTime } from "@/lib/format";
-import { ClipboardCheckIcon } from "@/components/icons";
+import Link from "next/link";
+import { ClipboardCheckIcon, UsersIcon } from "@/components/icons";
 
 type Activity = {
   id: string;
-  playerName: string;
-  score: number;
+  kind?: "CHECK_IN" | "ASSISTANT_ACTIVITY";
+  playerName?: string;
+  score?: number;
+  title?: string;
+  description?: string;
+  actionHref?: string | null;
   updatedAt: string;
-  tone: "good" | "warn" | "bad";
+  tone: "good" | "warn" | "bad" | "neutral";
 };
 
 const toneColor: Record<Activity["tone"], string> = {
   good: "#4CAF50",
   warn: "#FFC107",
   bad: "#E02020",
+  neutral: "#8a8f98",
 };
 
 export default function RecentActivity({ items, loading }: { items: Activity[] | null; loading: boolean }) {
@@ -41,11 +47,20 @@ export default function RecentActivity({ items, loading }: { items: Activity[] |
               className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
               style={{ backgroundColor: `${toneColor[item.tone]}22`, color: toneColor[item.tone] }}
             >
-              <ClipboardCheckIcon className="h-3.5 w-3.5" />
+              {item.kind === "ASSISTANT_ACTIVITY" ? <UsersIcon className="h-3.5 w-3.5" /> : <ClipboardCheckIcon className="h-3.5 w-3.5" />}
             </span>
             <span className="text-smoke-4">
-              <span className="font-semibold text-white">{item.playerName}</span> logged a readiness score of{" "}
-              <span className="font-semibold text-white">{item.score}</span>
+              {item.kind === "ASSISTANT_ACTIVITY" ? (
+                <>
+                  <span className="block font-semibold text-white">{item.title}</span>
+                  <span>{item.description}</span>
+                  {item.actionHref ? (
+                    <Link href={item.actionHref} className="ml-1 font-medium text-red hover:text-red-glow">Review</Link>
+                  ) : null}
+                </>
+              ) : (
+                <><span className="font-semibold text-white">{item.playerName}</span> logged a readiness score of{" "}<span className="font-semibold text-white">{item.score}</span></>
+              )}
               <span className="block text-[11px] text-smoke-3">{relativeTime(item.updatedAt)}</span>
             </span>
           </li>

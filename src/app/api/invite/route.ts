@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
+import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const schema = z.object({
   role: z.enum(["PLAYER", "ASSISTANT", "COACH"]).default("PLAYER"),
@@ -71,6 +72,16 @@ export async function POST(req: NextRequest) {
       phone,
       expiresAt,
     },
+  });
+
+  await notifyOwnerOfAssistantAction({
+    actorRole: session.role,
+    actorName: session.name,
+    ownerId: teamOwnerId,
+    title: "Assistant invited a player",
+    description: "created a new player invitation.",
+    actionHref: "/dashboard/coach/invitations",
+    relatedId: invite.id,
   });
 
   return NextResponse.json({

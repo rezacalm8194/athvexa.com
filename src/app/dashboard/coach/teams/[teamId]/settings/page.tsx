@@ -13,7 +13,7 @@ export default async function TeamSettingsPage({ params }: { params: { teamId: s
   const membership = await requireTeamMembership(session.sub, params.teamId);
   if (!membership) notFound();
 
-  const canEdit = session.role === "COACH" || membership.role === "OWNER" || membership.role === "HEAD_COACH";
+  const canEdit = session.role === "COACH" || session.role === "ASSISTANT" || membership.role === "OWNER" || membership.role === "HEAD_COACH";
 
   return (
     <main className="min-h-screen bg-ink">

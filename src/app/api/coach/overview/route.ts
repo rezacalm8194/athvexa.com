@@ -23,7 +23,7 @@ export async function GET() {
 
   const date = new Date().toISOString().slice(0, 10);
 
-  const [players, invites, recentLogs] = await Promise.all([
+  const [players, invites, recentLogs, assistantActivity] = await Promise.all([
     db.user.findMany({
       where: { coachId: teamOwnerId, role: "PLAYER" },
       select: {
@@ -45,6 +45,14 @@ export async function GET() {
         player: { select: { id: true, name: true } },
       },
     }),
+    session.role === "COACH"
+      ? db.notification.findMany({
+          where: { userId: session.sub, type: "ASSISTANT_ACTIVITY" },
+          orderBy: { createdAt: "desc" },
+          take: 8,
+          select: { id: true, title: true, description: true, actionHref: true, createdAt: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const enriched = players.map((p) => {
@@ -69,14 +77,28 @@ export async function GET() {
       needsAttention: playersNeedingAttention.length,
     },
     playersNeedingAttention: playersNeedingAttention.slice(0, 6),
-    recentActivity: recentLogs.map((log) => ({
-      id: log.id,
-      playerId: log.player.id,
-      playerName: log.player.name,
-      score: log.score,
-      date: log.date,
-      updatedAt: log.updatedAt,
-      tone: statusFor(log.score).tone,
-    })),
+    recentActivity: [
+      ...recentLogs.map((log) => ({
+        id: log.id,
+        kind: "CHECK_IN" as const,
+        playerId: log.player.id,
+        playerName: log.player.name,
+        score: log.score,
+        date: log.date,
+        updatedAt: log.updatedAt,
+        tone: statusFor(log.score).tone,
+      })),
+      ...assistantActivity.map((activity) => ({
+        id: activity.id,
+        kind: "ASSISTANT_ACTIVITY" as const,
+        title: activity.title,
+        description: activity.description,
+        actionHref: activity.actionHref,
+        updatedAt: activity.createdAt,
+        tone: "neutral" as const,
+      })),
+    ]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 8),
   });
 }

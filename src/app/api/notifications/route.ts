@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { ensureCoachReminderNotifications, ensurePlayerReminderNotifications } from "@/lib/notifications";
+import { getTeamOwnerId } from "@/lib/teamContext";
 
 export async function GET() {
   const session = await getSession();
@@ -10,8 +11,8 @@ export async function GET() {
   await ensureDatabase();
   if (session.role === "PLAYER") {
     await ensurePlayerReminderNotifications(session.sub);
-  } else if (session.role === "COACH") {
-    await ensureCoachReminderNotifications(session.sub);
+  } else {
+    await ensureCoachReminderNotifications(await getTeamOwnerId(session.sub), session.sub);
   }
 
   const [notifications, unreadCount] = await Promise.all([

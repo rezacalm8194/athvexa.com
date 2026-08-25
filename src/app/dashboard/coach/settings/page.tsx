@@ -120,20 +120,20 @@ export default async function SettingsPage() {
                 team={team}
                 ownerName={session.name}
                 roleLabel={membership ? teamRoleLabel(membership.role) : roleLabel}
-                canEdit={canManageRoles || membership?.role === "OWNER" || membership?.role === "HEAD_COACH"}
+                canEdit={session.role === "ASSISTANT" || canManageRoles || membership?.role === "OWNER" || membership?.role === "HEAD_COACH"}
               />
             </div>
 
             <div id="staff-management">
               <SettingCard
                 title="Staff Management"
-                description="Manage assistant coach access, staff permissions, and operational roles."
+                description="Assistants have full day-to-day operational access. Staff roles, ownership, billing, and other sensitive controls remain with the head coach."
                 action={<PlaceholderButton>{canManageRoles ? "Invite staff" : "Coach only"}</PlaceholderButton>}
               >
                 <div className="grid gap-3 md:grid-cols-3">
-                  <SettingRow label="Current permission" value={canManageRoles ? "Owner controls enabled" : "Limited assistant access"} />
+                  <SettingRow label="Current permission" value={canManageRoles ? "Owner controls enabled" : "Full operational access"} />
                   <SettingRow label="Assistant invites" value={canManageRoles ? "Available" : "Restricted"} />
-                  <SettingRow label="Role changes" value={canManageRoles ? "Owner only" : "Unavailable"} />
+                  <SettingRow label="Role changes" value="Owner only" />
                 </div>
               </SettingCard>
             </div>
@@ -178,7 +178,7 @@ export default async function SettingsPage() {
                   <SettingRow label="Team ownership" value="Coach-scoped access" />
                   <SettingRow label="Player data access" value="Roster only" />
                   <SettingRow label="Session policy" value="Secure HTTP-only session" />
-                  <SettingRow label="Audit log" value="Planned" />
+                  <SettingRow label="Assistant activity" value="Visible in dashboard and notifications" />
                 </div>
               </SettingCard>
             </div>

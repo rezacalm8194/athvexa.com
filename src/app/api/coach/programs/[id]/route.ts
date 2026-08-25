@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
-import { createManyNotifications } from "@/lib/notifications";
+import { createManyNotifications, notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -153,6 +153,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     })
   );
 
+  await notifyOwnerOfAssistantAction({
+    actorRole: auth.session.role,
+    actorName: auth.session.name,
+    ownerId: teamOwnerId,
+    title: "Assistant updated a program",
+    description: `updated the program “${data.name}”.`,
+    actionHref: "/dashboard/coach/programs",
+    relatedId: params.id,
+  });
+
   return NextResponse.json({ id: params.id });
 }
 
@@ -170,11 +180,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (parsed.data.action === "archive") {
     await db.program.update({ where: { id: existing.id }, data: { status: "ARCHIVED" } });
+    await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: teamOwnerId, title: "Assistant archived a program", description: `archived “${existing.name}”.`, actionHref: "/dashboard/coach/programs", relatedId: existing.id });
     return NextResponse.json({ id: existing.id, status: "ARCHIVED" });
   }
 
   if (parsed.data.action === "restore") {
     await db.program.update({ where: { id: existing.id }, data: { status: "DRAFT" } });
+    await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: teamOwnerId, title: "Assistant restored a program", description: `restored “${existing.name}”.`, actionHref: "/dashboard/coach/programs", relatedId: existing.id });
     return NextResponse.json({ id: existing.id, status: "DRAFT" });
   }
 
@@ -205,6 +217,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   });
 
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: teamOwnerId, title: "Assistant duplicated a program", description: `duplicated “${existing.name}”.`, actionHref: "/dashboard/coach/programs", relatedId: copy.id });
+
   return NextResponse.json({ id: copy.id }, { status: 201 });
 }
 
@@ -220,6 +234,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     db.programAssignment.deleteMany({ where: { programId: existing.id } }),
     db.program.delete({ where: { id: existing.id } }),
   ]);
+
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant deleted a program", description: `deleted “${existing.name}”.`, actionHref: "/dashboard/coach/programs" });
 
   return NextResponse.json({ ok: true });
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
-import { createManyNotifications } from "@/lib/notifications";
+import { createManyNotifications, notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
-  const { teamOwnerId } = auth;
+  const { teamOwnerId, session } = auth;
 
   const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
@@ -156,6 +156,16 @@ export async function POST(req: NextRequest) {
       dedupeKey: `program-assigned:${program.id}:${playerId}`,
     }))
   );
+
+  await notifyOwnerOfAssistantAction({
+    actorRole: session.role,
+    actorName: session.name,
+    ownerId: teamOwnerId,
+    title: "Assistant created a program",
+    description: `created the program “${program.name}”.`,
+    actionHref: "/dashboard/coach/programs",
+    relatedId: program.id,
+  });
 
   return NextResponse.json({ id: program.id }, { status: 201 });
 }
