@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 export type Role = "COACH" | "ASSISTANT" | "PLAYER";
@@ -37,33 +35,9 @@ function stripQuotes(value: string) {
   return trimmed;
 }
 
-function secretFromEnvFile(filePath: string) {
-  try {
-    const text = fs.readFileSync(filePath, "utf8");
-    for (const rawLine of text.split(/\r?\n/)) {
-      const line = rawLine.trim();
-      if (!line || line.startsWith("#")) continue;
-      const match = line.match(/^(?:export\s+)?JWT_SECRET\s*=\s*(.*)$/);
-      if (!match) continue;
-      return stripQuotes(match[1]);
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 function readJwtSecret() {
-  const fromEnv = stripQuotes(process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "");
-  const fromFiles = [
-    path.resolve(process.cwd(), ".env"),
-    path.resolve(process.cwd(), ".env.production"),
-    path.resolve(process.cwd(), ".env.local"),
-  ]
-    .map(secretFromEnvFile)
-    .find((value) => value);
-
-  const value = fromEnv || fromFiles || "";
+  // Middleware runs on the Edge runtime — do not import node:fs / node:path here.
+  const value = stripQuotes(process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "");
   if (!value || PLACEHOLDER_SECRETS.has(value) || value.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
       "JWT_SECRET is missing or too short. Set a random secret of at least 32 characters (see .env.example)."

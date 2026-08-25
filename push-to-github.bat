@@ -15,6 +15,15 @@ if errorlevel 1 (
   exit /b 1
 )
 
+echo Checking production build locally...
+call npm run build
+if errorlevel 1 (
+  echo.
+  echo ERROR: next build failed. Fix the errors above before pushing.
+  pause
+  exit /b 1
+)
+
 git status --short
 echo.
 
@@ -55,5 +64,6 @@ if errorlevel 1 (
 
 echo.
 echo Done. GitHub is updated.
-echo Important: your server must still be connected to this GitHub repo or redeployed separately.
+echo On Pachim: wait for deploy to finish, Node start args = start, PORT=3002 in env.
+echo Deploy command should include: npm run build
 pause
