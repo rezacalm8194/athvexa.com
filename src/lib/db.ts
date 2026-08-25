@@ -50,7 +50,7 @@ let sqliteReady: Promise<void> | null = null;
 
 function isIgnorableSchemaError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  return /readonly|SQLITE_READONLY|SQLITE_BUSY|already exists|duplicate column/i.test(message);
+  return /readonly|SQLITE_READONLY|SQLITE_BUSY|already exists|duplicate column|returned results/i.test(message);
 }
 
 /**
@@ -69,9 +69,10 @@ export function ensureDatabase() {
 }
 
 async function ensureSqliteSchema() {
-  await db.$executeRawUnsafe(`PRAGMA busy_timeout = 5000;`);
+  // SQLite PRAGMA statements return a row — Prisma $executeRawUnsafe rejects that.
+  await db.$queryRawUnsafe(`PRAGMA busy_timeout = 5000`);
   try {
-    await db.$executeRawUnsafe(`PRAGMA journal_mode = WAL;`);
+    await db.$queryRawUnsafe(`PRAGMA journal_mode = WAL`);
   } catch {
     // Some hosts reject WAL; continue with the default journal.
   }
