@@ -1,12 +1,13 @@
 // Athvexa — Phase 1 data model
-// PostgreSQL only. Local: docker compose up -d (see docker-compose.yml).
+// SQLite for zero-setup local/dev and current production. Switch provider
+// to "postgresql" + DATABASE_URL when moving off file-based SQLite.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 

@@ -14,7 +14,7 @@ and keep this Next.js app on the `app.` subdomain.
 - Tailwind CSS — theme tokens in `tailwind.config.ts` mirror the landing
   page's palette (`#E02020` red / `#0A0A0A` black) and fonts (Barlow
   Condensed for display, Inter for body)
-- PostgreSQL via Prisma ORM (Docker Compose for local)
+- PostgreSQL in production / SQLite for zero-setup local dev — via Prisma ORM
 - JWT auth (httpOnly cookies, `jose` + `bcryptjs`), no third-party auth
   provider required
 
@@ -23,8 +23,7 @@ and keep this Next.js app on the `app.` subdomain.
 ```bash
 npm install
 cp .env.example .env      # then edit JWT_SECRET
-docker compose up -d      # local PostgreSQL
-npx prisma db push        # apply schema (or prisma migrate deploy)
+npm run db:push           # creates dev.db (SQLite) from the Prisma schema
 npm run db:seed           # optional: 1 demo coach + 4 demo players
 npm run dev                # http://localhost:3000
 ```
@@ -129,15 +128,15 @@ connection returns — that's real, standalone work and belongs in Phase 2.
 You'll also want to drop real `icon-192.png` / `icon-512.png` files into
 `public/` (referenced by `manifest.json` but not included here).
 
-## PostgreSQL
+## Moving to Postgres for production
 
-Local development expects Postgres (`DATABASE_URL` in `.env.example`).
-Start it with `docker compose up -d`, then `npx prisma db push` or
-`npx prisma migrate deploy`.
+1. In `prisma/schema.prisma`, change `provider = "sqlite"` to
+   `provider = "postgresql"`.
+2. Set `DATABASE_URL` in your environment to your Postgres connection string.
+3. Run `npx prisma migrate deploy` (or `db push` for a quick first pass).
 
-Production must use a Postgres connection string. SQLite (`file:...`) is
-not supported — the Prisma schema is PostgreSQL, and the app no longer
-runs raw `CREATE TABLE` migrations on each query.
+Until then, schema stays SQLite. Table bootstrap for `file:` URLs runs once
+per process, not on every query.
 
 ## Roadmap (from the original brief)
 

@@ -60,10 +60,7 @@ export async function GET(req: NextRequest) {
     ...(search
       ? {
           player: {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { email: { contains: search, mode: "insensitive" } },
-            ],
+            OR: [{ name: { contains: search } }, { email: { contains: search } }],
           },
         }
       : {}),
