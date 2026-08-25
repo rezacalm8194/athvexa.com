@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import KpiCard from "@/components/coach/KpiCard";
 import ConfirmModal from "@/components/coach/shared/ConfirmModal";
@@ -493,15 +494,20 @@ export default function AssessmentsPageView() {
           {!loading && !error && assessments.length === 0 ? (
             <EmptyState
               icon={BarChartIcon}
-              title={hasFilters ? "No matching assessments" : "No assessments yet"}
+              title={players.length === 0 ? "No players yet" : hasFilters ? "No matching assessments" : "No assessments yet"}
               description={players.length === 0 ? "Add players to your team before creating assessments." : "Create an assessment to start tracking player development."}
               action={
-                players.length > 0 ? (
+                players.length === 0 ? (
+                  <Link href="/dashboard/coach/players" className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm">
+                    <PlusIcon className="h-4 w-4" />
+                    Add player
+                  </Link>
+                ) : (
                   <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={openCreate}>
                     <PlusIcon className="h-4 w-4" />
                     New assessment
                   </button>
-                ) : null
+                )
               }
             />
           ) : null}
