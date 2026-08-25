@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 export type Role = "COACH" | "ASSISTANT" | "PLAYER";
@@ -18,14 +20,60 @@ export function parseRole(role: string): Role | null {
 export const SESSION_COOKIE = "athvexa_session";
 export const MIN_JWT_SECRET_LENGTH = 32;
 
-export function getJwtSecretKey() {
-  const value = process.env.JWT_SECRET?.trim();
-  if (!value || value.length < MIN_JWT_SECRET_LENGTH) {
+const PLACEHOLDER_SECRETS = new Set([
+  "replace-with-at-least-32-random-characters",
+  "changeme",
+  "secret",
+]);
+
+function stripQuotes(value: string) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+function secretFromEnvFile(filePath: string) {
+  try {
+    const text = fs.readFileSync(filePath, "utf8");
+    for (const rawLine of text.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("#")) continue;
+      const match = line.match(/^(?:export\s+)?JWT_SECRET\s*=\s*(.*)$/);
+      if (!match) continue;
+      return stripQuotes(match[1]);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function readJwtSecret() {
+  const fromEnv = stripQuotes(process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "");
+  const fromFiles = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(process.cwd(), ".env.production"),
+    path.resolve(process.cwd(), ".env.local"),
+  ]
+    .map(secretFromEnvFile)
+    .find((value) => value);
+
+  const value = fromEnv || fromFiles || "";
+  if (!value || PLACEHOLDER_SECRETS.has(value) || value.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
       "JWT_SECRET is missing or too short. Set a random secret of at least 32 characters (see .env.example)."
     );
   }
-  return new TextEncoder().encode(value);
+  return value;
+}
+
+export function getJwtSecretKey() {
+  return new TextEncoder().encode(readJwtSecret());
 }
 
 export function sessionCookieOptions(maxAgeSeconds: number) {
