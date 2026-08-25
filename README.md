@@ -23,10 +23,16 @@ and keep this Next.js app on the `app.` subdomain.
 ```bash
 npm install
 cp .env.example .env      # then edit JWT_SECRET
-npm run db:push           # creates dev.db (SQLite) from the Prisma schema
+npm run db:push           # creates / updates SQLite from the Prisma schema
 npm run db:seed           # optional: 1 demo coach + 4 demo players
+npm run build             # required before production start
+npm run start             # production server (builds once if .next is missing)
 npm run dev                # http://localhost:3000
 ```
+
+On Pachim, set a **deploy command** to `npm run build` (or rely on `npm start`,
+which auto-builds when `.next` is missing). Node start args should be just `start`,
+with `PORT=3002` in environment variables.
 
 Demo logins after seeding (password for all: `password123`):
 
