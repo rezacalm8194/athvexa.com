@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import DashboardNav from "@/components/DashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
+import PlayerAssessmentsSection from "@/components/coach/assessments/PlayerAssessmentsSection";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
 import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon, UsersIcon } from "@/components/icons";
 import { db, ensureDatabase } from "@/lib/db";
@@ -212,38 +213,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           </Section>
 
           <Section id="assessments" title="Assessments">
-            {player.assessmentsReceived.length === 0 ? (
-              <EmptyLine text="No assessments recorded yet." />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
-                  <thead className="text-xs uppercase tracking-wide text-smoke-3">
-                    <tr className="border-b border-white/5">
-                      <th className="px-3 py-3">Type</th>
-                      <th className="px-3 py-3">Date</th>
-                      <th className="px-3 py-3">Score</th>
-                      <th className="px-3 py-3">Notes</th>
-                      <th className="px-3 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {player.assessmentsReceived.map((assessment) => (
-                      <tr key={assessment.id} className="border-b border-white/5">
-                        <td className="px-3 py-4 font-semibold text-white">{assessment.type}</td>
-                        <td className="px-3 py-4 text-smoke-2">{formatDate(assessment.date)}</td>
-                        <td className="px-3 py-4 text-smoke-2">{formatScore(assessment.score)}</td>
-                        <td className="max-w-sm truncate px-3 py-4 text-smoke-3">{assessment.notes ?? "No notes"}</td>
-                        <td className="px-3 py-4 text-right">
-                          <Link href={`/dashboard/coach/assessments?assessmentId=${assessment.id}`} className="btn-ghost !px-3 !py-2 text-xs">
-                            Open
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <PlayerAssessmentsSection player={{ id: player.id, name: player.name, email: player.email ?? "" }} />
           </Section>
 
           <Section id="programs" title="Programs">

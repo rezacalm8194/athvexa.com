@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
-  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant updated an assessment", description: `updated ${existing.player.name}’s ${parsed.data.type} assessment.`, actionHref: "/dashboard/coach/assessments", relatedId: existing.id });
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant updated an assessment", description: `updated ${existing.player.name}’s ${parsed.data.type} assessment.`, actionHref: `/dashboard/coach/assessments?assessmentId=${encodeURIComponent(existing.id)}`, relatedId: existing.id });
 
   return NextResponse.json({ id: existing.id });
 }
