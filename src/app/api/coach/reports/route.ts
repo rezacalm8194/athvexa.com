@@ -264,7 +264,7 @@ export async function GET(req: NextRequest) {
     const playerAssessments = assessmentsByPlayer.get(player.id) ?? [];
     const latestAssessment = playerAssessments[0] ?? null;
     const previousAssessment = playerAssessments[1] ?? null;
-    const assessmentChange = latestAssessment && previousAssessment ? latestAssessment.score - previousAssessment.score : null;
+    const assessmentChange = latestAssessment && previousAssessment ? Number((latestAssessment.score - previousAssessment.score).toFixed(2)) : null;
     const hasData = logs.length > 0 || latestAssessment != null;
     const activeProgram = activeProgramByPlayer.get(player.id);
     const totalProgramSessions = activeProgram?.program.sessions.length ?? 0;

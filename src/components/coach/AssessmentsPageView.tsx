@@ -20,6 +20,7 @@ import {
   UsersIcon,
 } from "@/components/icons";
 import { ASSESSMENT_TYPES, AssessmentType } from "@/lib/assessmentTypes";
+import { formatScore } from "@/lib/formatScore";
 
 type PlayerOption = {
   id: string;
@@ -65,7 +66,7 @@ const emptyForm = (playerId = ""): FormState => ({
   playerId,
   type: "Speed",
   date: todayKey(),
-  score: "70",
+  score: "",
   notes: "",
 });
 
@@ -75,8 +76,9 @@ function formatDate(value: string) {
 
 function ChangeBadge({ value }: { value: number | null }) {
   if (value == null) return <span className="text-smoke-4">-</span>;
-  const positive = value > 0;
-  const neutral = value === 0;
+  const rounded = Number(value.toFixed(2));
+  const positive = rounded > 0;
+  const neutral = rounded === 0;
   return (
     <span
       className={`inline-flex min-w-14 justify-center rounded-full px-2 py-1 text-xs font-bold ${
@@ -84,22 +86,8 @@ function ChangeBadge({ value }: { value: number | null }) {
       }`}
     >
       {positive ? "+" : ""}
-      {value}
+      {formatScore(rounded)}
     </span>
-  );
-}
-
-function ScoreBar({ score }: { score: number }) {
-  return (
-    <div className="min-w-24">
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="font-bold text-white">{score}</span>
-        <span className="text-smoke-4">/100</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-red" style={{ width: `${score}%` }} />
-      </div>
-    </div>
   );
 }
 
@@ -197,8 +185,9 @@ function AssessmentModal({
             <input
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
               type="number"
-              min="0"
-              max="100"
+              inputMode="decimal"
+              step="any"
+              placeholder="e.g. 3.20"
               value={form.score}
               onChange={(event) => setForm((cur) => ({ ...cur, score: event.target.value }))}
               required
@@ -250,11 +239,11 @@ function AssessmentDetailModal({ assessment, onClose }: { assessment: Assessment
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
             <div className="text-xs text-smoke-4">Score</div>
-            <div className="mt-1 font-display text-2xl font-black text-white">{assessment.score}</div>
+            <div className="mt-1 font-display text-2xl font-black text-white">{formatScore(assessment.score)}</div>
           </div>
           <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
             <div className="text-xs text-smoke-4">Previous</div>
-            <div className="mt-1 font-display text-2xl font-black text-white">{assessment.previousScore ?? "-"}</div>
+            <div className="mt-1 font-display text-2xl font-black text-white">{assessment.previousScore == null ? "-" : formatScore(assessment.previousScore)}</div>
           </div>
           <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
             <div className="text-xs text-smoke-4">Change</div>
@@ -372,8 +361,8 @@ export default function AssessmentsPageView() {
       showToast("Select a player first.", "error");
       return;
     }
-    if (!Number.isInteger(score) || score < 0 || score > 100) {
-      showToast("Score must be from 0 to 100.", "error");
+    if (form.score.trim() === "" || !Number.isFinite(score)) {
+      showToast("Enter a valid score.", "error");
       return;
     }
 
@@ -556,10 +545,8 @@ export default function AssessmentsPageView() {
                         <div className="text-xs text-smoke-4">{assessment.player.email}</div>
                       </td>
                       <td className="px-3 py-4 text-smoke-2">{assessment.type}</td>
-                      <td className="px-3 py-4">
-                        <ScoreBar score={assessment.score} />
-                      </td>
-                      <td className="px-3 py-4 font-semibold text-smoke-2">{assessment.previousScore ?? "-"}</td>
+                      <td className="px-3 py-4 font-semibold text-white">{formatScore(assessment.score)}</td>
+                      <td className="px-3 py-4 font-semibold text-smoke-2">{assessment.previousScore == null ? "-" : formatScore(assessment.previousScore)}</td>
                       <td className="px-3 py-4">
                         <ChangeBadge value={assessment.change} />
                       </td>

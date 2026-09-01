@@ -7,6 +7,7 @@ import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import { AlertIcon, BarChartIcon, CalendarIcon, ClipboardCheckIcon, UsersIcon } from "@/components/icons";
+import { formatScore } from "@/lib/formatScore";
 
 type RangeValue = "week" | "month" | "custom";
 type OverallStatus = "Good" | "Watch" | "Attention" | "No data";
@@ -100,7 +101,8 @@ function displayValue(value: number | null, suffix = "") {
 
 function displayChange(value: number | null) {
   if (value == null) return "No comparison";
-  return value > 0 ? `+${value}` : String(value);
+  const rounded = Number(value.toFixed(2));
+  return rounded > 0 ? `+${rounded}` : String(rounded);
 }
 
 function changeStyle(value: number | null) {
@@ -414,7 +416,7 @@ export default function ReportsPageView() {
                             "No assessment"
                           )}
                         </td>
-                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? `${player.latestAssessment.score}/100` : "No assessment"}</td>
+                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatScore(player.latestAssessment.score) : "No assessment"}</td>
                         <td className={`px-3 py-4 font-semibold ${changeStyle(player.assessmentChange)}`}>{displayChange(player.assessmentChange)}</td>
                         <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatDate(player.latestAssessment.date) : "No assessment"}</td>
                         <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness)}</td>

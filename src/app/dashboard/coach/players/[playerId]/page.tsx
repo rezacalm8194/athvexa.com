@@ -5,6 +5,7 @@ import CoachNav from "@/components/coach/CoachNav";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
 import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon, UsersIcon } from "@/components/icons";
 import { db, ensureDatabase } from "@/lib/db";
+import { formatScore } from "@/lib/formatScore";
 import { getSession } from "@/lib/session";
 import { ensureLegacyTeamMemberships, teamRoleLabel } from "@/lib/teamContext";
 
@@ -187,7 +188,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <StatCard icon={CheckCircleIcon} label="Latest readiness" value={latestLog ? `${latestLog.score}/100` : "No data"} detail={readinessLabel(latestLog?.score ?? null)} />
-          <StatCard icon={ClipboardCheckIcon} label="Latest assessment" value={latestAssessment ? `${latestAssessment.score}/100` : "No data"} detail={latestAssessment ? latestAssessment.type : "No assessments"} />
+          <StatCard icon={ClipboardCheckIcon} label="Latest assessment" value={latestAssessment ? formatScore(latestAssessment.score) : "No data"} detail={latestAssessment ? latestAssessment.type : "No assessments"} />
           <StatCard icon={ClipboardListIcon} label="Active program" value={activeAssignment?.program.name ?? "No active program"} detail={activeProgress ? `${activeProgress.percent}% complete` : "Not assigned"} />
           <StatCard icon={CalendarIcon} label="Last check-in" value={latestLog ? formatDate(latestLog.date) : "No data"} detail={latestLog ? readinessLabel(latestLog.score) : "No check-ins"} />
         </div>
@@ -230,7 +231,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                       <tr key={assessment.id} className="border-b border-white/5">
                         <td className="px-3 py-4 font-semibold text-white">{assessment.type}</td>
                         <td className="px-3 py-4 text-smoke-2">{formatDate(assessment.date)}</td>
-                        <td className="px-3 py-4 text-smoke-2">{assessment.score}/100</td>
+                        <td className="px-3 py-4 text-smoke-2">{formatScore(assessment.score)}</td>
                         <td className="max-w-sm truncate px-3 py-4 text-smoke-3">{assessment.notes ?? "No notes"}</td>
                         <td className="px-3 py-4 text-right">
                           <Link href={`/dashboard/coach/assessments?assessmentId=${assessment.id}`} className="btn-ghost !px-3 !py-2 text-xs">

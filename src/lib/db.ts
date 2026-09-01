@@ -83,8 +83,10 @@ export function ensureDatabase() {
     const tables = await db.$queryRawUnsafe<{ name: string }[]>(
       `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'User' LIMIT 1`
     );
-    if (tables.length > 0) return;
-    await ensureSqliteSchema();
+    if (tables.length === 0) {
+      await ensureSqliteSchema();
+    }
+    await ensureAssessmentScoreIsReal();
   })().catch((error) => {
     sqliteReady = null;
     if (isIgnorableSchemaError(error)) {
@@ -94,6 +96,46 @@ export function ensureDatabase() {
     throw error;
   });
   return sqliteReady;
+}
+
+async function ensureAssessmentScoreIsReal() {
+  const tables = await db.$queryRawUnsafe<{ name: string }[]>(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Assessment' LIMIT 1`
+  );
+  if (tables.length === 0) return;
+
+  const columns = await db.$queryRawUnsafe<{ name: string; type: string }[]>(`PRAGMA table_info("Assessment");`);
+  const score = columns.find((column) => column.name === "score");
+  if (!score || /^real$/i.test(score.type)) return;
+
+  await db.$queryRawUnsafe(`PRAGMA foreign_keys = OFF`);
+  try {
+    await sqliteExec(`
+      CREATE TABLE "Assessment_new" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "coachId" TEXT NOT NULL,
+        "playerId" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "date" TEXT NOT NULL,
+        "score" REAL NOT NULL,
+        "notes" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Assessment_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+        CONSTRAINT "Assessment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `);
+    await sqliteExec(
+      `INSERT INTO "Assessment_new" ("id","coachId","playerId","type","date","score","notes","createdAt","updatedAt") SELECT "id","coachId","playerId","type","date","score","notes","createdAt","updatedAt" FROM "Assessment";`
+    );
+    await sqliteExec(`DROP TABLE "Assessment";`);
+    await sqliteExec(`ALTER TABLE "Assessment_new" RENAME TO "Assessment";`);
+    await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_coachId_playerId_type_date_createdAt_idx" ON "Assessment"("coachId", "playerId", "type", "date", "createdAt");`);
+    await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_coachId_date_idx" ON "Assessment"("coachId", "date");`);
+    await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_playerId_idx" ON "Assessment"("playerId");`);
+  } finally {
+    await db.$queryRawUnsafe(`PRAGMA foreign_keys = ON`);
+  }
 }
 
 async function ensureSqliteSchema() {
@@ -397,7 +439,7 @@ async function ensureSqliteSchema() {
       "playerId" TEXT NOT NULL,
       "type" TEXT NOT NULL,
       "date" TEXT NOT NULL,
-      "score" INTEGER NOT NULL,
+      "score" REAL NOT NULL,
       "notes" TEXT,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

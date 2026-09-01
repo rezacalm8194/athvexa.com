@@ -10,7 +10,7 @@ const assessmentSchema = z.object({
   playerId: z.string().min(1, "Player is required"),
   type: z.enum(ASSESSMENT_TYPES),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD"),
-  score: z.number().int().min(0).max(100),
+  score: z.number({ invalid_type_error: "Score must be a number" }).finite(),
   notes: z.string().max(3000).nullable().optional(),
 });
 
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
         date: assessment.date,
         score: assessment.score,
         previousScore,
-        change: previousScore == null ? null : assessment.score - previousScore,
+        change: previousScore == null ? null : Number((assessment.score - previousScore).toFixed(2)),
         notes: assessment.notes,
         createdAt: assessment.createdAt,
         updatedAt: assessment.updatedAt,
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
   await createNotification({
     userId: parsed.data.playerId,
     title: "New assessment added",
-    description: `${parsed.data.type} assessment recorded: ${parsed.data.score}/100.`,
+    description: `${parsed.data.type} assessment recorded: ${parsed.data.score}.`,
     type: "ASSESSMENT_ADDED",
     actionHref: "/dashboard/player",
     relatedId: assessment.id,
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
     actorName: session.name,
     ownerId: teamOwnerId,
     title: "Assistant added an assessment",
-    description: `recorded a ${parsed.data.type} assessment (${parsed.data.score}/100).`,
+    description: `recorded a ${parsed.data.type} assessment (${parsed.data.score}).`,
     actionHref: "/dashboard/coach/assessments",
     relatedId: assessment.id,
   });

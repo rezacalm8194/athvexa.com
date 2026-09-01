@@ -340,7 +340,7 @@ model Assessment {
   player    User     @relation("PlayerAssessments", fields: [playerId], references: [id])
   type      String   // Speed | Strength | Endurance | Agility | Mobility | Body composition | Technical | General
   date      String   // "YYYY-MM-DD"
-  score     Int      // 0-100
+  score     Float    // any numeric value, decimals allowed
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

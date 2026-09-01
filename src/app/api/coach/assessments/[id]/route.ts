@@ -9,7 +9,7 @@ const assessmentSchema = z.object({
   playerId: z.string().min(1, "Player is required"),
   type: z.enum(ASSESSMENT_TYPES),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD"),
-  score: z.number().int().min(0).max(100),
+  score: z.number({ invalid_type_error: "Score must be a number" }).finite(),
   notes: z.string().max(3000).nullable().optional(),
 });
 
@@ -63,7 +63,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       date: assessment.date,
       score: assessment.score,
       previousScore,
-      change: previousScore == null ? null : assessment.score - previousScore,
+      change: previousScore == null ? null : Number((assessment.score - previousScore).toFixed(2)),
       notes: assessment.notes,
       createdAt: assessment.createdAt,
       updatedAt: assessment.updatedAt,
