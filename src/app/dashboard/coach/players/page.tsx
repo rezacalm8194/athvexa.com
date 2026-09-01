@@ -2,8 +2,18 @@ import DashboardNav from "@/components/DashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import PlayersPageView from "@/components/coach/PlayersPageView";
 import { getCoachContext } from "@/lib/coachContext";
+import { coachPlayerProfileHref } from "@/lib/coachRoutes";
+import { redirect } from "next/navigation";
 
-export default async function PlayersPage() {
+export default async function PlayersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ playerId?: string | string[] }>;
+}) {
+  const { playerId } = await searchParams;
+  const legacyPlayerId = Array.isArray(playerId) ? playerId[0] : playerId;
+  if (legacyPlayerId) redirect(coachPlayerProfileHref(legacyPlayerId));
+
   const { session, team, canManageRoles, roleLabel } = await getCoachContext();
 
   return (

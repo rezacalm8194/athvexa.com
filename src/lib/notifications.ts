@@ -1,3 +1,4 @@
+import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
 
 export type NotificationInput = {
@@ -128,7 +129,7 @@ export async function ensureCoachReminderNotifications(coachId: string, recipien
         title: "Player has not checked in today",
         description: `${player.name} has not completed today's check-in.`,
         type: "PLAYER_NO_CHECK_IN",
-        actionHref: `/dashboard/coach/players?playerId=${player.id}`,
+        actionHref: coachPlayerProfileHref(player.id),
         relatedId: player.id,
         dedupeKey: `coach-no-check-in:${recipientId}:${player.id}:${date}`,
       });

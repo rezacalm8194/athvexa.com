@@ -84,6 +84,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       dailyLogs: {
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         take: 30,
+        include: {
+          tasks: { orderBy: { order: "asc" } },
+        },
       },
       assessmentsReceived: {
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
@@ -271,18 +274,51 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             {player.dailyLogs.length === 0 ? (
               <EmptyLine text="No daily check-ins yet." />
             ) : (
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {player.dailyLogs.map((log) => (
                   <div key={log.id} className="rounded-lg border border-white/5 bg-ink-2 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-white">{formatDate(log.date)}</div>
                       <StatusBadge label={readinessLabel(log.score)} tone={readinessTone(log.score)} />
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                       <MiniMetric label="Readiness" value={`${log.score}/100`} />
                       <MiniMetric label="Sleep" value={log.sleepHours == null ? "No data" : `${log.sleepHours}h`} />
-                      <MiniMetric label="Fatigue" value={formatMetric(log.fatigue)} />
-                      <MiniMetric label="Soreness" value={formatMetric(log.soreness)} />
+                      <MiniMetric label="Water" value={log.waterLiters == null ? "No data" : `${log.waterLiters} L`} />
+                      <MiniMetric label="Energy" value={log.energy == null ? "No data" : `${log.energy}/5`} />
+                      <MiniMetric label="Fatigue" value={log.fatigue == null ? "No data" : `${log.fatigue}/5`} />
+                      <MiniMetric label="Soreness" value={log.soreness == null ? "No data" : `${log.soreness}/5`} />
+                      <MiniMetric label="Mood" value={log.mood == null ? "No data" : `${log.mood}/5`} />
+                      <MiniMetric label="Stress" value={log.stress == null ? "No data" : `${log.stress}/5`} />
+                      <MiniMetric label="Sleep quality" value={log.sleepQuality == null ? "No data" : `${log.sleepQuality}/5`} />
+                      <MiniMetric label="Body weight" value={log.bodyWeight == null ? "No data" : `${log.bodyWeight} kg`} />
+                    </div>
+                    <div className="mt-4 border-t border-white/5 pt-4">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-smoke-3">Notes</h3>
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-smoke-2">{formatMetric(log.notes, "No notes")}</p>
+                    </div>
+                    <div className="mt-4 border-t border-white/5 pt-4">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-smoke-3">Tasks</h3>
+                      {log.tasks.length === 0 ? (
+                        <p className="mt-2 text-sm text-smoke-3">No tasks for this check-in.</p>
+                      ) : (
+                        <ul className="mt-2 space-y-2">
+                          {log.tasks.map((task) => (
+                            <li key={task.id} className="flex items-start gap-2 rounded-md bg-ink-3 px-3 py-2 text-sm">
+                              <span
+                                aria-hidden="true"
+                                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                                  task.done ? "border-red bg-red text-white" : "border-smoke-4 text-transparent"
+                                }`}
+                              >
+                                ✓
+                              </span>
+                              <span className="min-w-0 flex-1 text-smoke-2">{task.label}</span>
+                              <span className="shrink-0 text-xs font-semibold text-smoke-4">{task.done ? "Done" : "Not done"}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 ))}

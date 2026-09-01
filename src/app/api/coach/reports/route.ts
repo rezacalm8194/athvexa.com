@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCoachApi } from "@/lib/apiAuth";
+import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
 
 const RANGE_VALUES = ["week", "month", "custom"] as const;
@@ -249,7 +250,7 @@ export async function GET(req: NextRequest) {
             sleep: todayLog?.sleepHours ?? null,
             fatigue: todayLog?.fatigue ?? null,
             soreness: todayLog?.soreness ?? null,
-            profileHref: `/dashboard/coach/players?playerId=${player.id}`,
+            profileHref: coachPlayerProfileHref(player.id),
           }
         : null;
     })
@@ -320,7 +321,7 @@ export async function GET(req: NextRequest) {
         soreness: latestLog?.soreness ?? null,
         assessmentChange,
       }),
-      profileHref: `/dashboard/coach/players?playerId=${player.id}`,
+      profileHref: coachPlayerProfileHref(player.id),
       assessmentHref: latestAssessment ? `/dashboard/coach/assessments?assessmentId=${latestAssessment.id}` : null,
     };
   });

@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import EmptyRosterState from "@/components/coach/EmptyRosterState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
 import StatusFilter from "@/components/coach/shared/StatusFilter";
 import { CopyIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
+import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 
 type PlayerStatus = "all" | "ready" | "attention" | "not_checked_in";
 
@@ -262,9 +264,9 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
                   </div>
 
                   <div className="mt-4 flex justify-end">
-                    <a href={`/dashboard/coach/players?playerId=${player.id}`} className="btn-ghost !px-3 !py-2 text-xs">
+                    <Link href={coachPlayerProfileHref(player.id)} className="btn-ghost !px-3 !py-2 text-xs">
                       Open player profile
-                    </a>
+                    </Link>
                   </div>
                 </article>
               ))}
