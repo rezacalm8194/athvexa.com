@@ -11,6 +11,8 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:loadtest": "tsx scripts/load-test-data.ts seed",
+    "db:loadtest:clean": "tsx scripts/load-test-data.ts unseed",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
