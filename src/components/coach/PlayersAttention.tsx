@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AlertIcon, CheckCircleIcon } from "@/components/icons";
+import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 
 type AttentionPlayer = {
   id: string;
@@ -42,7 +43,11 @@ export default function PlayersAttention({
 
       <div className="flex flex-col gap-2">
         {players?.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 rounded-md border border-white/5 bg-ink-3 p-3">
+          <Link
+            key={p.id}
+            href={coachPlayerProfileHref(p.id)}
+            className="flex cursor-pointer items-center gap-3 rounded-md border border-white/5 bg-ink-3 p-3 transition-colors hover:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/60"
+          >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-red/15 text-xs font-bold text-red">
               {p.name.charAt(0)}
             </div>
@@ -54,7 +59,7 @@ export default function PlayersAttention({
               </div>
             </div>
             {p.loggedToday && <div className="font-display text-xl font-black text-white">{p.score}</div>}
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { ensureCoachReminderNotifications, ensurePlayerReminderNotifications } from "@/lib/notifications";
+import {
+  ensureCoachReminderNotifications,
+  ensurePlayerReminderNotifications,
+  repairLegacyCoachPlayerNotificationLinks,
+} from "@/lib/notifications";
 import { getTeamOwnerId } from "@/lib/teamContext";
 
 export async function GET() {
@@ -13,6 +17,7 @@ export async function GET() {
     await ensurePlayerReminderNotifications(session.sub);
   } else {
     await ensureCoachReminderNotifications(await getTeamOwnerId(session.sub), session.sub);
+    await repairLegacyCoachPlayerNotificationLinks(session.sub);
   }
 
   const [notifications, unreadCount] = await Promise.all([

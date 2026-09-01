@@ -29,7 +29,9 @@ export async function createNotification(input: NotificationInput) {
   if (data.dedupeKey) {
     return db.notification.upsert({
       where: { dedupeKey: data.dedupeKey },
-      update: {},
+      update: data.dedupeKey.startsWith("coach-no-check-in:")
+        ? { actionHref: data.actionHref, description: data.description }
+        : {},
       create: data,
     });
   }
@@ -40,6 +42,32 @@ export async function createNotification(input: NotificationInput) {
 export async function createManyNotifications(items: NotificationInput[]) {
   for (const item of items) {
     await createNotification(item);
+  }
+}
+
+export async function repairLegacyCoachPlayerNotificationLinks(userId: string) {
+  const legacy = await db.notification.findMany({
+    where: {
+      userId,
+      OR: [
+        { actionHref: { startsWith: "/dashboard/coach/players?" } },
+        { type: "PLAYER_NO_CHECK_IN", relatedId: { not: null }, actionHref: { not: null } },
+      ],
+    },
+    select: { id: true, actionHref: true, relatedId: true },
+  });
+
+  for (const row of legacy) {
+    const playerId = row.relatedId ?? row.actionHref?.match(/[?&]playerId=([^&]+)/)?.[1];
+    if (!playerId) continue;
+
+    const nextHref = coachPlayerProfileHref(playerId);
+    if (row.actionHref === nextHref) continue;
+
+    await db.notification.update({
+      where: { id: row.id },
+      data: { actionHref: nextHref },
+    });
   }
 }
 

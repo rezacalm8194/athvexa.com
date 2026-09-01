@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { inviteStatus } from "@/lib/invites";
@@ -83,6 +84,7 @@ export async function GET() {
         kind: "CHECK_IN" as const,
         playerId: log.player.id,
         playerName: log.player.name,
+        actionHref: coachPlayerProfileHref(log.player.id),
         score: log.score,
         date: log.date,
         updatedAt: log.updatedAt,

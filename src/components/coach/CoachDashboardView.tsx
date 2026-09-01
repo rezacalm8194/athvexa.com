@@ -16,6 +16,7 @@ type Overview = {
   recentActivity: {
     id: string;
     kind?: "CHECK_IN" | "ASSISTANT_ACTIVITY";
+    playerId?: string;
     playerName?: string;
     score?: number;
     title?: string;

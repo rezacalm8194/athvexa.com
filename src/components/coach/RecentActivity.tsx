@@ -5,6 +5,7 @@ import { ClipboardCheckIcon, UsersIcon } from "@/components/icons";
 type Activity = {
   id: string;
   kind?: "CHECK_IN" | "ASSISTANT_ACTIVITY";
+  playerId?: string;
   playerName?: string;
   score?: number;
   title?: string;
@@ -59,7 +60,16 @@ export default function RecentActivity({ items, loading }: { items: Activity[] |
                   ) : null}
                 </>
               ) : (
-                <><span className="font-semibold text-white">{item.playerName}</span> logged a readiness score of{" "}<span className="font-semibold text-white">{item.score}</span></>
+                <>
+                  {item.actionHref ? (
+                    <Link href={item.actionHref} className="font-semibold text-red transition-colors hover:text-red-glow">
+                      {item.playerName}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{item.playerName}</span>
+                  )}{" "}
+                  logged a readiness score of <span className="font-semibold text-white">{item.score}</span>
+                </>
               )}
               <span className="block text-[11px] text-smoke-3">{relativeTime(item.updatedAt)}</span>
             </span>
