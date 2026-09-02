@@ -24,6 +24,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/onboarding") ||
     pathname.startsWith("/invite");
 
   if (isMarketingHost && isAppPath) {
@@ -58,5 +59,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/login", "/register", "/invite/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/onboarding/:path*", "/login", "/register", "/invite/:path*"],
 };

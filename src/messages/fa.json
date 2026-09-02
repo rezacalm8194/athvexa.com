@@ -1,0 +1,5 @@
+{
+  "preferences": { "title": "تنظیم ترجیحات", "language": "زبان", "timezone": "منطقه زمانی", "continue": "ادامه" },
+  "auth": { "signIn": "ورود", "register": "ثبت‌نام رایگان" },
+  "nav": { "dashboard": "داشبورد", "settings": "تنظیمات" }
+}

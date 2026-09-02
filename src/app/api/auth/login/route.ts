@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const token = await signSession({ sub: user.id, role, name: user.name }, remember);
 
     const res = NextResponse.json({
-      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, locale: user.locale, timeZone: user.timeZone, onboardingCompletedAt: user.onboardingCompletedAt },
     });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24));
     return res;

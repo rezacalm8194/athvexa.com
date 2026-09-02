@@ -35,7 +35,7 @@ export default function LoginForm() {
         }
         return;
       }
-      router.push(data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      router.push(!data.user?.onboardingCompletedAt ? "/onboarding/preferences" : data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
       router.refresh();
     } catch {
       setError("Could not sign in. Check the server database settings and try again.");

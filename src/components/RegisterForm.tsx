@@ -38,7 +38,7 @@ export default function RegisterForm({
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
-      router.push(role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      router.push("/onboarding/preferences");
       router.refresh();
     } catch {
       setError("Could not create your account. Check the server database settings and try again.");

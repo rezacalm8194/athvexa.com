@@ -19,6 +19,9 @@ model User {
   phone        String?  @unique
   passwordHash String
   role         String   @default("PLAYER") // COACH | ASSISTANT | PLAYER
+  locale       String   @default("en") // en | fa
+  timeZone     String?
+  onboardingCompletedAt DateTime?
   createdAt    DateTime @default(now())
 
   // Player-specific: which coach this player belongs to

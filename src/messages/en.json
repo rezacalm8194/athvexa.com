@@ -1,0 +1,5 @@
+{
+  "preferences": { "title": "Set your preferences", "language": "Language", "timezone": "Time zone", "continue": "Continue" },
+  "auth": { "signIn": "Sign in", "register": "Register free" },
+  "nav": { "dashboard": "Dashboard", "settings": "Settings" }
+}

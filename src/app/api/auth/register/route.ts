@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
     let coachId: string | undefined;
     let inviteIdToLink: string | undefined;
     let inviteTeamId: string | null = null;
+    let inviteLocale = "en";
+    let inviteTimeZone: string | null = null;
 
     if (inviteToken) {
       const invite = await db.invite.findUnique({ where: { token: inviteToken } });
@@ -59,6 +61,11 @@ export async function POST(req: NextRequest) {
       coachId = invite.coachId;
       inviteIdToLink = invite.id;
       inviteTeamId = invite.teamId;
+      if (invite.teamId) {
+        const team = await db.team.findUnique({ where: { id: invite.teamId }, select: { defaultLanguage: true, timeZone: true } });
+        inviteLocale = team?.defaultLanguage === "fa" ? "fa" : "en";
+        inviteTimeZone = team?.timeZone ?? null;
+      }
     } else if (role === "ASSISTANT") {
       // Assistant accounts can only be created through a coach's invite link.
       return NextResponse.json(
@@ -75,6 +82,8 @@ export async function POST(req: NextRequest) {
         passwordHash: await hashPassword(password),
         role,
         coachId,
+        locale: inviteLocale,
+        timeZone: inviteTimeZone,
       },
     });
 
@@ -105,7 +114,7 @@ export async function POST(req: NextRequest) {
     const token = await signSession({ sub: user.id, role, name: user.name }, true);
 
     const res = NextResponse.json({
-      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, locale: user.locale, timeZone: user.timeZone, onboardingCompletedAt: user.onboardingCompletedAt },
     });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(60 * 60 * 24 * 30));
     return res;

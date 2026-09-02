@@ -86,6 +86,7 @@ export function ensureDatabase() {
     if (tables.length === 0) {
       await ensureSqliteSchema();
     }
+    await ensureUserPreferenceColumns();
     await ensureAssessmentScoreIsReal();
   })().catch((error) => {
     sqliteReady = null;
@@ -96,6 +97,19 @@ export function ensureDatabase() {
     throw error;
   });
   return sqliteReady;
+}
+
+async function ensureUserPreferenceColumns() {
+  const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("User");`);
+  if (!columns.some((column) => column.name === "locale")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "locale" TEXT NOT NULL DEFAULT 'en';`);
+  }
+  if (!columns.some((column) => column.name === "timeZone")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "timeZone" TEXT;`);
+  }
+  if (!columns.some((column) => column.name === "onboardingCompletedAt")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "onboardingCompletedAt" DATETIME;`);
+  }
 }
 
 async function ensureAssessmentScoreIsReal() {
@@ -155,6 +169,9 @@ async function ensureSqliteSchema() {
       "phone" TEXT,
       "passwordHash" TEXT NOT NULL,
       "role" TEXT NOT NULL DEFAULT 'PLAYER',
+      "locale" TEXT NOT NULL DEFAULT 'en',
+      "timeZone" TEXT,
+      "onboardingCompletedAt" DATETIME,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "coachId" TEXT,
       CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE

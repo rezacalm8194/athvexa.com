@@ -17,7 +17,7 @@ export default function DashboardNav({
   roleLabel,
   subtitle,
   notificationCount = 0,
-  settingsHref,
+  settingsHref = "/dashboard/settings",
 }: {
   name: string;
   roleLabel: string;

@@ -32,6 +32,10 @@ export function weekDates(weekKey?: string | null) {
 }
 
 export const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export function weekdayLabels(locale: "en" | "fa" = "en") {
+  const monday = new Date("2024-01-01T12:00:00Z");
+  return Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { weekday: "short" }).format(new Date(monday.getTime() + index * 86400000)));
+}
 
 export function addDays(weekKey: string, days: number) {
   const d = new Date(weekKey + "T00:00:00");
@@ -39,7 +43,7 @@ export function addDays(weekKey: string, days: number) {
   return toKey(mondayOf(d));
 }
 
-export function shortLabel(dateKey: string) {
+export function shortLabel(dateKey: string, locale: "en" | "fa" = "en", timeZone?: string | null) {
   const d = new Date(dateKey + "T00:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return d.toLocaleDateString(locale === "fa" ? "fa-IR" : "en-US", { month: "short", day: "numeric", timeZone: timeZone || undefined });
 }
