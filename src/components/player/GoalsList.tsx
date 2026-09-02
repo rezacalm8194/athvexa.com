@@ -81,7 +81,7 @@ export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZo
           <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.goals.title")}</h1>
         </div>
         <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? "Cancel" : "+ New goal"}
+          {showForm ? t(locale, "common.cancel") : t(locale, "player.goals.new")}
         </button>
       </div>
 
@@ -90,19 +90,19 @@ export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZo
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Goal — e.g. Run a sub-12s 100m"
+            placeholder={t(locale, "player.goals.placeholder")}
             className="input-field mb-3"
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Notes (optional)"
+            placeholder={t(locale, "player.goals.notesPlaceholder")}
             rows={2}
             className="input-field mb-3 resize-none"
           />
           <div className="mb-3 flex flex-wrap items-center gap-4">
             <div>
-              <div className="eyebrow mb-1.5">Category</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.goals.category")}</div>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -116,7 +116,7 @@ export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZo
               </select>
             </div>
             <div>
-              <div className="eyebrow mb-1.5">Target date</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.goals.targetDate")}</div>
               <input
                 type="date"
                 value={targetDate}
@@ -126,16 +126,16 @@ export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZo
             </div>
           </div>
           <button className="btn-primary !px-4 !py-2 text-xs" onClick={createGoal}>
-            Create goal
+            {t(locale, "player.goals.create")}
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="text-sm text-smoke-3">Loading goals…</div>
+        <div className="text-sm text-smoke-3">{t(locale, "player.goals.loading")}</div>
       ) : goals.length === 0 ? (
         <div className="card p-6 text-center text-sm text-smoke-3">
-          No goals yet. Set your first target and track progress week to week.
+          {t(locale, "player.goals.empty")}
         </div>
       ) : (
         <div className="flex flex-col gap-6">

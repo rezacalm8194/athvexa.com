@@ -171,7 +171,7 @@ export default function TrainingProgramView({ locale, timeZone }: { locale: Loca
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-black text-white">{data.program.name}</h2>
-                <p className="mt-1 text-sm text-smoke-3">{data.program.goal || "No goal set."}</p>
+                <p className="mt-1 text-sm text-smoke-3">{data.program.goal || t(locale, "player.training.noGoal")}</p>
               </div>
               <span className="w-fit rounded-full bg-[#4CAF50]/15 px-2.5 py-1 text-xs font-bold text-[#80D987]">{t(locale, "player.training.active")}</span>
             </div>
@@ -262,10 +262,10 @@ export default function TrainingProgramView({ locale, timeZone }: { locale: Loca
       {completing ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4" onClick={() => setCompleting(null)}>
           <div className="w-full max-w-md rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <h2 className="font-display text-xl font-bold text-white">Complete session</h2>
+            <h2 className="font-display text-xl font-bold text-white">{t(locale, "player.training.completeSession")}</h2>
             <p className="mt-1 text-sm text-smoke-3">{completing.title}</p>
             <label className="mt-4 block text-xs font-medium text-smoke-3">
-              Completion time
+              {t(locale, "player.training.completionTime")}
               <input
                 className="input-field mt-1"
                 type="datetime-local"
@@ -274,20 +274,20 @@ export default function TrainingProgramView({ locale, timeZone }: { locale: Loca
               />
             </label>
             <label className="mt-4 block text-xs font-medium text-smoke-3">
-              Notes
+              {t(locale, "player.training.notes")}
               <textarea
                 className="input-field mt-1 min-h-24 resize-none"
                 value={completionNotes}
                 onChange={(event) => setCompletionNotes(event.target.value)}
-                placeholder="Optional notes about how it went"
+                placeholder={t(locale, "player.training.notesPlaceholder")}
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button className="btn-ghost !px-4 !py-2 text-xs" onClick={() => setCompleting(null)} disabled={busyId === completing.id}>
-                Cancel
+                {t(locale, "common.cancel")}
               </button>
               <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => updateSession(completing, "complete")} disabled={busyId === completing.id}>
-                {busyId === completing.id ? "Saving..." : "Mark completed"}
+                {busyId === completing.id ? t(locale, "common.saving") : t(locale, "player.training.markCompleted")}
               </button>
             </div>
           </div>

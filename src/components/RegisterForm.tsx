@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { roleLabel, t, type Locale } from "@/lib/i18n";
 
 type Role = "PLAYER" | "COACH" | "ASSISTANT";
 type ContactType = "email" | "phone";
 
 export default function RegisterForm({
+  locale,
   inviteToken,
   inviteRole,
 }: {
+  locale: Locale;
   inviteToken?: string;
   inviteRole?: "PLAYER" | "ASSISTANT" | "COACH";
 }) {
@@ -35,30 +38,29 @@ export default function RegisterForm({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Try again.");
+        setError(data.error ?? t(locale, "auth.genericError"));
         return;
       }
       router.push("/onboarding/preferences");
       router.refresh();
     } catch {
-      setError("Could not create your account. Check the server database settings and try again.");
+      setError(t(locale, "auth.registerFailed"));
     } finally {
       setLoading(false);
     }
   }
 
-  // Step 1 — the required "player or coach" choice.
   if (!role) {
     return (
       <div className="flex flex-col gap-3">
         <RoleCard
-          label="I'm a player"
-          description="Log your daily readiness, training and recovery."
+          label={t(locale, "auth.playerChoice")}
+          description={t(locale, "auth.playerDescription")}
           onClick={() => setRole("PLAYER")}
         />
         <RoleCard
-          label="I'm a coach"
-          description="Track your roster and send daily guidance."
+          label={t(locale, "auth.coachChoice")}
+          description={t(locale, "auth.coachDescription")}
           onClick={() => setRole("COACH")}
         />
       </div>
@@ -73,10 +75,10 @@ export default function RegisterForm({
         disabled={Boolean(inviteToken)}
         className="self-start text-xs font-medium text-smoke-3 hover:text-white disabled:opacity-40 disabled:hover:text-smoke-3"
       >
-        ← {role === "PLAYER" ? "Player" : role === "ASSISTANT" ? "Assistant coach" : "Coach"} account · change
+        {t(locale, "auth.changeRole", { role: roleLabel(role, locale) })}
       </button>
 
-      <Field label="Your name">
+      <Field label={t(locale, "auth.name")}>
         <input
           className="input-field"
           value={name}
@@ -95,11 +97,11 @@ export default function RegisterForm({
             onClick={() => { setContactType(type); setContact(""); setError(null); }}
             className={`min-h-11 rounded px-3 text-sm font-medium transition-colors ${contactType === type ? "bg-ink-4 text-white shadow-sm" : "text-smoke-3 hover:text-white"}`}
           >
-            {type === "email" ? "Email" : "Phone number"}
+            {type === "email" ? t(locale, "auth.email") : t(locale, "auth.phone")}
           </button>
         ))}
       </div>
-      <Field label={contactType === "email" ? "Email address" : "Phone number"}>
+      <Field label={contactType === "email" ? t(locale, "auth.emailAddress") : t(locale, "auth.phone")}>
         <input
           className="input-field"
           type={contactType === "email" ? "email" : "tel"}
@@ -111,13 +113,13 @@ export default function RegisterForm({
           required
         />
       </Field>
-      <Field label="Password">
+      <Field label={t(locale, "auth.password")}>
         <input
           className="input-field"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Min 8 characters"
+          placeholder={t(locale, "auth.minPassword")}
           autoComplete="new-password"
           minLength={8}
           required
@@ -127,12 +129,12 @@ export default function RegisterForm({
       {error && <p className="text-sm text-red-glow">{error}</p>}
 
       <button type="submit" className="btn-primary mt-1" disabled={loading}>
-        {loading ? "Creating account…" : "Create free account"}
+        {loading ? t(locale, "auth.creatingAccount") : t(locale, "auth.createAccount")}
       </button>
       <p className="text-center text-sm text-smoke-3">
-        Already have an account?{" "}
+        {t(locale, "auth.alreadyHaveAccount")}{" "}
         <a href="/login" className="text-white hover:text-red-glow">
-          Sign in
+          {t(locale, "auth.signIn")}
         </a>
       </p>
     </form>

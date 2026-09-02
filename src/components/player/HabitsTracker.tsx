@@ -92,7 +92,7 @@ export default function HabitsTracker({ locale }: { locale: Locale }) {
           <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.habits.title")}</h1>
         </div>
         <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? "Cancel" : "+ New habit"}
+          {showForm ? t(locale, "common.cancel") : t(locale, "player.habits.new")}
         </button>
       </div>
 
@@ -101,12 +101,12 @@ export default function HabitsTracker({ locale }: { locale: Locale }) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Habit name — e.g. Drink 3L water"
+            placeholder={t(locale, "player.habits.placeholder")}
             className="input-field mb-3"
           />
           <div className="mb-3 flex flex-wrap items-center gap-4">
             <div>
-              <div className="eyebrow mb-1.5">Icon</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.habits.icon")}</div>
               <div className="flex gap-1.5">
                 {ICON_CHOICES.map((i) => (
                   <button
@@ -121,7 +121,7 @@ export default function HabitsTracker({ locale }: { locale: Locale }) {
               </div>
             </div>
             <div>
-              <div className="eyebrow mb-1.5">Color</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.habits.color")}</div>
               <div className="flex gap-1.5">
                 {COLOR_CHOICES.map((c) => (
                   <button
@@ -135,7 +135,7 @@ export default function HabitsTracker({ locale }: { locale: Locale }) {
               </div>
             </div>
             <div>
-              <div className="eyebrow mb-1.5">Times / week: {targetDays}</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.habits.timesPerWeek", { count: targetDays })}</div>
               <input
                 type="range"
                 min={1}
@@ -147,16 +147,16 @@ export default function HabitsTracker({ locale }: { locale: Locale }) {
             </div>
           </div>
           <button className="btn-primary !px-4 !py-2 text-xs" onClick={createHabit}>
-            Create habit
+            {t(locale, "player.habits.create")}
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="text-sm text-smoke-3">Loading habits…</div>
+        <div className="text-sm text-smoke-3">{t(locale, "player.habits.loading")}</div>
       ) : habits.length === 0 ? (
         <div className="card p-6 text-center text-sm text-smoke-3">
-          No habits yet. Add your first one — small daily wins add up.
+          {t(locale, "player.habits.empty")}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -181,7 +181,7 @@ export default function HabitsTracker({ locale }: { locale: Locale }) {
                       onClick={() => archive(habit)}
                       className="text-xs text-smoke-3 opacity-0 transition-opacity hover:text-red group-hover:opacity-100"
                     >
-                      Archive
+                      {t(locale, "player.goals.archive")}
                     </button>
                   </div>
                 </div>
