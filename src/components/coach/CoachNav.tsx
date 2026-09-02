@@ -11,20 +11,21 @@ import {
   SettingsIcon,
   UsersIcon,
 } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
 const TABS = [
-  { href: "/dashboard/coach", label: "Dashboard", icon: GridIcon },
-  { href: "/dashboard/coach/teams", label: "Teams", icon: UsersIcon },
-  { href: "/dashboard/coach/players", label: "Players", icon: UsersIcon },
-  { href: "/dashboard/coach/programs", label: "Programs", icon: ClipboardListIcon },
-  { href: "/dashboard/coach/assessments", label: "Assessments", icon: ClipboardCheckIcon },
-  { href: "/dashboard/messages", label: "Messages", icon: MailIcon },
-  { href: "/dashboard/coach/reports", label: "Reports", icon: BarChartIcon },
-  { href: "/dashboard/coach/invitations", label: "Invitations", icon: MailIcon },
-  { href: "/dashboard/coach/settings", label: "Settings", icon: SettingsIcon },
-];
+  { href: "/dashboard/coach", key: "nav.coach.dashboard", icon: GridIcon },
+  { href: "/dashboard/coach/teams", key: "nav.coach.teams", icon: UsersIcon },
+  { href: "/dashboard/coach/players", key: "nav.coach.players", icon: UsersIcon },
+  { href: "/dashboard/coach/programs", key: "nav.coach.programs", icon: ClipboardListIcon },
+  { href: "/dashboard/coach/assessments", key: "nav.coach.assessments", icon: ClipboardCheckIcon },
+  { href: "/dashboard/messages", key: "nav.coach.messages", icon: MailIcon },
+  { href: "/dashboard/coach/reports", key: "nav.coach.reports", icon: BarChartIcon },
+  { href: "/dashboard/coach/invitations", key: "nav.coach.invitations", icon: MailIcon },
+  { href: "/dashboard/coach/settings", key: "nav.coach.settings", icon: SettingsIcon },
+] as const;
 
-export default function CoachNav() {
+export default function CoachNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
 
   return (
@@ -42,7 +43,7 @@ export default function CoachNav() {
               }`}
             >
               <Icon className="h-4 w-4" />
-              {tab.label}
+              {t(locale, tab.key)}
               {active && <span className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-red" />}
             </Link>
           );

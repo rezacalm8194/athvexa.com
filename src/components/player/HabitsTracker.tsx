@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { WEEKDAY_LABELS, mondayOf, toKey, todayKey } from "@/lib/week";
+import { mondayOf, toKey, todayKey, weekdayLabels } from "@/lib/week";
+import { t, type Locale } from "@/lib/i18n";
 
 type Habit = {
   id: string;
@@ -15,7 +16,7 @@ type Habit = {
 const ICON_CHOICES = ["💧", "🏃", "🥗", "😴", "🧘", "🩹", "📚", "🦵"];
 const COLOR_CHOICES = ["#4CAF50", "#FFC107", "#2196F3", "#E02020", "#9C27B0", "#00BCD4"];
 
-export default function HabitsTracker() {
+export default function HabitsTracker({ locale }: { locale: Locale }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,7 @@ export default function HabitsTracker() {
   useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const today = todayKey();
+  const labels = weekdayLabels(locale);
 
   async function toggle(habit: Habit, date: string) {
     const has = habit.logs.some((l) => l.date === date);
@@ -86,8 +88,8 @@ export default function HabitsTracker() {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <div className="eyebrow">Phase 2</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Habits</h1>
+          <div className="eyebrow">{t(locale, "common.phase2")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.habits.title")}</h1>
         </div>
         <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => setShowForm((s) => !s)}>
           {showForm ? "Cancel" : "+ New habit"}
@@ -194,7 +196,7 @@ export default function HabitsTracker() {
                         onClick={() => toggle(habit, date)}
                         className="flex flex-1 flex-col items-center gap-1 disabled:opacity-30"
                       >
-                        <span className="text-[9px] uppercase text-smoke-3">{WEEKDAY_LABELS[i]}</span>
+                        <span className="text-[9px] uppercase text-smoke-3">{labels[i]}</span>
                         <span
                           className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
                           style={{

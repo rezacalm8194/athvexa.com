@@ -33,6 +33,7 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-barlow)", "sans-serif"],
         body: ["var(--font-inter)", "sans-serif"],
+        vazirmatn: ["var(--font-vazirmatn)", "sans-serif"],
       },
       fontWeight: {
         extrabold: "700",

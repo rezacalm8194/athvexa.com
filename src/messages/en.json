@@ -1,5 +1,110 @@
 {
-  "preferences": { "title": "Set your preferences", "language": "Language", "timezone": "Time zone", "continue": "Continue" },
+  "preferences": {
+    "title": "Set your preferences",
+    "subtitle": "Choose the language and time zone used across your workspace.",
+    "language": "Language",
+    "timezone": "Time zone",
+    "timezoneHint": "Detected from your browser; you can change it.",
+    "timezoneSearch": "Search time zones",
+    "continue": "Continue",
+    "save": "Save preferences",
+    "saving": "Saving…"
+  },
   "auth": { "signIn": "Sign in", "register": "Register free" },
-  "nav": { "dashboard": "Dashboard", "settings": "Settings" }
+  "roles": { "player": "Player", "coach": "Coach", "assistantCoach": "Assistant coach" },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "preferences": "Preferences",
+    "teamSettings": "Team settings",
+    "signOut": "Sign out",
+    "switchTeam": "Switch team",
+    "createTeam": "Create new team",
+    "manageTeams": "Manage teams",
+    "player": {
+      "today": "Today",
+      "training": "Training",
+      "planner": "Planner",
+      "habits": "Habits",
+      "goals": "Goals",
+      "messages": "Messages"
+    },
+    "coach": {
+      "dashboard": "Dashboard",
+      "teams": "Teams",
+      "players": "Players",
+      "programs": "Programs",
+      "assessments": "Assessments",
+      "messages": "Messages",
+      "reports": "Reports",
+      "invitations": "Invitations",
+      "settings": "Settings"
+    }
+  },
+  "settings": {
+    "title": "Preferences",
+    "description": "Language and time zone apply to your personal account."
+  },
+  "common": {
+    "notSet": "Not set",
+    "minutes": "{value} min",
+    "phase2": "Phase 2",
+    "cancel": "Cancel",
+    "tryAgain": "Try again"
+  },
+  "player": {
+    "today": {
+      "eyebrow": "Today",
+      "welcome": "Welcome, {name}",
+      "loading": "Loading today's dashboard…",
+      "todaysTraining": "Today's training",
+      "todaysCheckIn": "Today's check-in",
+      "noTrainingToday": "No training session is scheduled for today."
+    },
+    "checkIn": {
+      "eyebrow": "Daily check-in",
+      "title": "Today's check-in",
+      "loadingDate": "Loading today's date…"
+    },
+    "goals": {
+      "title": "Goals",
+      "due": "Due {date}",
+      "completed": "Completed",
+      "archive": "Archive"
+    },
+    "training": {
+      "eyebrow": "Training",
+      "title": "Training program",
+      "subtitle": "Your current assigned program and this week's sessions.",
+      "notAssigned": "No training program has been assigned yet.",
+      "programProgress": "Program progress",
+      "completedRemaining": "{completed} completed · {remaining} remaining",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "thisWeekSessions": "This week's sessions",
+      "scheduledCount": "{count} scheduled",
+      "noSessions": "No sessions have been added to this program.",
+      "noNotes": "No notes added.",
+      "completedAt": "Completed at {datetime}",
+      "statusNotStarted": "Not started",
+      "statusInProgress": "In progress",
+      "statusCompleted": "Completed",
+      "statusSkipped": "Skipped",
+      "start": "Start",
+      "complete": "Complete",
+      "skip": "Skip",
+      "active": "Active"
+    },
+    "planner": {
+      "title": "Weekly Planner",
+      "prev": "← Prev",
+      "next": "Next →",
+      "thisWeek": "This week",
+      "loadingWeek": "Loading the week…",
+      "nothingPlanned": "Nothing planned"
+    },
+    "habits": {
+      "title": "Habits"
+    }
+  }
 }

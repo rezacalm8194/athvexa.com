@@ -5,6 +5,8 @@ import Link from "next/link";
 import ScoreCard from "./ScoreCard";
 import StatInput from "./StatInput";
 import WellnessSlider from "./WellnessSlider";
+import { formatDate } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 
 type Task = { id: string; label: string; done: boolean };
 type Log = {
@@ -40,18 +42,16 @@ type ActiveProgram = {
   nextSession: { id: string; title: string; day: string; durationMinutes: number | null; intensity: string } | null;
 } | null;
 
-function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(
-    new Date(`${value}T00:00:00`)
-  );
+function formatLongDate(value: string, locale: Locale, timeZone: string | null) {
+  return formatDate(`${value}T12:00:00Z`, { weekday: "long", month: "long", day: "numeric", year: "numeric" }, locale, timeZone);
 }
 
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T00:00:00`));
+function formatShortDate(value: string, locale: Locale, timeZone: string | null) {
+  return formatDate(`${value}T12:00:00Z`, { month: "short", day: "numeric", year: "numeric" }, locale, timeZone);
 }
 
-function durationLabel(value: number | null | undefined) {
-  return value == null ? "Not set" : `${value} min`;
+function durationLabel(value: number | null | undefined, locale: Locale) {
+  return value == null ? t(locale, "common.notSet") : t(locale, "common.minutes", { value });
 }
 
 function SummaryCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -63,7 +63,7 @@ function SummaryCard({ title, children }: { title: string; children: React.React
   );
 }
 
-export default function TodayDashboard({ playerName }: { playerName: string }) {
+export default function TodayDashboard({ playerName, locale, timeZone }: { playerName: string; locale: Locale; timeZone: string | null }) {
   const [log, setLog] = useState<Log | null>(null);
   const [coachMessage, setCoachMessage] = useState<string | null>(null);
   const [todayDate, setTodayDate] = useState<string | null>(null);
@@ -114,37 +114,37 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
   }
 
   if (loading || !log) {
-    return <div className="p-8 text-sm text-smoke-3">Loading today's dashboard…</div>;
+    return <div className="p-8 text-sm text-smoke-3">{t(locale, "player.today.loading")}</div>;
   }
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <div className="eyebrow">Today</div>
+        <div className="eyebrow">{t(locale, "player.today.eyebrow")}</div>
         <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">
-          Welcome, {playerName}
+          {t(locale, "player.today.welcome", { name: playerName })}
         </h1>
-        <p className="mt-1 text-sm text-smoke-3">{todayDate ? formatLongDate(todayDate) : ""}</p>
+        <p className="mt-1 text-sm text-smoke-3">{todayDate ? formatLongDate(todayDate, locale, timeZone) : ""}</p>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
-        <SummaryCard title="Today's training">
+        <SummaryCard title={t(locale, "player.today.todaysTraining")}>
           {todaysTraining ? (
             <div>
               <h2 className="font-display text-lg font-bold text-white">{todaysTraining.title}</h2>
               <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
-                <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{durationLabel(todaysTraining.durationMinutes)}</span>
+                <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{durationLabel(todaysTraining.durationMinutes, locale)}</span>
                 <span className="rounded bg-red/15 px-2 py-1 font-bold text-red-glow">{todaysTraining.intensity}</span>
                 <span className="rounded bg-[#4CAF50]/15 px-2 py-1 font-bold text-[#80D987]">{todaysTraining.status}</span>
               </div>
               {todaysTraining.notes && <p className="mt-3 text-xs text-smoke-3">{todaysTraining.notes}</p>}
             </div>
           ) : (
-            <p className="text-sm text-smoke-3">No training session is scheduled for today.</p>
+            <p className="text-sm text-smoke-3">{t(locale, "player.today.noTrainingToday")}</p>
           )}
         </SummaryCard>
 
-        <SummaryCard title="Today's check-in">
+        <SummaryCard title={t(locale, "player.today.todaysCheckIn")}>
           <div className="flex flex-col gap-3">
             <div>
               <div className="font-display text-xl font-black text-white">{checkInCompleted ? "Completed" : "Not completed"}</div>
@@ -165,7 +165,7 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
             <div id="current-assessment">
               <div className="font-display text-3xl font-black text-white">{currentAssessment.score}</div>
               <p className="mt-1 text-sm text-smoke-3">
-                {currentAssessment.type} on {formatShortDate(currentAssessment.date)}
+                {currentAssessment.type} on {formatShortDate(currentAssessment.date, locale, timeZone)}
               </p>
             </div>
           ) : (

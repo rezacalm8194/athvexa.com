@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDate } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 
 type Goal = {
   id: string;
@@ -14,7 +16,7 @@ type Goal = {
 
 const CATEGORIES = ["Performance", "Fitness", "Skill", "Team"];
 
-export default function GoalsList() {
+export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -75,8 +77,8 @@ export default function GoalsList() {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <div className="eyebrow">Phase 2</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Goals</h1>
+          <div className="eyebrow">{t(locale, "common.phase2")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.goals.title")}</h1>
         </div>
         <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => setShowForm((s) => !s)}>
           {showForm ? "Cancel" : "+ New goal"}
@@ -140,16 +142,16 @@ export default function GoalsList() {
           {active.length > 0 && (
             <section className="flex flex-col gap-3">
               {active.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} onProgress={setProgress} onArchive={archive} />
+                <GoalCard key={goal.id} goal={goal} onProgress={setProgress} onArchive={archive} locale={locale} timeZone={timeZone} />
               ))}
             </section>
           )}
           {done.length > 0 && (
             <section>
-              <h2 className="eyebrow mb-3">Completed</h2>
+              <h2 className="eyebrow mb-3">{t(locale, "player.goals.completed")}</h2>
               <div className="flex flex-col gap-3">
                 {done.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} onProgress={setProgress} onArchive={archive} />
+                  <GoalCard key={goal.id} goal={goal} onProgress={setProgress} onArchive={archive} locale={locale} timeZone={timeZone} />
                 ))}
               </div>
             </section>
@@ -164,10 +166,14 @@ function GoalCard({
   goal,
   onProgress,
   onArchive,
+  locale,
+  timeZone,
 }: {
   goal: Goal;
   onProgress: (goal: Goal, progress: number) => void;
   onArchive: (goal: Goal) => void;
+  locale: Locale;
+  timeZone: string | null;
 }) {
   const isDone = goal.status === "DONE";
   return (
@@ -175,7 +181,7 @@ function GoalCard({
       <div className="mb-1 flex items-start justify-between gap-3">
         <div>
           <span className="eyebrow mr-2">{goal.category}</span>
-          {goal.targetDate && <span className="text-[10px] text-smoke-3">Due {goal.targetDate}</span>}
+          {goal.targetDate && <span className="text-[10px] text-smoke-3">{t(locale, "player.goals.due", { date: formatDate(`${goal.targetDate}T12:00:00Z`, { month: "short", day: "numeric", year: "numeric" }, locale, timeZone) })}</span>}
           <h3 className={`font-display text-lg font-bold ${isDone ? "text-smoke-3 line-through" : "text-white"}`}>
             {goal.title}
           </h3>
@@ -185,7 +191,7 @@ function GoalCard({
           onClick={() => onArchive(goal)}
           className="shrink-0 text-xs text-smoke-3 opacity-0 transition-opacity hover:text-red group-hover:opacity-100"
         >
-          Archive
+          {t(locale, "player.goals.archive")}
         </button>
       </div>
 

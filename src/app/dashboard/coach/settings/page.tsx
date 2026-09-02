@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import DashboardNav from "@/components/DashboardNav";
+import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import {
   AlertIcon,
@@ -14,6 +14,8 @@ import {
 import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getCoachContext } from "@/lib/coachContext";
 import { getCurrentTeamMembership, teamRoleLabel } from "@/lib/teamContext";
+import { getUserPreferences } from "@/lib/userPreferences";
+import { roleLabel as translateRole } from "@/lib/i18n";
 
 function SettingCard({
   title,
@@ -75,14 +77,15 @@ function TogglePlaceholder({ label, checked = false }: { label: string; checked?
 }
 
 export default async function SettingsPage() {
-  const { session, team: fallbackTeam, roleLabel, canManageRoles } = await getCoachContext();
+  const { session, team: fallbackTeam, canManageRoles } = await getCoachContext();
+  const { locale } = await getUserPreferences(session.sub);
   const membership = await getCurrentTeamMembership(session.sub);
   const team = membership?.team ?? fallbackTeam;
 
   return (
     <main className="min-h-screen bg-ink">
-      <DashboardNav name={session.name} roleLabel={roleLabel} settingsHref="/dashboard/coach/settings" />
-      <CoachNav />
+      <ServerDashboardNav name={session.name} locale={locale} settingsHref="/dashboard/coach/settings" />
+      <CoachNav locale={locale} />
 
       <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
@@ -119,7 +122,7 @@ export default async function SettingsPage() {
               <TeamProfileSettings
                 team={team}
                 ownerName={session.name}
-                roleLabel={membership ? teamRoleLabel(membership.role) : roleLabel}
+                roleLabel={membership ? teamRoleLabel(membership.role) : translateRole(session.role, locale)}
                 canEdit={session.role === "ASSISTANT" || canManageRoles || membership?.role === "OWNER" || membership?.role === "HEAD_COACH"}
               />
             </div>

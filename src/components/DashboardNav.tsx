@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, ChevronDownIcon, LogOutIcon, MailIcon, SettingsIcon } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
 type HeaderTeam = {
   id: string;
@@ -15,12 +16,14 @@ type HeaderTeam = {
 export default function DashboardNav({
   name,
   roleLabel,
+  locale,
   subtitle,
   notificationCount = 0,
-  settingsHref = "/dashboard/settings",
+  settingsHref,
 }: {
   name: string;
   roleLabel: string;
+  locale: Locale;
   /** Optional short line under the logo, e.g. a daily summary for coaches. */
   subtitle?: string;
   notificationCount?: number;
@@ -139,7 +142,7 @@ export default function DashboardNav({
                   className="absolute right-0 top-[calc(100%+8px)] w-64 overflow-hidden rounded-md border border-line-1 bg-ink-3 shadow-xl shadow-black/40"
                 >
                   <div className="border-b border-white/5 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-smoke-3">
-                    Switch team
+                    {t(locale, "nav.switchTeam")}
                   </div>
                   {teams.map((team) => (
                     <button
@@ -167,7 +170,7 @@ export default function DashboardNav({
                       className="block px-3.5 py-2.5 text-sm text-smoke-4 transition-colors hover:bg-white/5 hover:text-paper-pure"
                       role="menuitem"
                     >
-                      Create new team
+                      {t(locale, "nav.createTeam")}
                     </Link>
                     <Link
                       href="/dashboard/coach/teams"
@@ -175,7 +178,7 @@ export default function DashboardNav({
                       className="block px-3.5 py-2.5 text-sm text-smoke-4 transition-colors hover:bg-white/5 hover:text-paper-pure"
                       role="menuitem"
                     >
-                      Manage teams
+                      {t(locale, "nav.manageTeams")}
                     </Link>
                   </div>
                 </div>
@@ -238,6 +241,15 @@ export default function DashboardNav({
                   <div className="text-sm font-semibold text-white">{name}</div>
                   <div className="eyebrow">{roleLabel}</div>
                 </div>
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-smoke-4 transition-colors hover:bg-white/5 hover:text-paper-pure"
+                  role="menuitem"
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  {t(locale, "nav.preferences")}
+                </Link>
                 {settingsHref && (
                   <Link
                     href={settingsHref}
@@ -246,7 +258,7 @@ export default function DashboardNav({
                     role="menuitem"
                   >
                     <SettingsIcon className="h-4 w-4" />
-                    Settings
+                    {t(locale, "nav.teamSettings")}
                   </Link>
                 )}
                 <button
@@ -256,7 +268,7 @@ export default function DashboardNav({
                   className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-smoke-4 transition-colors hover:bg-red/10 hover:text-red-glow"
                 >
                   <LogOutIcon className="h-4 w-4" />
-                  Sign out
+                  {t(locale, "nav.signOut")}
                 </button>
               </div>
             )}

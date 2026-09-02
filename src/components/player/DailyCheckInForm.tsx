@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { formatDate as formatAppDate } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 
 type CheckIn = {
   id: string;
@@ -34,10 +36,8 @@ const emptyForm: FormState = {
   notes: "",
 };
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(
-    new Date(`${value}T00:00:00`)
-  );
+function formatDate(value: string, locale: Locale, timeZone: string | null) {
+  return formatAppDate(`${value}T12:00:00Z`, { weekday: "long", month: "long", day: "numeric", year: "numeric" }, locale, timeZone);
 }
 
 function formFromCheckIn(checkIn: CheckIn | null): FormState {
@@ -71,7 +71,7 @@ function Field({
   );
 }
 
-export default function DailyCheckInForm() {
+export default function DailyCheckInForm({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
   const [date, setDate] = useState<string | null>(null);
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -138,9 +138,9 @@ export default function DailyCheckInForm() {
   return (
     <section className="mx-auto w-full max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <div className="eyebrow">Daily check-in</div>
-        <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Today&apos;s check-in</h1>
-        <p className="mt-1 text-sm text-smoke-3">{date ? formatDate(date) : "Loading today's date..."}</p>
+        <div className="eyebrow">{t(locale, "player.checkIn.eyebrow")}</div>
+        <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.checkIn.title")}</h1>
+        <p className="mt-1 text-sm text-smoke-3">{date ? formatDate(date, locale, timeZone) : t(locale, "player.checkIn.loadingDate")}</p>
       </div>
 
       {loading ? (

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import DashboardNav from "@/components/DashboardNav";
+import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import PlayerAssessmentsSection from "@/components/coach/assessments/PlayerAssessmentsSection";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
@@ -9,6 +9,7 @@ import { db, ensureDatabase } from "@/lib/db";
 import { formatScore } from "@/lib/formatScore";
 import { getSession } from "@/lib/session";
 import { ensureLegacyTeamMemberships, teamRoleLabel } from "@/lib/teamContext";
+import { getUserPreferences } from "@/lib/userPreferences";
 
 type Tone = "good" | "warn" | "bad" | "neutral";
 
@@ -79,6 +80,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   });
 
   if (!membership) notFound();
+
+  const { locale } = await getUserPreferences(session.sub);
 
   const player = await db.user.findFirst({
     where: { id: playerId, role: "PLAYER" },
@@ -152,8 +155,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
   return (
     <main className="min-h-screen bg-ink">
-      <DashboardNav name={session.name} roleLabel={session.role === "COACH" ? "Coach" : "Assistant coach"} settingsHref="/dashboard/coach/settings" />
-      <CoachNav />
+      <ServerDashboardNav name={session.name} locale={locale} settingsHref="/dashboard/coach/settings" />
+      <CoachNav locale={locale} />
       <section className="mx-auto max-w-[1280px] px-6 py-8">
         <div className="mb-5">
           <Link href="/dashboard/coach/players" className="text-xs font-semibold text-smoke-3 transition-colors hover:text-white">

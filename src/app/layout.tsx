@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = userLocale === "fa" || (!userLocale && (cookieLocale === "fa" || (!cookieLocale && acceptLanguage.startsWith("fa")))) ? "fa" : "en";
   return (
     <html lang={locale} dir={locale === "fa" ? "rtl" : "ltr"} className={`${inter.variable} ${barlow.variable} ${vazirmatn.variable}`}>
-      <body className="font-body antialiased">
+      <body className={`font-body antialiased ${locale === "fa" ? "font-vazirmatn" : ""}`}>
         <RegisterServiceWorker />
         <ToastProvider>{children}</ToastProvider>
       </body>

@@ -1,5 +1,110 @@
 {
-  "preferences": { "title": "تنظیم ترجیحات", "language": "زبان", "timezone": "منطقه زمانی", "continue": "ادامه" },
+  "preferences": {
+    "title": "تنظیم ترجیحات",
+    "subtitle": "زبان و منطقه زمانی فضای کاری خود را انتخاب کنید.",
+    "language": "زبان",
+    "timezone": "منطقه زمانی",
+    "timezoneHint": "به‌صورت خودکار از مرورگر تشخیص داده شد؛ قابل تغییر است.",
+    "timezoneSearch": "جستجوی منطقه زمانی",
+    "continue": "ادامه",
+    "save": "ذخیره تنظیمات",
+    "saving": "در حال ذخیره…"
+  },
   "auth": { "signIn": "ورود", "register": "ثبت‌نام رایگان" },
-  "nav": { "dashboard": "داشبورد", "settings": "تنظیمات" }
+  "roles": { "player": "بازیکن", "coach": "مربی", "assistantCoach": "مربی دستیار" },
+  "nav": {
+    "dashboard": "داشبورد",
+    "settings": "تنظیمات",
+    "preferences": "ترجیحات",
+    "teamSettings": "تنظیمات تیم",
+    "signOut": "خروج",
+    "switchTeam": "تغییر تیم",
+    "createTeam": "ایجاد تیم جدید",
+    "manageTeams": "مدیریت تیم‌ها",
+    "player": {
+      "today": "امروز",
+      "training": "تمرین",
+      "planner": "برنامه‌ریز",
+      "habits": "عادت‌ها",
+      "goals": "اهداف",
+      "messages": "پیام‌ها"
+    },
+    "coach": {
+      "dashboard": "داشبورد",
+      "teams": "تیم‌ها",
+      "players": "بازیکنان",
+      "programs": "برنامه‌ها",
+      "assessments": "ارزیابی‌ها",
+      "messages": "پیام‌ها",
+      "reports": "گزارش‌ها",
+      "invitations": "دعوت‌نامه‌ها",
+      "settings": "تنظیمات"
+    }
+  },
+  "settings": {
+    "title": "ترجیحات",
+    "description": "زبان و منطقه زمانی برای حساب شخصی شما اعمال می‌شوند."
+  },
+  "common": {
+    "notSet": "تنظیم نشده",
+    "minutes": "{value} دقیقه",
+    "phase2": "فاز ۲",
+    "cancel": "انصراف",
+    "tryAgain": "تلاش مجدد"
+  },
+  "player": {
+    "today": {
+      "eyebrow": "امروز",
+      "welcome": "خوش آمدید، {name}",
+      "loading": "در حال بارگذاری داشبورد امروز…",
+      "todaysTraining": "تمرین امروز",
+      "todaysCheckIn": "ثبت وضعیت امروز",
+      "noTrainingToday": "برای امروز تمرینی برنامه‌ریزی نشده است."
+    },
+    "checkIn": {
+      "eyebrow": "ثبت روزانه",
+      "title": "ثبت وضعیت امروز",
+      "loadingDate": "در حال بارگذاری تاریخ امروز…"
+    },
+    "goals": {
+      "title": "اهداف",
+      "due": "موعد {date}",
+      "completed": "تکمیل‌شده",
+      "archive": "بایگانی"
+    },
+    "training": {
+      "eyebrow": "تمرین",
+      "title": "برنامه تمرینی",
+      "subtitle": "برنامه فعلی اختصاص‌یافته و جلسات این هفته.",
+      "notAssigned": "هنوز برنامه تمرینی اختصاص داده نشده است.",
+      "programProgress": "پیشرفت برنامه",
+      "completedRemaining": "{completed} تکمیل · {remaining} باقی‌مانده",
+      "startDate": "تاریخ شروع",
+      "endDate": "تاریخ پایان",
+      "thisWeekSessions": "جلسات این هفته",
+      "scheduledCount": "{count} برنامه‌ریزی‌شده",
+      "noSessions": "جلسه‌ای به این برنامه اضافه نشده است.",
+      "noNotes": "یادداشتی ثبت نشده.",
+      "completedAt": "تکمیل در {datetime}",
+      "statusNotStarted": "شروع نشده",
+      "statusInProgress": "در حال انجام",
+      "statusCompleted": "تکمیل‌شده",
+      "statusSkipped": "رد شده",
+      "start": "شروع",
+      "complete": "تکمیل",
+      "skip": "رد کردن",
+      "active": "فعال"
+    },
+    "planner": {
+      "title": "برنامه هفتگی",
+      "prev": "→ قبلی",
+      "next": "بعدی ←",
+      "thisWeek": "این هفته",
+      "loadingWeek": "در حال بارگذاری هفته…",
+      "nothingPlanned": "برنامه‌ای نیست"
+    },
+    "habits": {
+      "title": "عادت‌ها"
+    }
+  }
 }
