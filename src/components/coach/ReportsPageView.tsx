@@ -266,8 +266,6 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
   const [data, setData] = useState<ReportsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState({ enabled: false, everyDays: 7, lastSentAt: null as string | null });
-  const [savingSchedule, setSavingSchedule] = useState(false);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams({ range });
@@ -297,16 +295,6 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
   useEffect(() => {
     void loadReports();
   }, [queryString]);
-
-  useEffect(() => { fetch("/api/coach/reports/schedule").then((res) => res.json()).then((value) => setSchedule(value)).catch(() => {}); }, []);
-  async function saveSchedule() {
-    setSavingSchedule(true);
-    try {
-      const res = await fetch("/api/coach/reports/schedule", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: schedule.enabled, everyDays: schedule.everyDays }) });
-      if (!res.ok) throw new Error();
-      const value = await res.json(); setSchedule(value);
-    } finally { setSavingSchedule(false); }
-  }
 
   const players = data?.players ?? [];
   const kpis = data?.kpis ?? {
@@ -374,22 +362,6 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
               </option>
             ))}
           </select>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-lg border border-line-1 bg-ink-3 p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.autoChecklistTitle")}</h2>
-            <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.reports.autoChecklistBody")}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-smoke-2"><input type="checkbox" checked={schedule.enabled} onChange={(event) => setSchedule((value) => ({ ...value, enabled: event.target.checked }))} className="h-4 w-4 accent-red" />{t(locale, "coach.reports.autoChecklistEnable")}</label>
-            <select value={schedule.everyDays} onChange={(event) => setSchedule((value) => ({ ...value, everyDays: Number(event.target.value) }))} className="min-h-10 rounded-md border border-line-1 bg-ink-2 px-3 text-sm text-white" aria-label={t(locale, "coach.reports.autoChecklistInterval")}>
-              {[1, 3, 7, 14, 30].map((days) => <option key={days} value={days}>{t(locale, "coach.reports.autoChecklistEvery", { days })}</option>)}
-            </select>
-            <button type="button" onClick={saveSchedule} disabled={savingSchedule} className="btn-primary !min-h-10 !px-4 !py-2 text-xs">{savingSchedule ? t(locale, "coach.reports.saving") : t(locale, "coach.reports.saveSchedule")}</button>
-          </div>
         </div>
       </div>
 

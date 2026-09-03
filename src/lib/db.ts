@@ -87,7 +87,6 @@ export function ensureDatabase() {
       await ensureSqliteSchema();
     }
     await ensureUserPreferenceColumns();
-    await ensureChecklistReportColumns();
     await ensureTeamWorkspaceColumns();
     await ensureAssessmentScoreIsReal();
   })().catch((error) => {
@@ -99,13 +98,6 @@ export function ensureDatabase() {
     throw error;
   });
   return sqliteReady;
-}
-
-async function ensureChecklistReportColumns() {
-  const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("User");`);
-  if (!columns.some((column) => column.name === "checklistReportEnabled")) await sqliteExec(`ALTER TABLE "User" ADD COLUMN "checklistReportEnabled" BOOLEAN NOT NULL DEFAULT 0;`);
-  if (!columns.some((column) => column.name === "checklistReportEveryDays")) await sqliteExec(`ALTER TABLE "User" ADD COLUMN "checklistReportEveryDays" INTEGER NOT NULL DEFAULT 7;`);
-  if (!columns.some((column) => column.name === "checklistReportLastSentAt")) await sqliteExec(`ALTER TABLE "User" ADD COLUMN "checklistReportLastSentAt" DATETIME;`);
 }
 
 async function ensureUserPreferenceColumns() {

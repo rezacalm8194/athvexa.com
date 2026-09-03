@@ -26,9 +26,6 @@ model User {
   notifyLowReadiness      Boolean @default(true)
   notifySessionComplete   Boolean @default(true)
   notifyWeeklyEmail       Boolean @default(false)
-  checklistReportEnabled  Boolean @default(false)
-  checklistReportEveryDays Int @default(7)
-  checklistReportLastSentAt DateTime?
   createdAt    DateTime @default(now())
 
   // Player-specific: which coach this player belongs to

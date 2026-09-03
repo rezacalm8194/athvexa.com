@@ -595,13 +595,6 @@
       "shareWhatsApp": "ارسال گزارش {player} در واتساپ",
       "shareTelegram": "ارسال گزارش {player} در تلگرام",
       "shareMessage": "گزارش پیشرفت {player}: پیشرفت برنامه {progress}٪، آمادگی اخیر {readiness}. گزارش: {link}"
-      ,"autoChecklistTitle": "گزارش خودکار چک‌لیست بازیکنان",
-      "autoChecklistBody": "گزارش شامل تیک‌های انجام‌شده، خواب، آب و داده‌های ثبت‌شدهٔ بازیکن است و برای شما در پیام‌ها و اعلان‌ها ارسال می‌شود.",
-      "autoChecklistEnable": "فعال‌سازی",
-      "autoChecklistInterval": "فاصله ارسال گزارش",
-      "autoChecklistEvery": "هر {days} روز",
-      "saveSchedule": "ذخیره زمان‌بندی",
-      "saving": "در حال ذخیره…"
     },
     "invite": {
       "eyebrow": "دعوت‌نامه",
