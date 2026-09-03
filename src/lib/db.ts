@@ -87,6 +87,7 @@ export function ensureDatabase() {
       await ensureSqliteSchema();
     }
     await ensureUserPreferenceColumns();
+    await ensureChecklistReportScheduleTable();
     await ensureTeamWorkspaceColumns();
     await ensureAssessmentScoreIsReal();
   })().catch((error) => {
@@ -98,6 +99,16 @@ export function ensureDatabase() {
     throw error;
   });
   return sqliteReady;
+}
+
+async function ensureChecklistReportScheduleTable() {
+  await sqliteExec(`CREATE TABLE IF NOT EXISTS "ChecklistReportSchedule" (
+    "coachId" TEXT NOT NULL PRIMARY KEY,
+    "enabled" BOOLEAN NOT NULL DEFAULT 0,
+    "everyDays" INTEGER NOT NULL DEFAULT 7,
+    "lastSentAt" DATETIME,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 }
 
 async function ensureUserPreferenceColumns() {

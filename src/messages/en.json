@@ -601,6 +601,14 @@
       ,"quickShareEyebrow": "Quick share",
       "quickShareTitle": "{player}'s progress report",
       "quickShareHint": "Use the player filter above to share a different player's report."
+      ,"autoChecklistEyebrow": "Automatic reporting",
+      "autoChecklistTitle": "Automatic player checklist reports",
+      "autoChecklistBody": "Completed checklist items, sleep, and water are delivered to your messages and notifications.",
+      "autoChecklistEnable": "Enable",
+      "autoChecklistInterval": "Report interval",
+      "autoChecklistEvery": "Every {days} days",
+      "saveSchedule": "Save",
+      "saving": "Saving…"
     },
     "invite": {
       "eyebrow": "Invitation",

@@ -601,6 +601,14 @@
       ,"quickShareEyebrow": "اشتراک‌گذاری سریع",
       "quickShareTitle": "گزارش پیشرفت {player}",
       "quickShareHint": "برای انتخاب بازیکن دیگر، از فیلتر بالای صفحه استفاده کنید."
+      ,"autoChecklistEyebrow": "گزارش خودکار",
+      "autoChecklistTitle": "گزارش خودکار چک‌لیست بازیکنان",
+      "autoChecklistBody": "تیک‌های چک‌لیست، خواب و آب بازیکن در پیام‌ها و اعلان‌های شما ارسال می‌شود.",
+      "autoChecklistEnable": "فعال‌سازی",
+      "autoChecklistInterval": "فاصله ارسال",
+      "autoChecklistEvery": "هر {days} روز",
+      "saveSchedule": "ذخیره",
+      "saving": "در حال ذخیره…"
     },
     "invite": {
       "eyebrow": "دعوت‌نامه",
