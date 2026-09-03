@@ -17,6 +17,10 @@ export async function GET() {
   }
 
   await ensureDatabase();
+  const { ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
+  await ensureRezaDemoRoster({ coachId: session.sub }).catch((error) => {
+    console.error("[players] demo roster seed skipped", error);
+  });
 
   const date = new Date().toISOString().slice(0, 10);
   const membership = await getCurrentTeamMembership(session.sub);
