@@ -114,6 +114,18 @@ async function ensureUserPreferenceColumns() {
   if (!columns.some((column) => column.name === "onboardingCompletedAt")) {
     await sqliteExec(`ALTER TABLE "User" ADD COLUMN "onboardingCompletedAt" DATETIME;`);
   }
+  if (!columns.some((column) => column.name === "notifyCheckIns")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "notifyCheckIns" BOOLEAN NOT NULL DEFAULT 1;`);
+  }
+  if (!columns.some((column) => column.name === "notifyLowReadiness")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "notifyLowReadiness" BOOLEAN NOT NULL DEFAULT 1;`);
+  }
+  if (!columns.some((column) => column.name === "notifySessionComplete")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "notifySessionComplete" BOOLEAN NOT NULL DEFAULT 1;`);
+  }
+  if (!columns.some((column) => column.name === "notifyWeeklyEmail")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "notifyWeeklyEmail" BOOLEAN NOT NULL DEFAULT 0;`);
+  }
 }
 
 async function ensureAssessmentScoreIsReal() {

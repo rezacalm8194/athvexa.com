@@ -7,6 +7,7 @@ import {
   repairLegacyCoachPlayerNotificationLinks,
 } from "@/lib/notifications";
 import { getTeamOwnerId } from "@/lib/teamContext";
+import { getCoachNotificationPrefs, hiddenNotificationTypes } from "@/lib/userPreferences";
 
 export async function GET() {
   const session = await getSession();
@@ -20,13 +21,19 @@ export async function GET() {
     await repairLegacyCoachPlayerNotificationLinks(session.sub);
   }
 
+  const hiddenTypes = hiddenNotificationTypes(await getCoachNotificationPrefs(session.sub));
+  const where = {
+    userId: session.sub,
+    ...(hiddenTypes.length ? { type: { notIn: hiddenTypes } } : {}),
+  };
+
   const [notifications, unreadCount] = await Promise.all([
     db.notification.findMany({
-      where: { userId: session.sub },
+      where,
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
-    db.notification.count({ where: { userId: session.sub, readAt: null } }),
+    db.notification.count({ where: { ...where, readAt: null } }),
   ]);
 
   return NextResponse.json({ notifications, unreadCount });

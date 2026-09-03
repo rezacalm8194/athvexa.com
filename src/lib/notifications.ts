@@ -1,5 +1,6 @@
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
+import { allowsNotificationType, getCoachNotificationPrefs } from "@/lib/userPreferences";
 
 export type NotificationInput = {
   userId: string;
@@ -16,6 +17,9 @@ export function todayKey() {
 }
 
 export async function createNotification(input: NotificationInput) {
+  const prefs = await getCoachNotificationPrefs(input.userId);
+  if (!allowsNotificationType(prefs, input.type)) return null;
+
   const data = {
     userId: input.userId,
     title: input.title,

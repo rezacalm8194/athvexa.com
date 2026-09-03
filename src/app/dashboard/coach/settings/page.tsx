@@ -11,10 +11,11 @@ import {
   TrashIcon,
   UsersIcon,
 } from "@/components/icons";
+import NotificationSettings from "@/components/coach/NotificationSettings";
 import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getCoachContext } from "@/lib/coachContext";
 import { getCurrentTeamMembership } from "@/lib/teamContext";
-import { getUserPreferences } from "@/lib/userPreferences";
+import { getCoachNotificationPrefs, getUserPreferences } from "@/lib/userPreferences";
 import { roleLabel as translateRole, t, teamRoleLabel } from "@/lib/i18n";
 
 function SettingCard({
@@ -65,17 +66,6 @@ function PlaceholderButton({ children, danger = false }: { children: ReactNode; 
   );
 }
 
-function TogglePlaceholder({ label, checked = false }: { label: string; checked?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-line-1 bg-ink-2 p-3">
-      <span className="text-sm text-paper">{label}</span>
-      <span className={`h-6 w-11 rounded-full p-1 ${checked ? "bg-red" : "bg-white/10"}`}>
-        <span className={`block h-4 w-4 rounded-full bg-white transition-transform ${checked ? "translate-x-5" : ""}`} />
-      </span>
-    </div>
-  );
-}
-
 const SETTINGS_NAV = [
   { id: "team-profile", labelKey: "coach.settings.navTeamProfile", Icon: SettingsIcon },
   { id: "staff-management", labelKey: "coach.settings.navStaff", Icon: UsersIcon },
@@ -89,6 +79,7 @@ const SETTINGS_NAV = [
 export default async function SettingsPage() {
   const { session, team: fallbackTeam, canManageRoles } = await getCoachContext();
   const { locale } = await getUserPreferences(session.sub);
+  const notificationPrefs = await getCoachNotificationPrefs(session.sub);
   const membership = await getCurrentTeamMembership(session.sub);
   const team = membership?.team ?? fallbackTeam;
 
@@ -115,7 +106,7 @@ export default async function SettingsPage() {
           </aside>
 
           <div className="space-y-5">
-            <div id="team-profile">
+            <div id="team-profile" className="scroll-mt-28">
               <TeamProfileSettings
                 team={team}
                 ownerName={session.name}
@@ -125,7 +116,7 @@ export default async function SettingsPage() {
               />
             </div>
 
-            <div id="staff-management">
+            <div id="staff-management" className="scroll-mt-28">
               <SettingCard
                 title={t(locale, "coach.settings.staffTitle")}
                 description={t(locale, "coach.settings.staffDesc")}
@@ -139,7 +130,7 @@ export default async function SettingsPage() {
               </SettingCard>
             </div>
 
-            <div id="player-defaults">
+            <div id="player-defaults" className="scroll-mt-28">
               <SettingCard
                 title={t(locale, "coach.settings.defaultsTitle")}
                 description={t(locale, "coach.settings.defaultsDesc")}
@@ -154,22 +145,11 @@ export default async function SettingsPage() {
               </SettingCard>
             </div>
 
-            <div id="notifications">
-              <SettingCard
-                title={t(locale, "coach.settings.notifTitle")}
-                description={t(locale, "coach.settings.notifDesc")}
-                action={<PlaceholderButton>{t(locale, "coach.settings.savePrefs")}</PlaceholderButton>}
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <TogglePlaceholder label={t(locale, "coach.settings.notifCheckIns")} checked />
-                  <TogglePlaceholder label={t(locale, "coach.settings.notifLowReadiness")} checked />
-                  <TogglePlaceholder label={t(locale, "coach.settings.notifSession")} checked />
-                  <TogglePlaceholder label={t(locale, "coach.settings.notifWeekly")} />
-                </div>
-              </SettingCard>
+            <div id="notifications" className="scroll-mt-28">
+              <NotificationSettings locale={locale} initial={notificationPrefs} />
             </div>
 
-            <div id="security">
+            <div id="security" className="scroll-mt-28">
               <SettingCard
                 title={t(locale, "coach.settings.securityTitle")}
                 description={t(locale, "coach.settings.securityDesc")}
@@ -184,7 +164,7 @@ export default async function SettingsPage() {
               </SettingCard>
             </div>
 
-            <div id="subscription">
+            <div id="subscription" className="scroll-mt-28">
               <SettingCard
                 title={t(locale, "coach.settings.subTitle")}
                 description={t(locale, "coach.settings.subDesc")}
@@ -198,7 +178,7 @@ export default async function SettingsPage() {
               </SettingCard>
             </div>
 
-            <div id="danger-zone">
+            <div id="danger-zone" className="scroll-mt-28">
               <SettingCard
                 title={t(locale, "coach.settings.dangerTitle")}
                 description={t(locale, "coach.settings.dangerDesc")}
