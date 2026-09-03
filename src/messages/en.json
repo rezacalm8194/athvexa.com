@@ -595,6 +595,13 @@
       "shareWhatsApp": "Share {player}'s report on WhatsApp",
       "shareTelegram": "Share {player}'s report on Telegram",
       "shareMessage": "{player}'s progress report: {progress}% program progress, latest readiness {readiness}. Report: {link}"
+      ,"autoChecklistTitle": "Automatic player checklist reports",
+      "autoChecklistBody": "Reports include completed checklist items, sleep, water, and player-entered data, delivered to your messages and notifications.",
+      "autoChecklistEnable": "Enable",
+      "autoChecklistInterval": "Report interval",
+      "autoChecklistEvery": "Every {days} days",
+      "saveSchedule": "Save schedule",
+      "saving": "Saving…"
     },
     "invite": {
       "eyebrow": "Invitation",

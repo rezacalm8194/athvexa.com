@@ -4,6 +4,7 @@ import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
 import { getCurrentTeamMembership, listRosterPlayers } from "@/lib/teamContext";
 import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
+import { deliverDueChecklistReport } from "@/lib/checklistReports";
 
 const RANGE_VALUES = ["week", "month", "custom"] as const;
 type RangeValue = (typeof RANGE_VALUES)[number];
@@ -124,6 +125,7 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const { teamOwnerId, session } = auth;
+  await deliverDueChecklistReport(teamOwnerId);
   const membership = await getCurrentTeamMembership(session.sub);
   const workspace = await getTeamWorkspaceByCoachId(teamOwnerId);
   const { range, from, to } = resolveRange(req);
