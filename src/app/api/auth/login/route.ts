@@ -13,6 +13,13 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     await ensureDatabase();
+    // This runs only after the database bootstrap has completed. Running it
+    // inside ensureDatabase causes a circular await because notifications read
+    // user preferences through ensureDatabase as well.
+    const { ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
+    await ensureRezaDemoRoster().catch((error) => {
+      console.error("[login] demo roster seed skipped", error);
+    });
     const body = await req.json().catch(() => null);
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
