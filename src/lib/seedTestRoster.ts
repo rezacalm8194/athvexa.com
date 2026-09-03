@@ -58,29 +58,15 @@ export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?
   for (const row of ROSTER) {
     let user = await db.user.findFirst({ where: { email: row.email } });
     if (!user) {
-      try {
-        user = await db.user.create({
-          data: {
-            name: row.name,
-            email: row.email,
-            passwordHash,
-            role: row.role,
-            coachId: coach.id,
-            locale: "fa",
-            timeZone: "Asia/Tehran",
-          },
-        });
-      } catch {
-        user = await db.user.create({
-          data: {
-            name: row.name,
-            email: row.email,
-            passwordHash,
-            role: row.role,
-            coachId: coach.id,
-          },
-        });
-      }
+      user = await db.user.create({
+        data: {
+          name: row.name,
+          email: row.email,
+          passwordHash,
+          role: row.role,
+          coachId: coach.id,
+        },
+      });
     } else {
       user = await db.user.update({
         where: { id: user.id },
