@@ -180,9 +180,15 @@ export default function AssessmentsPageView() {
                 <div className="space-y-3">
                   {players.map((player) => {
                     const playerHref = `/dashboard/coach/players/${encodeURIComponent(player.id)}`;
+                    const assessmentsHref = `${playerHref}#assessments`;
                     return (
-                      <article key={player.id} className="rounded-lg border border-line-1 bg-ink-2 p-4">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <article key={player.id} className="relative rounded-lg border border-line-1 bg-ink-2 p-4 transition-colors hover:border-white/20">
+                        <Link
+                          href={assessmentsHref}
+                          className="absolute inset-0 z-0 rounded-lg"
+                          aria-label={`Open assessments for ${player.name || player.email || "player"}`}
+                        />
+                        <div className="pointer-events-none relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                           <div className="min-w-0 lg:w-64">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="truncate font-display text-lg font-bold text-white">{player.name || "Unnamed player"}</h3>
@@ -203,8 +209,8 @@ export default function AssessmentsPageView() {
 
                           <div className="flex flex-col gap-2 sm:flex-row lg:items-center">
                             <span className="whitespace-nowrap text-xs font-semibold text-smoke-3">{player.count} {player.count === 1 ? "assessment" : "assessments"}</span>
-                            <Link href={`${playerHref}?newAssessment=1#assessments`} className="btn-ghost justify-center !px-3 !py-2 text-xs">New assessment</Link>
-                            <Link href={`${playerHref}#assessments`} className="btn-primary justify-center !px-4 !py-2 text-xs">Open assessments</Link>
+                            <Link href={`${playerHref}?newAssessment=1#assessments`} className="pointer-events-auto btn-ghost justify-center !px-3 !py-2 text-xs">New assessment</Link>
+                            <Link href={assessmentsHref} className="pointer-events-auto btn-primary justify-center !px-4 !py-2 text-xs">Open assessments</Link>
                           </div>
                         </div>
                       </article>
