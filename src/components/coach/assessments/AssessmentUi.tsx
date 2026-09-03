@@ -45,14 +45,14 @@ export function formatAssessmentDate(value: string) {
 }
 
 export function AssessmentChangeBadge({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-smoke-4">-</span>;
+  if (value == null) return <span className="text-smoke-4">—</span>;
   const rounded = Number(value.toFixed(2));
   const positive = rounded > 0;
   const neutral = rounded === 0;
   return (
     <span
-      className={`inline-flex min-w-14 justify-center rounded-full px-2 py-1 text-xs font-bold ${
-        neutral ? "bg-white/5 text-smoke-3" : positive ? "bg-[#4CAF50]/15 text-[#80D987]" : "bg-red/15 text-red-glow"
+      className={`tabular-nums text-xs font-semibold ${
+        neutral ? "text-smoke-3" : positive ? "text-[#80D987]" : "text-red-glow"
       }`}
     >
       {positive ? "+" : ""}
@@ -191,45 +191,63 @@ export function AssessmentModal({
   );
 }
 
-export function AssessmentDetailModal({ assessment, onClose }: { assessment: AssessmentItem | null; onClose: () => void }) {
+export function AssessmentDetailModal({
+  assessment,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  assessment: AssessmentItem | null;
+  onClose: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}) {
   if (!assessment) return null;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+      <div className="w-full max-w-md rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-xl font-black text-white">{assessment.player.name || assessment.player.email}</h2>
-            <p className="mt-1 text-sm text-smoke-3">
-              {assessment.type} assessment on {formatAssessmentDate(assessment.date)}
-            </p>
+            <h2 className="font-display text-xl font-black text-white">{assessment.type}</h2>
+            <p className="mt-1 text-sm text-smoke-3">{formatAssessmentDate(assessment.date)}</p>
           </div>
           <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={onClose}>
             Close
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
-            <div className="text-xs text-smoke-4">Score</div>
-            <div className="mt-1 font-display text-2xl font-black text-white">{formatScore(assessment.score)}</div>
+        <div className="mt-4 flex items-end justify-between gap-4 border-b border-white/5 pb-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-smoke-4">Score</div>
+            <div className="mt-1 font-display text-3xl font-black text-white">{formatScore(assessment.score)}</div>
           </div>
-          <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
-            <div className="text-xs text-smoke-4">Previous</div>
-            <div className="mt-1 font-display text-2xl font-black text-white">{assessment.previousScore == null ? "-" : formatScore(assessment.previousScore)}</div>
-          </div>
-          <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
-            <div className="text-xs text-smoke-4">Change</div>
-            <div className="mt-2">
+          <div className="text-right text-sm">
+            <div className="text-smoke-4">Previous {assessment.previousScore == null ? "—" : formatScore(assessment.previousScore)}</div>
+            <div className="mt-1">
               <AssessmentChangeBadge value={assessment.change} />
             </div>
           </div>
         </div>
 
-        <div className="mt-5 rounded-md border border-line-1 bg-ink-2 p-4">
-          <div className="text-xs font-bold uppercase tracking-wide text-smoke-4">Notes</div>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-smoke-2">{assessment.notes?.trim() || "No notes added."}</p>
-        </div>
+        {assessment.notes?.trim() ? (
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-smoke-2">{assessment.notes.trim()}</p>
+        ) : null}
+
+        {onEdit || onDelete ? (
+          <div className="mt-5 flex justify-end gap-2">
+            {onDelete ? (
+              <button type="button" className="btn-ghost !px-3 !py-2 text-xs text-red-glow" onClick={onDelete}>
+                Delete
+              </button>
+            ) : null}
+            {onEdit ? (
+              <button type="button" className="btn-primary !px-4 !py-2 text-xs" onClick={onEdit}>
+                Edit
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

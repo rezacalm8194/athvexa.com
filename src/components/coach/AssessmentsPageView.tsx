@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatAssessmentDate } from "@/components/coach/assessments/AssessmentUi";
-import KpiCard from "@/components/coach/KpiCard";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import SearchInput from "@/components/coach/shared/SearchInput";
-import { AlertIcon, CalendarIcon, ClipboardCheckIcon, PlusIcon, UsersIcon } from "@/components/icons";
+import { PlusIcon, UsersIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/Toast";
 import { ASSESSMENT_TYPES, AssessmentType } from "@/lib/assessmentTypes";
 import { formatScore } from "@/lib/formatScore";
@@ -99,7 +98,11 @@ export default function AssessmentsPageView() {
     };
   }, [deepLinkedAssessmentId, router, showToast]);
 
-  const players = data?.playersSummary ?? [];
+  const players = useMemo(() => {
+    const list = data?.playersSummary ?? [];
+    return [...list].sort((a, b) => Number(b.needsAssessment) - Number(a.needsAssessment) || a.name.localeCompare(b.name));
+  }, [data?.playersSummary]);
+
   const kpis = data?.kpis ?? {
     totalPlayers: 0,
     totalAssessments: 0,
@@ -108,114 +111,112 @@ export default function AssessmentsPageView() {
     playersNotAssessed: 0,
   };
   const hasFilters = search.trim() !== "" || type !== "all" || month !== "";
-  const assessmentCoverage = kpis.totalPlayers === 0 ? 0 : Math.round((kpis.playersAssessed / kpis.totalPlayers) * 100);
+  const coverage = kpis.totalPlayers === 0 ? 0 : Math.round((kpis.playersAssessed / kpis.totalPlayers) * 100);
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Coach tools</p>
-          <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">Assessments</h1>
-          <p className="mt-2 text-sm text-smoke-3">See team coverage and open each player’s assessment history.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-red">Coach tools</p>
+          <h1 className="mt-1 font-display text-3xl font-black text-white">Assessments</h1>
+          <p className="mt-1 text-sm text-smoke-3">One row per player. History lives on the player profile.</p>
         </div>
-        {!loading && kpis.totalPlayers === 0 ? (
-          <div className="flex flex-col items-stretch gap-2 sm:items-end">
-            <Link href="/dashboard/coach/players#invite-panel" className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm">
-              <PlusIcon className="h-4 w-4" />
-              Add your first player
-            </Link>
-            <Link href="/dashboard/coach/players" className="text-center text-xs font-semibold text-smoke-3 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red">
-              Go to Players
-            </Link>
-          </div>
+        {!loading && kpis.totalPlayers > 0 ? (
+          <p className="text-sm text-smoke-3">
+            <span className="font-semibold text-white">{kpis.playersNotAssessed}</span> due
+            <span className="mx-2 text-white/20">·</span>
+            <span className="font-semibold text-white">{coverage}%</span> covered
+            <span className="mx-2 text-white/20">·</span>
+            <span className="font-semibold text-white">{kpis.assessmentsThisMonth}</span> this month
+            <span className="mx-2 text-white/20">·</span>
+            <span className="font-semibold text-white">{kpis.totalAssessments}</span> total
+          </p>
         ) : null}
       </div>
 
       {!loading && !error && kpis.totalPlayers === 0 ? (
-        <div className="mt-8 flex items-start gap-4 rounded-lg border border-line-1 bg-ink-3 p-5 sm:max-w-2xl sm:p-6">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-red/15 text-red">
-            <UsersIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-display text-lg font-black text-white">Start with your first player</h2>
-            <p className="mt-1 max-w-xl text-sm leading-6 text-smoke-3">Add a player to your team. Once they join, you can create assessments and track their development here.</p>
-          </div>
+        <div className="rounded-lg border border-line-1 bg-ink-3 p-6 sm:max-w-xl">
+          <h2 className="font-display text-lg font-black text-white">Add a player first</h2>
+          <p className="mt-1 text-sm leading-6 text-smoke-3">Assessments attach to players. Invite someone, then record their tests here.</p>
+          <Link href="/dashboard/coach/players#invite-panel" className="btn-primary mt-4 inline-flex gap-2 !px-4 !py-2.5 text-sm">
+            <PlusIcon className="h-4 w-4" />
+            Invite a player
+          </Link>
         </div>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard label="Players needing assessment" value={kpis.playersNotAssessed} icon={AlertIcon} tone="warn" loading={loading} />
-            <KpiCard label="Team assessment coverage" value={`${assessmentCoverage}%`} icon={UsersIcon} loading={loading} />
-            <KpiCard label="Assessments this month" value={kpis.assessmentsThisMonth} icon={CalendarIcon} loading={loading} />
-            <KpiCard label="Total assessments" value={kpis.totalAssessments} icon={ClipboardCheckIcon} loading={loading} />
-          </div>
-
-          <div className="mt-5 rounded-lg border border-line-1 bg-ink-3 p-4">
-            <div className="grid gap-3 lg:grid-cols-[1fr_220px_180px]">
-              <SearchInput value={search} onChange={setSearch} placeholder="Search player name or email" />
-              <select className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red" value={type} onChange={(event) => setType(event.target.value as AssessmentType | "all")} aria-label="Assessment type">
-                <option value="all">All types</option>
-                {ASSESSMENT_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-              <input className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red" type="month" value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Assessment month" />
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_150px]">
+            <div className="col-span-2 sm:col-span-1">
+              <SearchInput value={search} onChange={setSearch} placeholder="Search players" />
             </div>
+            <select className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" value={type} onChange={(event) => setType(event.target.value as AssessmentType | "all")} aria-label="Assessment type">
+              <option value="all">All types</option>
+              {ASSESSMENT_TYPES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+            <input className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" type="month" value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Assessment month" />
           </div>
 
-          <div className="mt-5 rounded-lg border border-line-1 bg-ink-3">
-            <div className="flex items-center justify-between border-b border-line-1 px-4 py-4">
-              <div>
-                <h2 className="font-display text-lg font-black text-white">Players</h2>
-                <p className="mt-1 text-xs text-smoke-4">{loading ? "Loading..." : `${players.length} shown`}</p>
+          <div className="mt-4 overflow-hidden rounded-lg border border-line-1 bg-ink-3">
+            <div className="flex items-center justify-between border-b border-line-1 px-4 py-2.5">
+              <h2 className="text-sm font-semibold text-white">Squad</h2>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-smoke-4">{loading ? "Loading…" : `${players.length} players`}</p>
+                {hasFilters ? (
+                  <button className="text-xs font-semibold text-smoke-3 hover:text-white" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>
+                    Clear
+                  </button>
+                ) : null}
               </div>
-              {hasFilters ? <button className="btn-ghost !px-3 !py-2 text-xs" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>Clear filters</button> : null}
             </div>
 
-            <div className="p-4">
-              {loading ? <SkeletonRows count={6} /> : null}
-              {!loading && error ? <ErrorState message={error} onRetry={loadPlayers} /> : null}
+            <div className="p-0">
+              {loading ? <div className="p-4"><SkeletonRows count={6} /></div> : null}
+              {!loading && error ? <div className="p-4"><ErrorState message={error} onRetry={loadPlayers} /></div> : null}
               {!loading && !error && players.length === 0 ? (
-                <EmptyState icon={UsersIcon} title="No matching players" description="Try clearing the search, type, or month filter." action={hasFilters ? <button className="btn-ghost !px-4 !py-2 text-sm" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>Clear filters</button> : undefined} />
+                <div className="p-4">
+                  <EmptyState icon={UsersIcon} title="No matching players" description="Clear the search or filters to see the full squad." action={hasFilters ? <button className="btn-ghost !px-4 !py-2 text-sm" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>Clear filters</button> : undefined} />
+                </div>
               ) : null}
               {!loading && !error && players.length > 0 ? (
-                <div className="space-y-3">
-                  {players.map((player) => {
-                    const playerHref = `/dashboard/coach/players/${encodeURIComponent(player.id)}`;
-                    const assessmentsHref = `${playerHref}#assessments`;
-                    return (
-                      <article key={player.id} className="relative rounded-lg border border-line-1 bg-ink-2 p-4 transition-colors hover:border-white/20">
-                        <Link
-                          href={assessmentsHref}
-                          className="absolute inset-0 z-0 rounded-lg"
-                          aria-label={`Open assessments for ${player.name || player.email || "player"}`}
-                        />
-                        <div className="pointer-events-none relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                          <div className="min-w-0 lg:w-64">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="truncate font-display text-lg font-bold text-white">{player.name || "Unnamed player"}</h3>
-                              {player.needsAssessment ? <span className="rounded-full bg-red/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-glow">Needs assessment</span> : null}
-                            </div>
-                            <p className="mt-1 truncate text-xs text-smoke-4">{player.email}</p>
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            {player.latestAssessment ? (
-                              <div className="grid gap-2 text-sm sm:grid-cols-3">
-                                <div><span className="text-smoke-4">Latest type</span><div className="mt-1 font-semibold text-white">{player.latestAssessment.type}</div></div>
-                                <div><span className="text-smoke-4">Score</span><div className="mt-1 font-semibold text-white">{formatScore(player.latestAssessment.score)}</div></div>
-                                <div><span className="text-smoke-4">Date</span><div className="mt-1 font-semibold text-smoke-2">{formatAssessmentDate(player.latestAssessment.date)}</div></div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] sm:min-w-0 text-left text-sm">
+                    <thead className="text-[11px] uppercase tracking-wide text-smoke-4">
+                      <tr className="border-b border-white/5">
+                        <th className="px-4 py-2 font-semibold">Player</th>
+                        <th className="px-4 py-2 font-semibold">Latest</th>
+                        <th className="px-4 py-2 font-semibold">Score</th>
+                        <th className="hidden px-4 py-2 font-semibold sm:table-cell">Date</th>
+                        <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">Tests</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {players.map((player) => {
+                        const href = `/dashboard/coach/players/${encodeURIComponent(player.id)}#assessments`;
+                        return (
+                          <tr
+                            key={player.id}
+                            className="cursor-pointer border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] [content-visibility:auto]"
+                            onClick={() => router.push(href)}
+                          >
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate font-semibold text-white">{player.name || "Unnamed"}</span>
+                                {player.needsAssessment ? <span className="rounded bg-red/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-glow">Due</span> : null}
                               </div>
-                            ) : <p className="text-sm font-semibold text-smoke-3">No assessments</p>}
-                          </div>
-
-                          <div className="flex flex-col gap-2 sm:flex-row lg:items-center">
-                            <span className="whitespace-nowrap text-xs font-semibold text-smoke-3">{player.count} {player.count === 1 ? "assessment" : "assessments"}</span>
-                            <Link href={`${playerHref}?newAssessment=1#assessments`} className="pointer-events-auto btn-ghost justify-center !px-3 !py-2 text-xs">New assessment</Link>
-                            <Link href={assessmentsHref} className="pointer-events-auto btn-primary justify-center !px-4 !py-2 text-xs">Open assessments</Link>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                            </td>
+                            <td className="px-4 py-2.5 text-smoke-2">{player.latestAssessment?.type ?? "—"}</td>
+                            <td className="px-4 py-2.5 font-semibold text-white">{player.latestAssessment ? formatScore(player.latestAssessment.score) : "—"}</td>
+                            <td className="hidden px-4 py-2.5 text-smoke-3 sm:table-cell">{player.latestAssessment ? formatAssessmentDate(player.latestAssessment.date) : "—"}</td>
+                            <td className="hidden px-4 py-2.5 text-right tabular-nums text-smoke-3 sm:table-cell">{player.count}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               ) : null}
             </div>

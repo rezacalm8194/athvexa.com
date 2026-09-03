@@ -15,6 +15,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
+echo Stopping local Next.js so Prisma can update...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\stop-local-next.ps1"
+
 echo Checking production build locally...
 call npm run build
 if errorlevel 1 (

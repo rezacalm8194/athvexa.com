@@ -156,12 +156,14 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-smoke-3">Full assessment history for {player.name || player.email}.</p>
-        <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setModal({ mode: "create" })}>
-          <PlusIcon className="h-4 w-4" />
-          New assessment
-        </button>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-smoke-4">{assessments.length === 0 && !loading ? "No tests yet" : `${assessments.length} tests`}</p>
+        {!loading && assessments.length > 0 ? (
+          <button className="btn-primary gap-1.5 !px-3 !py-1.5 text-xs" onClick={() => setModal({ mode: "create" })}>
+            <PlusIcon className="h-3.5 w-3.5" />
+            New
+          </button>
+        ) : null}
       </div>
 
       {loading ? <SkeletonRows count={4} /> : null}
@@ -170,7 +172,7 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
         <EmptyState
           icon={ClipboardCheckIcon}
           title="No assessments yet"
-          description="Create this player’s first assessment to start tracking development."
+          description="Add the first test for this player."
           action={
             <button className="btn-primary !px-4 !py-2 text-sm" onClick={() => setModal({ mode: "create" })}>
               New assessment
@@ -180,34 +182,33 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
       ) : null}
       {!loading && !error && assessments.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[940px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-smoke-3">
+          <table className="w-full min-w-[520px] text-left text-sm">
+            <thead className="text-[11px] uppercase tracking-wide text-smoke-4">
               <tr className="border-b border-white/5">
-                <th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Date</th>
-                <th className="px-3 py-3">Score</th>
-                <th className="px-3 py-3">Previous</th>
-                <th className="px-3 py-3">Change</th>
-                <th className="px-3 py-3">Notes</th>
-                <th className="px-3 py-3 text-right">Actions</th>
+                <th className="py-2 pr-3 font-semibold">Type</th>
+                <th className="px-3 py-2 font-semibold">Date</th>
+                <th className="px-3 py-2 font-semibold">Score</th>
+                <th className="py-2 pl-3 text-right font-semibold">Change</th>
               </tr>
             </thead>
             <tbody>
               {assessments.map((assessment) => (
-                <tr key={assessment.id} className="border-b border-white/5 last:border-b-0">
-                  <td className="px-3 py-4 font-semibold text-white">{assessment.type}</td>
-                  <td className="px-3 py-4 text-smoke-2">{formatAssessmentDate(assessment.date)}</td>
-                  <td className="px-3 py-4 font-semibold text-white">{formatScore(assessment.score)}</td>
-                  <td className="px-3 py-4 text-smoke-2">{assessment.previousScore == null ? "-" : formatScore(assessment.previousScore)}</td>
-                  <td className="px-3 py-4"><AssessmentChangeBadge value={assessment.change} /></td>
-                  <td className="max-w-xs truncate px-3 py-4 text-smoke-3">{assessment.notes?.trim() || "No notes"}</td>
-                  <td className="px-3 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setViewing(assessment)}>View</button>
-                      <button className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setModal({ mode: "edit", item: assessment })}>Edit</button>
-                      <button className="btn-ghost !px-3 !py-2 text-xs text-red-glow" onClick={() => setDeleting(assessment)}>Delete</button>
-                    </div>
-                  </td>
+                <tr
+                  key={assessment.id}
+                  className="cursor-pointer border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] [content-visibility:auto]"
+                  onClick={() => setViewing(assessment)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setViewing(assessment);
+                    }
+                  }}
+                  tabIndex={0}
+                >
+                  <td className="py-2.5 pr-3 font-semibold text-white">{assessment.type}</td>
+                  <td className="px-3 py-2.5 text-smoke-3">{formatAssessmentDate(assessment.date)}</td>
+                  <td className="px-3 py-2.5 font-semibold tabular-nums text-white">{formatScore(assessment.score)}</td>
+                  <td className="py-2.5 pl-3 text-right"><AssessmentChangeBadge value={assessment.change} /></td>
                 </tr>
               ))}
             </tbody>
@@ -225,7 +226,26 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
         onClose={closeEditor}
         onSubmit={saveAssessment}
       />
-      <AssessmentDetailModal assessment={viewing} onClose={deepLinkedAssessmentId ? closeQueryModal : () => setViewing(null)} />
+      <AssessmentDetailModal
+        assessment={viewing}
+        onClose={deepLinkedAssessmentId ? closeQueryModal : () => setViewing(null)}
+        onEdit={
+          viewing
+            ? () => {
+                setModal({ mode: "edit", item: viewing });
+                setViewing(null);
+              }
+            : undefined
+        }
+        onDelete={
+          viewing
+            ? () => {
+                setDeleting(viewing);
+                setViewing(null);
+              }
+            : undefined
+        }
+      />
       <ConfirmModal
         open={Boolean(deleting)}
         title="Delete assessment?"
