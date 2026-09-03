@@ -15,6 +15,7 @@ import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getCoachContext } from "@/lib/coachContext";
 import { getCurrentTeamMembership, teamRoleLabel } from "@/lib/teamContext";
 import { getUserPreferences } from "@/lib/userPreferences";
+import { t } from "@/lib/i18n";
 import { roleLabel as translateRole } from "@/lib/i18n";
 
 function SettingCard({
@@ -89,11 +90,9 @@ export default async function SettingsPage() {
 
       <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Team settings</p>
-          <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">Settings</h1>
-          <p className="mt-2 max-w-2xl text-sm text-smoke-3">
-            Configure team details, staff access, defaults, notifications, security, billing, and high-risk actions.
-          </p>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">{t(locale, "coach.settings.eyebrow")}</p>
+          <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">{t(locale, "coach.settings.title")}</h1>
+          <p className="mt-2 max-w-2xl text-sm text-smoke-3">{t(locale, "coach.settings.subtitle")}</p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[260px_1fr]">

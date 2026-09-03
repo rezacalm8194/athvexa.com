@@ -12,7 +12,7 @@ export default async function AssessmentsPage() {
     <main className="min-h-screen bg-ink">
       <ServerDashboardNav name={session.name} locale={locale} settingsHref="/dashboard/coach/settings" />
       <CoachNav locale={locale} />
-      <AssessmentsPageView />
+      <AssessmentsPageView locale={locale} />
     </main>
   );
 }

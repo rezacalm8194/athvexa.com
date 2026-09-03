@@ -8,6 +8,7 @@ import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import { AlertIcon, BarChartIcon, CalendarIcon, ClipboardCheckIcon, UsersIcon } from "@/components/icons";
 import { formatScore } from "@/lib/formatScore";
+import { t, type Locale } from "@/lib/i18n";
 
 type RangeValue = "week" | "month" | "custom";
 type OverallStatus = "Good" | "Watch" | "Attention" | "No data";
@@ -180,7 +181,7 @@ function ReadinessChart({ data }: { data: TrendPoint[] }) {
   );
 }
 
-export default function ReportsPageView() {
+export default function ReportsPageView({ locale }: { locale: Locale }) {
   const [range, setRange] = useState<RangeValue>("week");
   const [from, setFrom] = useState(daysAgo(6));
   const [to, setTo] = useState(todayKey());
@@ -239,8 +240,8 @@ export default function ReportsPageView() {
     <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Coach tools</p>
-        <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">Reports</h1>
-        <p className="mt-2 text-sm text-smoke-3">Review readiness, recovery, and player progress.</p>
+        <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">{t(locale, "coach.reports.title")}</h1>
+        <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.reports.subtitle")}</p>
       </div>
 
       <div className="rounded-lg border border-line-1 bg-ink-3 p-4">
@@ -288,10 +289,10 @@ export default function ReportsPageView() {
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Average readiness" value={kpis.averageReadiness ?? 0} icon={BarChartIcon} loading={loading} />
-        <KpiCard label="Players checked in" value={kpis.playersCheckedIn} icon={ClipboardCheckIcon} loading={loading} />
-        <KpiCard label="Average sleep" value={kpis.averageSleep ?? 0} icon={CalendarIcon} loading={loading} />
-        <KpiCard label="Players requiring attention" value={kpis.playersRequiringAttention} icon={AlertIcon} tone="warn" loading={loading} />
+        <KpiCard label={t(locale, "coach.reports.kpiAverageReadiness")} value={kpis.averageReadiness ?? 0} icon={BarChartIcon} loading={loading} />
+        <KpiCard label={t(locale, "coach.reports.kpiPlayersCheckedIn")} value={kpis.playersCheckedIn} icon={ClipboardCheckIcon} loading={loading} />
+        <KpiCard label={t(locale, "coach.reports.kpiAverageSleep")} value={kpis.averageSleep ?? 0} icon={CalendarIcon} loading={loading} />
+        <KpiCard label={t(locale, "coach.reports.kpiNeedsAttention")} value={kpis.playersRequiringAttention} icon={AlertIcon} tone="warn" loading={loading} />
       </div>
 
       <div className="mt-5">
@@ -309,7 +310,7 @@ export default function ReportsPageView() {
         {!loading && !error && data && players.length > 0 ? (
           <div className="space-y-5">
             <div className="rounded-lg border border-line-1 bg-ink-3 p-4">
-              <h2 className="font-display text-lg font-black text-white">Team overview</h2>
+              <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.teamOverview")}</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <MetricTile label="Active players" value={overview?.activePlayers ?? 0} />
                 <MetricTile label="Check-in rate" value={`${overview?.checkInRate ?? 0}%`} />
@@ -323,7 +324,7 @@ export default function ReportsPageView() {
             <div className="rounded-lg border border-line-1 bg-ink-3 p-4">
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="font-display text-lg font-black text-white">Weekly readiness trend</h2>
+                  <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.weeklyTrend")}</h2>
                   <p className="text-xs text-smoke-4">Red bars show average readiness. Gray rails show check-in volume.</p>
                 </div>
                 <div className="text-xs text-smoke-4">
@@ -335,7 +336,7 @@ export default function ReportsPageView() {
 
             <div className="rounded-lg border border-line-1 bg-ink-3">
               <div className="border-b border-line-1 px-4 py-4">
-                <h2 className="font-display text-lg font-black text-white">Players requiring attention</h2>
+                <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.attentionTitle")}</h2>
               </div>
               <div className="p-4">
                 {data.attentionPlayers.length === 0 ? (
@@ -379,7 +380,7 @@ export default function ReportsPageView() {
 
             <div className="rounded-lg border border-line-1 bg-ink-3">
               <div className="border-b border-line-1 px-4 py-4">
-                <h2 className="font-display text-lg font-black text-white">Player progress</h2>
+                <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.playerProgress")}</h2>
               </div>
               <div className="overflow-x-auto p-4">
                 <table className="w-full min-w-[1320px] text-left text-sm">

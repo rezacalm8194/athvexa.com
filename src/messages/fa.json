@@ -224,5 +224,73 @@
       "color": "رنگ",
       "timesPerWeek": "دفعات در هفته: {count}"
     }
+  },
+  "coach": {
+    "teamFallback": "تیم",
+    "dashboard": {
+      "eyebrow": "{team} — امروز",
+      "teamStatus": "وضعیت تیم",
+      "welcome": "خوش آمدید، {name}",
+      "summaryLoading": "در حال بارگذاری خلاصه امروز…",
+      "summary": "{checked} از {active} بازیکن امروز ثبت وضعیت کرده‌اند",
+      "summaryAttention": " · {count} نیازمند توجه",
+      "kpiActivePlayers": "بازیکنان فعال",
+      "kpiPendingInvites": "دعوت‌نامه‌های در انتظار",
+      "kpiReportsToday": "گزارش‌های ثبت‌شده امروز",
+      "kpiNeedsAttention": "بازیکنان نیازمند توجه",
+      "teamRoster": "فهرست تیم",
+      "quickActions": "اقدامات سریع",
+      "invitePlayer": "دعوت بازیکن",
+      "viewPlayers": "مشاهده بازیکنان",
+      "buildProgram": "ساخت برنامه",
+      "viewReports": "مشاهده گزارش‌ها",
+      "assistantInviteHint": "فقط مربی اصلی می‌تواند مربی دستیار دعوت کند.",
+      "emptyRosterTitle": "فهرست تیم خود را بسازید",
+      "emptyRosterTitleNamed": "فهرست تیم {team} را بسازید",
+      "emptyRosterBody": "پس از پیوستن بازیکن، روزانه آمادگی، خواب و درد عضلانی را ثبت می‌کند تا خستگی را زودتر ببینید و آماده فشار بیشتر را تشخیص دهید.",
+      "inviteFirstPlayer": "اولین بازیکن را دعوت کنید",
+      "attentionTitle": "بازیکنان نیازمند توجه",
+      "viewAll": "مشاهده همه",
+      "allGoodToday": "همه بازیکنان امروز ثبت وضعیت کرده‌اند و وضعیت خوبی دارند.",
+      "hasntCheckedIn": "امروز ثبت وضعیت نکرده",
+      "recentActivity": "فعالیت اخیر",
+      "activityEmpty": "ثبت وضعیت بازیکنان اینجا نمایش داده می‌شود.",
+      "loggedScore": "امتیاز آمادگی ثبت کرد:",
+      "review": "بررسی"
+    },
+    "players": {
+      "title": "بازیکنان",
+      "subtitle": "همه اعضای فهرست، با آمادگی امروز در یک نگاه."
+    },
+    "programs": {
+      "title": "برنامه‌های تمرینی",
+      "subtitle": "برنامه‌های ساختاریافته با جلسات و مدت بسازید و به بازیکنان اختصاص دهید."
+    },
+    "assessments": {
+      "title": "ارزیابی‌ها",
+      "subtitle": "پوشش ارزیابی را پیگیری کنید و سابقه بازیکن را باز کنید."
+    },
+    "reports": {
+      "title": "گزارش‌ها",
+      "subtitle": "روند آمادگی، فهرست توجه و پیشرفت بازیکنان.",
+      "kpiAverageReadiness": "میانگین آمادگی",
+      "kpiPlayersCheckedIn": "بازیکنان ثبت‌شده",
+      "kpiAverageSleep": "میانگین خواب",
+      "kpiNeedsAttention": "بازیکنان نیازمند توجه",
+      "teamOverview": "نمای کلی تیم",
+      "weeklyTrend": "روند آمادگی هفتگی",
+      "attentionTitle": "بازیکنان نیازمند توجه",
+      "playerProgress": "پیشرفت بازیکن"
+    },
+    "invitations": {
+      "title": "دعوت‌نامه‌ها",
+      "subtitle": "لینک دعوت بازیکن و کادر را بسازید و مدیریت کنید.",
+      "listTitle": "فهرست دعوت‌نامه‌ها"
+    },
+    "settings": {
+      "eyebrow": "تنظیمات تیم",
+      "title": "تنظیمات",
+      "subtitle": "جزئیات تیم، دسترسی کادر، پیش‌فرض‌ها، اعلان‌ها، امنیت، صورتحساب و اقدامات پرریسک را پیکربندی کنید."
+    }
   }
 }

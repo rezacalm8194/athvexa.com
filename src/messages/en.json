@@ -224,5 +224,73 @@
       "color": "Color",
       "timesPerWeek": "Times / week: {count}"
     }
+  },
+  "coach": {
+    "teamFallback": "Team",
+    "dashboard": {
+      "eyebrow": "{team} — today",
+      "teamStatus": "Team status",
+      "welcome": "Welcome back, {name}",
+      "summaryLoading": "Loading today's summary…",
+      "summary": "{checked} of {active} player(s) checked in today",
+      "summaryAttention": " · {count} need attention",
+      "kpiActivePlayers": "Active players",
+      "kpiPendingInvites": "Pending invitations",
+      "kpiReportsToday": "Reports submitted today",
+      "kpiNeedsAttention": "Players requiring attention",
+      "teamRoster": "Team roster",
+      "quickActions": "Quick actions",
+      "invitePlayer": "Invite a player",
+      "viewPlayers": "View players",
+      "buildProgram": "Build a program",
+      "viewReports": "View reports",
+      "assistantInviteHint": "Only the head coach can invite assistant coaches.",
+      "emptyRosterTitle": "Build your team's roster",
+      "emptyRosterTitleNamed": "Build {team}'s roster",
+      "emptyRosterBody": "Once a player joins, they check in daily with readiness, sleep and soreness data — so you can spot fatigue before it becomes an injury and see who's ready to push harder.",
+      "inviteFirstPlayer": "Invite your first player",
+      "attentionTitle": "Players requiring attention",
+      "viewAll": "View all",
+      "allGoodToday": "Every player is checked in and reading well today.",
+      "hasntCheckedIn": "Hasn't checked in today",
+      "recentActivity": "Recent activity",
+      "activityEmpty": "Check-ins from your players will show up here.",
+      "loggedScore": "logged a readiness score of",
+      "review": "Review"
+    },
+    "players": {
+      "title": "Players",
+      "subtitle": "Everyone on your roster, with today's readiness at a glance."
+    },
+    "programs": {
+      "title": "Training programs",
+      "subtitle": "Build structured programs with sessions and a duration, then assign them to your players."
+    },
+    "assessments": {
+      "title": "Assessments",
+      "subtitle": "Track coverage and open player assessment history."
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "Readiness trends, attention list, and player progress.",
+      "kpiAverageReadiness": "Average readiness",
+      "kpiPlayersCheckedIn": "Players checked in",
+      "kpiAverageSleep": "Average sleep",
+      "kpiNeedsAttention": "Players requiring attention",
+      "teamOverview": "Team overview",
+      "weeklyTrend": "Weekly readiness trend",
+      "attentionTitle": "Players requiring attention",
+      "playerProgress": "Player progress"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "subtitle": "Create and manage invite links for players and staff.",
+      "listTitle": "Invitation list"
+    },
+    "settings": {
+      "eyebrow": "Team settings",
+      "title": "Settings",
+      "subtitle": "Configure team details, staff access, defaults, notifications, security, billing, and high-risk actions."
+    }
   }
 }

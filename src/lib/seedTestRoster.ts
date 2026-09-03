@@ -115,4 +115,81 @@ export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?
       });
     }
   }
+
+  const playerIds = memberIds.filter((member) => member.role === "PLAYER").map((member) => member.id);
+  await ensureDemoPrograms(coach.id, playerIds);
+}
+
+function dateOffset(daysFromToday: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
+const DEMO_PROGRAMS = [
+  {
+    name: "Pre-season fitness",
+    description: "Speed, strength and recovery work to build match fitness.",
+    goal: "Match fitness",
+    durationWeeks: 6,
+    sessionsPerWeek: 4,
+    startDate: dateOffset(-10),
+    endDate: dateOffset(32),
+    status: "ACTIVE" as const,
+    sessions: [
+      { title: "Speed + SAQ", day: "Monday", durationMinutes: 75, intensity: "HIGH", order: 0 },
+      { title: "Strength", day: "Tuesday", durationMinutes: 60, intensity: "MEDIUM", order: 1 },
+      { title: "Tactical shape", day: "Thursday", durationMinutes: 90, intensity: "MEDIUM", order: 2 },
+      { title: "Recovery", day: "Saturday", durationMinutes: 40, intensity: "LOW", order: 3 },
+    ],
+    assignAllPlayers: true,
+  },
+  {
+    name: "Match-week recovery",
+    description: "Lighter load for the days around a fixture.",
+    goal: "Stay fresh for match day",
+    durationWeeks: 2,
+    sessionsPerWeek: 3,
+    startDate: dateOffset(-2),
+    endDate: dateOffset(12),
+    status: "DRAFT" as const,
+    sessions: [
+      { title: "Activation", day: "Monday", durationMinutes: 30, intensity: "LOW", order: 0 },
+      { title: "Video + walkthrough", day: "Wednesday", durationMinutes: 45, intensity: "MEDIUM", order: 1 },
+      { title: "Set pieces", day: "Friday", durationMinutes: 60, intensity: "MEDIUM", order: 2 },
+    ],
+    assignAllPlayers: false,
+  },
+];
+
+async function ensureDemoPrograms(coachId: string, playerIds: string[]) {
+  for (const def of DEMO_PROGRAMS) {
+    let program = await db.program.findFirst({ where: { coachId, name: def.name }, select: { id: true } });
+    if (!program) {
+      program = await db.program.create({
+        data: {
+          coachId,
+          name: def.name,
+          description: def.description,
+          goal: def.goal,
+          durationWeeks: def.durationWeeks,
+          sessionsPerWeek: def.sessionsPerWeek,
+          startDate: def.startDate,
+          endDate: def.endDate,
+          status: def.status,
+          sessions: { create: def.sessions },
+        },
+        select: { id: true },
+      });
+    }
+
+    const assigned = def.assignAllPlayers ? playerIds : playerIds.slice(0, 1);
+    for (const playerId of assigned) {
+      await db.programAssignment.upsert({
+        where: { programId_playerId: { programId: program.id, playerId } },
+        update: {},
+        create: { programId: program.id, playerId },
+      });
+    }
+  }
 }

@@ -1,9 +1,20 @@
 "use client";
 
 import { UsersIcon } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function EmptyRosterState({ teamName, onInvite }: { teamName: string | null; onInvite?: () => void }) {
-  const title = teamName ? `Build ${teamName}'s roster` : "Build your team's roster";
+export default function EmptyRosterState({
+  teamName,
+  locale,
+  onInvite,
+}: {
+  teamName: string | null;
+  locale: Locale;
+  onInvite?: () => void;
+}) {
+  const title = teamName
+    ? t(locale, "coach.dashboard.emptyRosterTitleNamed", { team: teamName })
+    : t(locale, "coach.dashboard.emptyRosterTitle");
 
   return (
     <div className="card flex flex-col items-center gap-4 px-6 py-12 text-center">
@@ -12,18 +23,15 @@ export default function EmptyRosterState({ teamName, onInvite }: { teamName: str
       </div>
       <div className="max-w-md">
         <h2 className="font-display text-xl font-bold tracking-wide text-white">{title}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-smoke-3">
-          Once a player joins, they check in daily with readiness, sleep and soreness data - so you can
-          spot fatigue before it becomes an injury and see who's ready to push harder.
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-smoke-3">{t(locale, "coach.dashboard.emptyRosterBody")}</p>
       </div>
       {onInvite ? (
         <button type="button" onClick={onInvite} className="btn-primary !px-5 !py-3 text-sm">
-          Invite your first player
+          {t(locale, "coach.dashboard.inviteFirstPlayer")}
         </button>
       ) : (
         <a href="/dashboard/coach/players" className="btn-primary !px-5 !py-3 text-sm">
-          Invite your first player
+          {t(locale, "coach.dashboard.inviteFirstPlayer")}
         </a>
       )}
     </div>
