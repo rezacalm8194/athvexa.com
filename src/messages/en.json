@@ -598,6 +598,9 @@
       ,"openShare": "Share report",
       "shareModalTitle": "Share progress report",
       "close": "Close"
+      ,"quickShareEyebrow": "Quick share",
+      "quickShareTitle": "{player}'s progress report",
+      "quickShareHint": "Use the player filter above to share a different player's report."
     },
     "invite": {
       "eyebrow": "Invitation",

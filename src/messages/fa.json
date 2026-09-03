@@ -598,6 +598,9 @@
       ,"openShare": "ارسال گزارش",
       "shareModalTitle": "ارسال گزارش پیشرفت",
       "close": "بستن"
+      ,"quickShareEyebrow": "اشتراک‌گذاری سریع",
+      "quickShareTitle": "گزارش پیشرفت {player}",
+      "quickShareHint": "برای انتخاب بازیکن دیگر، از فیلتر بالای صفحه استفاده کنید."
     },
     "invite": {
       "eyebrow": "دعوت‌نامه",

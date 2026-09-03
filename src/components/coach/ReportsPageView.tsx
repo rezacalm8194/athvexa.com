@@ -373,6 +373,17 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
         <KpiCard label={t(locale, "coach.reports.kpiNeedsAttention")} value={kpis.playersRequiringAttention} icon={AlertIcon} tone="warn" loading={loading} />
       </div>
 
+      {!loading && !error && data?.playerProgress[0] ? (
+        <div className="mt-5 flex flex-col gap-4 rounded-lg border border-red/30 bg-red/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-red">{t(locale, "coach.reports.quickShareEyebrow")}</p>
+            <h2 className="mt-1 font-display text-lg font-black text-white">{t(locale, "coach.reports.quickShareTitle", { player: data.playerProgress[0].name })}</h2>
+            <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.reports.quickShareHint")}</p>
+          </div>
+          <ProgressShareActions player={data.playerProgress[0]} filters={data.filters} locale={locale} />
+        </div>
+      ) : null}
+
       <div className="mt-5">
         {loading ? <SkeletonRows count={7} height="h-20" /> : null}
         {!loading && error ? <ErrorState locale={locale} message={error} onRetry={loadReports} /> : null}
