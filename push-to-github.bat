@@ -57,16 +57,49 @@ if errorlevel 1 (
 )
 
 echo.
-echo Pushing to GitHub...
-git push
+echo Pushing this branch to GitHub...
+for /f "delims=" %%b in ('git branch --show-current') do set "CURRENT_BRANCH=%%b"
+git push -u origin HEAD
 if errorlevel 1 (
   echo ERROR: git push failed. Check your GitHub login, remote URL, or network connection.
   pause
   exit /b 1
 )
 
+if /I not "%CURRENT_BRANCH%"=="main" (
+  echo.
+  echo Updating main so Pachim deploys app.athvexa.com...
+  git fetch origin main
+  if errorlevel 1 (
+    echo ERROR: could not fetch origin/main.
+    pause
+    exit /b 1
+  )
+  git checkout main
+  if errorlevel 1 (
+    echo ERROR: could not switch to main.
+    pause
+    exit /b 1
+  )
+  git merge --no-edit "%CURRENT_BRANCH%"
+  if errorlevel 1 (
+    echo ERROR: merge into main failed. Resolve conflicts, then push main.
+    git checkout "%CURRENT_BRANCH%"
+    pause
+    exit /b 1
+  )
+  git push origin main
+  if errorlevel 1 (
+    echo ERROR: git push origin main failed.
+    git checkout "%CURRENT_BRANCH%"
+    pause
+    exit /b 1
+  )
+  git checkout "%CURRENT_BRANCH%"
+)
+
 echo.
-echo Done. GitHub is updated.
+echo Done. GitHub main is updated. Pachim should start a new deployment.
 echo.
 echo Pachim checklist:
 echo   1. Deployments: wait until status is green ^(تمام شده^)
