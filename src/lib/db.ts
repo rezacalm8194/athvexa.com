@@ -87,6 +87,10 @@ export function ensureDatabase() {
       await ensureSqliteSchema();
     }
     await ensureAssessmentScoreIsReal();
+    const { ensureRezaDemoRoster } = await import("./seedTestRoster");
+    await ensureRezaDemoRoster().catch((error) => {
+      console.error("[db] demo roster seed skipped", error);
+    });
   })().catch((error) => {
     sqliteReady = null;
     if (isIgnorableSchemaError(error)) {
