@@ -47,7 +47,11 @@
     "inviteJoinStaff": "Join {team}'s staff on Athvexa",
     "inviteJoinPlayer": "Join {team} on Athvexa",
     "inviteStaffSubtitle": "Create your {role} account to help manage the roster.",
-    "invitePlayerSubtitle": "Create your player account to get today's training and check in."
+    "invitePlayerSubtitle": "Create your player account to get today's training and check in.",
+    "namePhPlayer": "Ali Hassan",
+    "namePhCoach": "Coach Ali",
+    "namePhAssistant": "Assistant name",
+    "registerMethodAria": "Registration method"
   },
   "roles": {
     "player": "Player",
@@ -95,7 +99,72 @@
     "phase2": "Phase 2",
     "cancel": "Cancel",
     "tryAgain": "Try again",
+    "defaultError": "Something went wrong while loading this data.",
     "saving": "Saving…"
+  },
+  "messages": {
+    "eyebrow": "Messages",
+    "title": "Coach and player messaging",
+    "refresh": "Refresh",
+    "search": "Search conversations",
+    "startNew": "Start a new message",
+    "emptyTitle": "No conversations yet.",
+    "emptyBody": "Choose a teammate above to send the first message.",
+    "noMessagesYet": "No messages yet",
+    "newConversation": "New conversation",
+    "newMessage": "New message",
+    "selectOrStart": "Select or start a conversation",
+    "participants": "{player} and {coach}",
+    "pickConversation": "Pick a conversation.",
+    "pickConversationHint": "Messages, timestamps, and read status will appear here.",
+    "emptyThread": "No messages in this conversation yet.",
+    "contextTraining": "Training session",
+    "contextAssessment": "Assessment",
+    "contextDailyCheckIn": "Daily check-in",
+    "contextProgram": "Program",
+    "read": "Read",
+    "unread": "Unread",
+    "sendingWithContext": "Sending with context: {context}",
+    "writeMessage": "Write a message",
+    "chooseRecipientFirst": "Choose someone to message first",
+    "send": "Send",
+    "sending": "Sending...",
+    "loadError": "Could not load messages",
+    "openError": "Could not open conversation",
+    "sendError": "Could not send message"
+  },
+  "notifications": {
+    "eyebrow": "Notifications",
+    "title": "Notification center",
+    "unreadCount": "{count} unread",
+    "markAllRead": "Mark all as read",
+    "loadError": "Could not load notifications",
+    "tryAgain": "Try again",
+    "emptyTitle": "No notifications yet.",
+    "emptyBody": "Program, check-in, assessment, and training updates will appear here.",
+    "timeMinutesAgo": "{n}m ago",
+    "timeHoursAgo": "{n}h ago",
+    "timeDaysAgo": "{n}d ago",
+    "open": "Open",
+    "markRead": "Mark as read",
+    "delete": "Delete",
+    "types": {
+      "checkInReminder": {
+        "title": "Complete today's check-in",
+        "body": "Log your readiness, sleep, fatigue, soreness, and mood for today."
+      },
+      "trainingReminder": {
+        "title": "Today's training session",
+        "body": "{session} is scheduled for today."
+      },
+      "playerNoCheckIn": {
+        "title": "Player has not checked in today",
+        "body": "{name} has not completed today's check-in."
+      },
+      "assistantActivity": {
+        "fallbackTitle": "Assistant activity"
+      }
+    }
   },
   "player": {
     "today": {
@@ -177,7 +246,11 @@
       "targetDate": "Target date",
       "create": "Create goal",
       "loading": "Loading goals…",
-      "empty": "No goals yet. Set your first target and track progress week to week."
+      "empty": "No goals yet. Set your first target and track progress week to week.",
+      "catPerformance": "Performance",
+      "catFitness": "Fitness",
+      "catSkill": "Skill",
+      "catTeam": "Team"
     },
     "training": {
       "eyebrow": "Training",
@@ -206,7 +279,10 @@
       "notes": "Notes",
       "notesPlaceholder": "Optional notes about how it went",
       "markCompleted": "Mark completed",
-      "noGoal": "No goal set."
+      "noGoal": "No goal set.",
+      "loadError": "Could not load training program.",
+      "updateError": "Could not update this session.",
+      "sessionUpdated": "Session updated."
     },
     "planner": {
       "title": "Weekly Planner",
@@ -214,7 +290,16 @@
       "next": "Next →",
       "thisWeek": "This week",
       "loadingWeek": "Loading the week…",
-      "nothingPlanned": "Nothing planned"
+      "nothingPlanned": "Nothing planned",
+      "markDone": "Mark done",
+      "markNotDone": "Mark not done",
+      "deleteItem": "Delete item",
+      "catTraining": "Training",
+      "catGym": "Gym",
+      "catMatch": "Match",
+      "catRecovery": "Recovery",
+      "catRest": "Rest",
+      "catOther": "Other"
     },
     "habits": {
       "title": "Habits",
@@ -848,6 +933,21 @@
       "setupEyebrow": "One quick step",
       "setupPageTitle": "Set up your team",
       "setupPageBody": "Give your team a name first — you'll be able to invite players and assistant coaches right after."
+    },
+    "roster": {
+      "assistantBadge": "Assistant",
+      "notLoggedToday": "Not logged today",
+      "player": "Player",
+      "assistant": "Assistant"
+    },
+    "comingSoon": {
+      "badge": "Coming soon"
+    },
+    "teamScoped": {
+      "eyebrow": "Team workspace",
+      "body": "{section} is team-scoped and ready for migration. Your access is verified as {role}.",
+      "cardBody": "Existing coach tools are unchanged while the multi-team foundation is introduced.",
+      "openCurrent": "Open current {section}"
     }
   }
 }

@@ -311,7 +311,7 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
 
       <div className="mt-5">
         {loading ? <SkeletonRows count={7} height="h-20" /> : null}
-        {!loading && error ? <ErrorState message={error} onRetry={loadReports} /> : null}
+        {!loading && error ? <ErrorState locale={locale} message={error} onRetry={loadReports} /> : null}
         {hasNoPlayers ? (
           <EmptyState icon={UsersIcon} title={t(locale, "coach.reports.emptyPlayersTitle")} description={t(locale, "coach.reports.emptyPlayersBody")} />
         ) : null}

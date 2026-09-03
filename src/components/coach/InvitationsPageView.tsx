@@ -402,7 +402,7 @@ export default function InvitationsPageView({
 
         <div className="p-4">
           {loading ? <SkeletonRows count={6} /> : null}
-          {!loading && error ? <ErrorState message={error} onRetry={loadInvites} /> : null}
+          {!loading && error ? <ErrorState locale={locale} message={error} onRetry={loadInvites} /> : null}
           {!loading && !error && invites.length === 0 ? (
             <EmptyState
               icon={UsersIcon}

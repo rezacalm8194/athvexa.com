@@ -19,3 +19,17 @@ export function roleLabel(role: string, locale: Locale): string {
   if (role === "ASSISTANT") return t(locale, "roles.assistantCoach");
   return t(locale, "roles.coach");
 }
+
+/** Team membership roles (OWNER, HEAD_COACH, …) shown in coach UI. */
+export function teamRoleLabel(role: string, locale: Locale): string {
+  const keyByRole: Record<string, string> = {
+    OWNER: "coach.teams.roleOwner",
+    HEAD_COACH: "coach.teams.roleHeadCoach",
+    ASSISTANT_COACH: "coach.teams.roleAssistantCoach",
+    ANALYST: "coach.teams.roleAnalyst",
+    PHYSIO: "coach.teams.rolePhysio",
+    PLAYER: "coach.teams.rolePlayer",
+  };
+  const key = keyByRole[role];
+  return key ? t(locale, key) : role;
+}

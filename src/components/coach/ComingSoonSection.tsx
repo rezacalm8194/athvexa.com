@@ -1,10 +1,13 @@
 import type { ComponentType } from "react";
+import { t, type Locale } from "@/lib/i18n";
 
 export default function ComingSoonSection({
+  locale,
   title,
   description,
   icon: Icon,
 }: {
+  locale: Locale;
   title: string;
   description: string;
   icon: ComponentType<{ className?: string }>;
@@ -19,7 +22,7 @@ export default function ComingSoonSection({
           <h1 className="font-display text-xl font-bold tracking-wide text-white">{title}</h1>
           <p className="mt-2 text-sm leading-relaxed text-smoke-3">{description}</p>
         </div>
-        <span className="eyebrow rounded-full border border-line-1 px-3 py-1">Coming soon</span>
+        <span className="eyebrow rounded-full border border-line-1 px-3 py-1">{t(locale, "coach.comingSoon.badge")}</span>
       </div>
     </div>
   );

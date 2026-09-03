@@ -16,6 +16,17 @@ type Goal = {
 
 const CATEGORIES = ["Performance", "Fitness", "Skill", "Team"];
 
+function categoryLabel(name: string, locale: Locale) {
+  const keyByName: Record<string, string> = {
+    Performance: "player.goals.catPerformance",
+    Fitness: "player.goals.catFitness",
+    Skill: "player.goals.catSkill",
+    Team: "player.goals.catTeam",
+  };
+  const key = keyByName[name];
+  return key ? t(locale, key) : name;
+}
+
 export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +121,7 @@ export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZo
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {categoryLabel(c, locale)}
                   </option>
                 ))}
               </select>
@@ -180,7 +191,7 @@ function GoalCard({
     <div className="card group p-4">
       <div className="mb-1 flex items-start justify-between gap-3">
         <div>
-          <span className="eyebrow mr-2">{goal.category}</span>
+          <span className="eyebrow mr-2">{categoryLabel(goal.category, locale)}</span>
           {goal.targetDate && <span className="text-[10px] text-smoke-3">{t(locale, "player.goals.due", { date: formatDate(`${goal.targetDate}T12:00:00Z`, { month: "short", day: "numeric", year: "numeric" }, locale, timeZone) })}</span>}
           <h3 className={`font-display text-lg font-bold ${isDone ? "text-smoke-3 line-through" : "text-white"}`}>
             {goal.title}

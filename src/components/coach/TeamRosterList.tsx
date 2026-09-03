@@ -1,5 +1,7 @@
 "use client";
 
+import { t, type Locale } from "@/lib/i18n";
+
 type MemberRole = "PLAYER" | "ASSISTANT";
 
 export type Member = {
@@ -20,11 +22,13 @@ const toneColor: Record<Member["tone"], string> = {
 };
 
 export default function TeamRosterList({
+  locale,
   members,
   canManageRoles,
   updatingId,
   onChangeRole,
 }: {
+  locale: Locale;
   members: Member[];
   canManageRoles: boolean;
   updatingId: string | null;
@@ -42,12 +46,12 @@ export default function TeamRosterList({
               <span className="truncate text-sm font-semibold text-white">{m.name}</span>
               {m.role === "ASSISTANT" && (
                 <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-smoke-3">
-                  Assistant
+                  {t(locale, "coach.roster.assistantBadge")}
                 </span>
               )}
             </div>
             <div className="truncate text-[11px]" style={{ color: m.role === "ASSISTANT" ? "#8a8f98" : toneColor[m.tone] }}>
-              {m.role === "ASSISTANT" ? m.email : m.loggedToday ? m.label : "Not logged today"}
+              {m.role === "ASSISTANT" ? m.email : m.loggedToday ? m.label : t(locale, "coach.roster.notLoggedToday")}
             </div>
           </div>
           {m.role === "PLAYER" && (
@@ -60,8 +64,8 @@ export default function TeamRosterList({
               onChange={(e) => onChangeRole(m.id, e.target.value as MemberRole)}
               className="rounded border border-line-1 bg-ink-2 px-2 py-1.5 text-xs text-smoke-3 disabled:opacity-50"
             >
-              <option value="PLAYER">Player</option>
-              <option value="ASSISTANT">Assistant</option>
+              <option value="PLAYER">{t(locale, "coach.roster.player")}</option>
+              <option value="ASSISTANT">{t(locale, "coach.roster.assistant")}</option>
             </select>
           )}
         </div>

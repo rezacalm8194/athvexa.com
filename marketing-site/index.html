@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Athvexa — Football Performance Platform</title>
+<title data-i18n="meta.title">Athvexa — Football Performance Platform</title>
 <link rel="icon" href="/favicon.png" type="image/png">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
@@ -1454,6 +1454,58 @@
     font-size: 18px; font-weight: 500;
   }
   .mobile-menu .btn-red { margin-top: 16px; text-align: center; justify-content: center; padding: 14px; }
+
+  /* LANGUAGE TOGGLE */
+  .lang-toggle {
+    display: flex; align-items: center; gap: 4px;
+    margin-inline-end: 4px;
+  }
+  .lang-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 12px; font-weight: 600;
+    color: var(--gray-3);
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .lang-btn:hover { color: var(--white-pure); }
+  .lang-btn.active { color: var(--red-glow); background: rgba(224,32,32,0.12); }
+  .lang-sep { color: var(--gray-2); font-size: 11px; user-select: none; }
+  .mobile-menu .lang-toggle {
+    justify-content: center;
+    margin: 12px 0 4px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--black-3);
+  }
+  .mobile-menu .lang-btn { font-size: 16px; padding: 8px 16px; }
+
+  /* RTL */
+  html[dir="rtl"] {
+    --font-body: 'Vazirmatn', 'Inter', sans-serif;
+  }
+  html[dir="rtl"] body {
+    font-family: var(--font-body);
+  }
+  html[dir="rtl"] .product-tab {
+    text-align: right;
+  }
+  html[dir="rtl"] .modal-close {
+    right: auto;
+    left: 16px;
+  }
+  html[dir="rtl"] .ps-task-time {
+    margin-left: 0;
+    margin-right: auto;
+  }
+  html[dir="rtl"] .preview-row span,
+  html[dir="rtl"] .preview-player span {
+    margin-left: 0;
+    margin-right: auto;
+  }
+  html[dir="rtl"] .form-divider::before { left: auto; right: 0; }
+  html[dir="rtl"] .form-divider::after { right: auto; left: 0; }
+  html[dir="rtl"] .nav-cta .btn-red::before { content: "شروع رایگان"; }
 </style>
 </head>
 <body>
@@ -1462,28 +1514,38 @@
 <nav>
   <a class="nav-logo" href="#">ATH<span>VEXA</span></a>
   <ul class="nav-links">
-    <li><a href="#features">Features</a></li>
-    <li><a href="#modules">Modules</a></li>
-    <li><a href="#roles">Roles</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#features" data-i18n="nav.features">Features</a></li>
+    <li><a href="#modules" data-i18n="nav.modules">Modules</a></li>
+    <li><a href="#roles" data-i18n="nav.roles">Roles</a></li>
+    <li><a href="#roadmap" data-i18n="nav.roadmap">Roadmap</a></li>
   </ul>
   <div class="nav-cta">
-    <a class="btn-ghost" href="https://app.athvexa.com/login">Sign in</a>
-    <a class="btn-red" href="https://app.athvexa.com/register">Get started free</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button type="button" class="lang-btn" data-set-locale="en">EN</button>
+      <span class="lang-sep">|</span>
+      <button type="button" class="lang-btn" data-set-locale="fa">FA</button>
+    </div>
+    <a class="btn-ghost" href="https://app.athvexa.com/login" data-i18n="nav.signIn">Sign in</a>
+    <a class="btn-red" href="https://app.athvexa.com/register" data-i18n="nav.getStarted">Get started free</a>
   </div>
-  <button class="hamburger" onclick="toggleMobile()" aria-label="Menu">
+  <button class="hamburger" onclick="toggleMobile()" data-i18n-aria-label="nav.menu" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
 </nav>
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobileMenu">
-  <a href="#features" onclick="toggleMobile()">Features</a>
-  <a href="#modules" onclick="toggleMobile()">Modules</a>
-  <a href="#roles" onclick="toggleMobile()">Roles</a>
-  <a href="#roadmap" onclick="toggleMobile()">Roadmap</a>
-  <a class="btn-ghost" href="https://app.athvexa.com/login">Sign in</a>
-  <a class="btn-red" href="https://app.athvexa.com/register">Get started free</a>
+  <a href="#features" onclick="toggleMobile()" data-i18n="nav.features">Features</a>
+  <a href="#modules" onclick="toggleMobile()" data-i18n="nav.modules">Modules</a>
+  <a href="#roles" onclick="toggleMobile()" data-i18n="nav.roles">Roles</a>
+  <a href="#roadmap" onclick="toggleMobile()" data-i18n="nav.roadmap">Roadmap</a>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button type="button" class="lang-btn" data-set-locale="en">EN</button>
+    <span class="lang-sep">|</span>
+    <button type="button" class="lang-btn" data-set-locale="fa">فارسی</button>
+  </div>
+  <a class="btn-ghost" href="https://app.athvexa.com/login" data-i18n="nav.signIn">Sign in</a>
+  <a class="btn-red" href="https://app.athvexa.com/register" data-i18n="nav.getStarted">Get started free</a>
 </div>
 
 <!-- HERO -->
@@ -1492,29 +1554,29 @@
     <div class="hero-content">
       <div class="hero-eyebrow">
         <div class="dot-pulse"></div>
-        Football Performance Platform
+        <span data-i18n="hero.eyebrow">Football Performance Platform</span>
       </div>
-      <h1>TRAIN SMARTER.<br><em>WIN HARDER.</em></h1>
-      <p class="hero-sub">Athvexa gives football strength coaches full visibility into every player's daily performance — training, recovery, wellness, habits, and goals — in one powerful dashboard.</p>
+      <h1 data-i18n-html="hero.title">TRAIN SMARTER.<br><em>WIN HARDER.</em></h1>
+      <p class="hero-sub" data-i18n="hero.sub">Athvexa gives football strength coaches full visibility into every player's daily performance — training, recovery, wellness, habits, and goals — in one powerful dashboard.</p>
       <div class="hero-actions">
         <a class="btn-hero" href="https://app.athvexa.com/register">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 7l5 5-5 5M6 12h12"/></svg>
-          Start for free
+          <span data-i18n="hero.cta.start">Start for free</span>
         </a>
-        <a class="btn-hero-outline" href="#modules">See how it works</a>
+        <a class="btn-hero-outline" href="#modules" data-i18n="hero.cta.how">See how it works</a>
       </div>
       <div class="hero-stats">
         <div class="stat-item">
           <div class="stat-num">7<span>+</span></div>
-          <div class="stat-label">Core modules</div>
+          <div class="stat-label" data-i18n="hero.stat.modules">Core modules</div>
         </div>
         <div class="stat-item">
           <div class="stat-num">∞</div>
-          <div class="stat-label">Players per coach</div>
+          <div class="stat-label" data-i18n="hero.stat.players">Players per coach</div>
         </div>
         <div class="stat-item">
           <div class="stat-num">3</div>
-          <div class="stat-label">Access roles</div>
+          <div class="stat-label" data-i18n="hero.stat.roles">Access roles</div>
         </div>
       </div>
     </div>
@@ -1527,55 +1589,55 @@
         <div class="phone-screen">
           <div class="ps-header">
             <div>
-              <div class="ps-date">Mon, 19 July</div>
-              <div class="ps-greeting">Today's Dashboard</div>
+              <div class="ps-date" data-i18n="phone.date">Mon, 19 July</div>
+              <div class="ps-greeting" data-i18n="phone.greeting">Today's Dashboard</div>
             </div>
           </div>
 
           <div class="ps-score-card">
-            <div class="ps-score-label">Daily Score</div>
+            <div class="ps-score-label" data-i18n="phone.scoreLabel">Daily Score</div>
             <div class="ps-score-num">84</div>
-            <div class="ps-score-sub">+6 pts vs yesterday</div>
+            <div class="ps-score-sub" data-i18n="phone.scoreSub">+6 pts vs yesterday</div>
           </div>
 
           <div class="ps-grid">
             <div class="ps-cell">
-              <div class="label">Sleep</div>
+              <div class="label" data-i18n="phone.sleep">Sleep</div>
               <div class="value green">7.5h</div>
             </div>
             <div class="ps-cell">
-              <div class="label">Water</div>
+              <div class="label" data-i18n="phone.water">Water</div>
               <div class="value amber">1.8L</div>
             </div>
             <div class="ps-cell">
-              <div class="label">Readiness</div>
+              <div class="label" data-i18n="phone.readiness">Readiness</div>
               <div class="value">92%</div>
             </div>
             <div class="ps-cell">
-              <div class="label">Energy</div>
-              <div class="value green">High</div>
+              <div class="label" data-i18n="phone.energy">Energy</div>
+              <div class="value green" data-i18n="phone.energyHigh">High</div>
             </div>
           </div>
 
           <div class="ps-progress-bar">
-            <div class="ps-progress-label">Daily progress <span>72%</span></div>
+            <div class="ps-progress-label"><span data-i18n="phone.progress">Daily progress</span> <span>72%</span></div>
             <div class="ps-bar-track"><div class="ps-bar-fill"></div></div>
           </div>
 
           <div class="ps-tasks">
             <div class="ps-task">
               <div class="ps-check done"></div>
-              <span class="ps-task-text done">Morning stretching</span>
-              <span class="ps-task-time">Done</span>
+              <span class="ps-task-text done" data-i18n="phone.task1">Morning stretching</span>
+              <span class="ps-task-time" data-i18n="phone.done">Done</span>
             </div>
             <div class="ps-task">
               <div class="ps-check done"></div>
-              <span class="ps-task-text done">Gym session</span>
-              <span class="ps-task-time">Done</span>
+              <span class="ps-task-text done" data-i18n="phone.task2">Gym session</span>
+              <span class="ps-task-time" data-i18n="phone.done">Done</span>
             </div>
             <div class="ps-task">
               <div class="ps-check"></div>
-              <span class="ps-task-text">Football training</span>
+              <span class="ps-task-text" data-i18n="phone.task3">Football training</span>
               <span class="ps-task-time">16:00</span>
             </div>
           </div>
@@ -1589,40 +1651,40 @@
 <section class="features-section" id="features">
   <div class="section-inner">
     <div class="features-header">
-      <div class="eyebrow">Why Athvexa</div>
-      <h2 class="section-title">Built for the pitch.<br>Designed for the coach.</h2>
-      <p class="section-sub">Everything a football strength coach needs to track, analyse, and improve player performance at every level.</p>
+      <div class="eyebrow" data-i18n="features.eyebrow">Why Athvexa</div>
+      <h2 class="section-title" data-i18n-html="features.title">Built for the pitch.<br>Designed for the coach.</h2>
+      <p class="section-sub" data-i18n="features.sub">Everything a football strength coach needs to track, analyse, and improve player performance at every level.</p>
     </div>
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">📊</div>
-        <div class="feature-title">Real-time dashboards</div>
-        <p class="feature-desc">Live view of every player's daily score, wellness status, and task completion — before you even step on the pitch.</p>
+        <div class="feature-title" data-i18n="features.dashboards.title">Real-time dashboards</div>
+        <p class="feature-desc" data-i18n="features.dashboards.desc">Live view of every player's daily score, wellness status, and task completion — before you even step on the pitch.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📴</div>
-        <div class="feature-title">Offline-first</div>
-        <p class="feature-desc">Players can log data without internet. Everything syncs automatically when they reconnect. No excuses, no lost entries.</p>
+        <div class="feature-title" data-i18n="features.offline.title">Offline-first</div>
+        <p class="feature-desc" data-i18n="features.offline.desc">Players can log data without internet. Everything syncs automatically when they reconnect. No excuses, no lost entries.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🌍</div>
-        <div class="feature-title">Multilingual</div>
-        <p class="feature-desc">English by default. Switch to Arabic or Persian in settings. Gregorian, Shamsi, and Hijri calendars all supported.</p>
+        <div class="feature-title" data-i18n="features.multilingual.title">Multilingual</div>
+        <p class="feature-desc" data-i18n="features.multilingual.desc">English by default. Switch to Arabic or Persian in settings. Gregorian, Shamsi, and Hijri calendars all supported.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔔</div>
-        <div class="feature-title">Smart reminders</div>
-        <p class="feature-desc">Automated notifications for training sessions, habit check-ins, and wellness assessments — configured by the coach.</p>
+        <div class="feature-title" data-i18n="features.reminders.title">Smart reminders</div>
+        <p class="feature-desc" data-i18n="features.reminders.desc">Automated notifications for training sessions, habit check-ins, and wellness assessments — configured by the coach.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔗</div>
-        <div class="feature-title">Invite via link</div>
-        <p class="feature-desc">Add players instantly with a shareable invite link. No admin friction, no account setup required on the player's side.</p>
+        <div class="feature-title" data-i18n="features.invite.title">Invite via link</div>
+        <p class="feature-desc" data-i18n="features.invite.desc">Add players instantly with a shareable invite link. No admin friction, no account setup required on the player's side.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🛡️</div>
-        <div class="feature-title">Secure &amp; private</div>
-        <p class="feature-desc">Self-hosted on your own server. JWT authentication, HTTPS enforced, full data backup and export control in your hands.</p>
+        <div class="feature-title" data-i18n="features.secure.title">Secure &amp; private</div>
+        <p class="feature-desc" data-i18n="features.secure.desc">Self-hosted on your own server. JWT authentication, HTTPS enforced, full data backup and export control in your hands.</p>
       </div>
     </div>
   </div>
@@ -1633,24 +1695,24 @@
   <div class="section-inner">
     <div class="product-preview-grid">
       <div class="product-preview-copy">
-        <div class="eyebrow">Product preview</div>
-        <h2 class="section-title">See your team in action.</h2>
-        <p class="section-sub" style="margin:0">Explore the core tools coaches use throughout the day.</p>
-        <div class="product-preview-tabs" role="tablist" aria-label="Coach product preview tabs" id="productPreviewTabs"></div>
+        <div class="eyebrow" data-i18n="preview.eyebrow">Product preview</div>
+        <h2 class="section-title" data-i18n="preview.title">See your team in action.</h2>
+        <p class="section-sub" style="margin:0" data-i18n="preview.sub">Explore the core tools coaches use throughout the day.</p>
+        <div class="product-preview-tabs" role="tablist" data-i18n-aria-label="preview.tabsLabel" aria-label="Coach product preview tabs" id="productPreviewTabs"></div>
       </div>
       <div class="product-preview-stage">
         <div class="product-frame" id="productFrame">
           <div class="product-frame-screen" id="productPreviewScreen" role="img" aria-label="Dashboard preview"></div>
         </div>
         <div class="product-mobile-info" id="productMobileInfo" aria-live="polite">
-          <h3 class="product-active-title" id="productActiveTitle">Dashboard</h3>
-          <p class="product-active-desc" id="productActiveDesc">See team readiness, alerts, check-ins, and today’s priorities at a glance.</p>
+          <h3 class="product-active-title" id="productActiveTitle" data-i18n="preview.dashboard.title">Dashboard</h3>
+          <p class="product-active-desc" id="productActiveDesc" data-i18n="preview.dashboard.description">See team readiness, alerts, check-ins, and today's priorities at a glance.</p>
         </div>
         <div class="product-mobile-controls">
-          <button class="product-nav-btn" id="productPrev" type="button" aria-label="Previous product preview" disabled>‹</button>
-          <button class="product-nav-btn" id="productNext" type="button" aria-label="Next product preview">›</button>
+          <button class="product-nav-btn" id="productPrev" type="button" data-i18n-aria-label="preview.prev" aria-label="Previous product preview" disabled>‹</button>
+          <button class="product-nav-btn" id="productNext" type="button" data-i18n-aria-label="preview.next" aria-label="Next product preview">›</button>
         </div>
-        <div class="product-dots" id="productDots" aria-label="Product preview pagination"></div>
+        <div class="product-dots" id="productDots" data-i18n-aria-label="preview.pagination" aria-label="Product preview pagination"></div>
       </div>
     </div>
   </div>
@@ -1659,42 +1721,42 @@
 <section class="roles-section" id="roles">
   <div class="section-inner">
     <div style="text-align:center">
-      <div class="eyebrow">Access roles</div>
-      <h2 class="section-title">Three roles.<br>One platform.</h2>
-      <p class="section-sub" style="margin:0 auto 0">From head coach to player — each person sees exactly what they need, nothing more.</p>
+      <div class="eyebrow" data-i18n="roles.eyebrow">Access roles</div>
+      <h2 class="section-title" data-i18n-html="roles.title">Three roles.<br>One platform.</h2>
+      <p class="section-sub" style="margin:0 auto 0" data-i18n="roles.sub">From head coach to player — each person sees exactly what they need, nothing more.</p>
     </div>
     <div class="roles-grid">
       <div class="role-card">
-        <div class="role-badge coach">Head Coach</div>
-        <h3>Full Control</h3>
-        <p>Complete access to all players, all data, all settings. Assign training, set goals, manage the entire team from one screen.</p>
+        <div class="role-badge coach" data-i18n="roles.coach.badge">Head Coach</div>
+        <h3 data-i18n="roles.coach.title">Full Control</h3>
+        <p data-i18n="roles.coach.desc">Complete access to all players, all data, all settings. Assign training, set goals, manage the entire team from one screen.</p>
         <div class="role-perms">
-          <div class="perm-item"><span class="perm-check">✓</span> Manage all players</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Add assistants</div>
-          <div class="perm-item"><span class="perm-check">✓</span> All analytics</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Full settings access</div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.coach.perm1">Manage all players</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.coach.perm2">Add assistants</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.coach.perm3">All analytics</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.coach.perm4">Full settings access</span></div>
         </div>
       </div>
       <div class="role-card">
-        <div class="role-badge assistant">Assistant Coach</div>
-        <h3>Delegated Access</h3>
-        <p>Head coaches can delegate specific players or tasks to assistants — even granting partial coach-level access where needed.</p>
+        <div class="role-badge assistant" data-i18n="roles.assistant.badge">Assistant Coach</div>
+        <h3 data-i18n="roles.assistant.title">Delegated Access</h3>
+        <p data-i18n="roles.assistant.desc">Head coaches can delegate specific players or tasks to assistants — even granting partial coach-level access where needed.</p>
         <div class="role-perms">
-          <div class="perm-item"><span class="perm-check">✓</span> Assigned players</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Assign training</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Send coach messages</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Configurable scope</div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.assistant.perm1">Assigned players</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.assistant.perm2">Assign training</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.assistant.perm3">Send coach messages</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.assistant.perm4">Configurable scope</span></div>
         </div>
       </div>
       <div class="role-card">
-        <div class="role-badge player">Player</div>
-        <h3>Own Dashboard</h3>
-        <p>Players see their own data, check in daily, complete tasks, track habits, and receive messages from the coaching staff.</p>
+        <div class="role-badge player" data-i18n="roles.player.badge">Player</div>
+        <h3 data-i18n="roles.player.title">Own Dashboard</h3>
+        <p data-i18n="roles.player.desc">Players see their own data, check in daily, complete tasks, track habits, and receive messages from the coaching staff.</p>
         <div class="role-perms">
-          <div class="perm-item"><span class="perm-check">✓</span> Personal dashboard</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Daily check-in</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Habit tracking</div>
-          <div class="perm-item"><span class="perm-check">✓</span> Coach messages</div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.player.perm1">Personal dashboard</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.player.perm2">Daily check-in</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.player.perm3">Habit tracking</span></div>
+          <div class="perm-item"><span class="perm-check">✓</span> <span data-i18n="roles.player.perm4">Coach messages</span></div>
         </div>
       </div>
     </div>
@@ -1705,51 +1767,51 @@
 <section>
   <div class="section-inner">
     <div class="benefits-header">
-      <div class="eyebrow">WHY ATHVEXA</div>
-      <h2 class="section-title">Run your team with less guesswork.</h2>
-      <p class="section-sub" style="margin:0 auto">Everything coaches need to monitor players, organize training, and make better decisions from one place.</p>
+      <div class="eyebrow" data-i18n="benefits.eyebrow">WHY ATHVEXA</div>
+      <h2 class="section-title" data-i18n="benefits.title">Run your team with less guesswork.</h2>
+      <p class="section-sub" style="margin:0 auto" data-i18n="benefits.sub">Everything coaches need to monitor players, organize training, and make better decisions from one place.</p>
     </div>
     <div class="benefits-grid">
       <div class="benefit-card">
         <div class="benefit-icon">⏱</div>
         <div>
-          <div class="benefit-title">Save time every day</div>
-          <div class="benefit-desc">Replace scattered messages, notes, and spreadsheets with one organized workspace.</div>
+          <div class="benefit-title" data-i18n="benefits.time.title">Save time every day</div>
+          <div class="benefit-desc" data-i18n="benefits.time.desc">Replace scattered messages, notes, and spreadsheets with one organized workspace.</div>
         </div>
       </div>
       <div class="benefit-card">
         <div class="benefit-icon">⚠</div>
         <div>
-          <div class="benefit-title">Catch problems earlier</div>
-          <div class="benefit-desc">Spot low readiness, poor sleep, fatigue, and soreness before performance drops.</div>
+          <div class="benefit-title" data-i18n="benefits.catch.title">Catch problems earlier</div>
+          <div class="benefit-desc" data-i18n="benefits.catch.desc">Spot low readiness, poor sleep, fatigue, and soreness before performance drops.</div>
         </div>
       </div>
       <div class="benefit-card">
         <div class="benefit-icon">✓</div>
         <div>
-          <div class="benefit-title">Keep players accountable</div>
-          <div class="benefit-desc">Track check-ins, assigned programs, completed sessions, and missed work.</div>
+          <div class="benefit-title" data-i18n="benefits.accountable.title">Keep players accountable</div>
+          <div class="benefit-desc" data-i18n="benefits.accountable.desc">Track check-ins, assigned programs, completed sessions, and missed work.</div>
         </div>
       </div>
       <div class="benefit-card">
         <div class="benefit-icon">👥</div>
         <div>
-          <div class="benefit-title">See the whole team clearly</div>
-          <div class="benefit-desc">Review every player’s status, progress, and alerts from one dashboard.</div>
+          <div class="benefit-title" data-i18n="benefits.team.title">See the whole team clearly</div>
+          <div class="benefit-desc" data-i18n="benefits.team.desc">Review every player's status, progress, and alerts from one dashboard.</div>
         </div>
       </div>
       <div class="benefit-card">
         <div class="benefit-icon">📋</div>
         <div>
-          <div class="benefit-title">Keep player history</div>
-          <div class="benefit-desc">Assessments, programs, check-ins, and coach notes remain connected to each player.</div>
+          <div class="benefit-title" data-i18n="benefits.history.title">Keep player history</div>
+          <div class="benefit-desc" data-i18n="benefits.history.desc">Assessments, programs, check-ins, and coach notes remain connected to each player.</div>
         </div>
       </div>
       <div class="benefit-card">
         <div class="benefit-icon">↗</div>
         <div>
-          <div class="benefit-title">Grow from one team</div>
-          <div class="benefit-desc">Manage one squad, multiple teams, or a full academy from the same account.</div>
+          <div class="benefit-title" data-i18n="benefits.grow.title">Grow from one team</div>
+          <div class="benefit-desc" data-i18n="benefits.grow.desc">Manage one squad, multiple teams, or a full academy from the same account.</div>
         </div>
       </div>
     </div>
@@ -1759,46 +1821,46 @@
 <!-- ROADMAP -->
 <section class="roadmap-section" id="roadmap">
   <div class="section-inner">
-    <div class="eyebrow">Build plan</div>
-    <h2 class="section-title">From zero to launch<br>in three phases.</h2>
+    <div class="eyebrow" data-i18n="roadmap.eyebrow">Build plan</div>
+    <h2 class="section-title" data-i18n-html="roadmap.title">From zero to launch<br>in three phases.</h2>
     <div class="roadmap-grid">
       <div class="roadmap-card">
-        <div class="roadmap-phase p1">Phase 1 — Foundation</div>
-        <h3>Core app</h3>
+        <div class="roadmap-phase p1" data-i18n="roadmap.p1.phase">Phase 1 — Foundation</div>
+        <h3 data-i18n="roadmap.p1.title">Core app</h3>
         <ul class="roadmap-list">
-          <li>Auth (email + password, remember me)</li>
-          <li>athvexa.com landing page</li>
-          <li>app.athvexa.com player dashboard</li>
-          <li>Today Dashboard + Daily Routine</li>
-          <li>Coach player management</li>
-          <li>Invite via link</li>
-          <li>PWA + offline sync</li>
+          <li data-i18n="roadmap.p1.item1">Auth (email + password, remember me)</li>
+          <li data-i18n="roadmap.p1.item2">athvexa.com landing page</li>
+          <li data-i18n="roadmap.p1.item3">app.athvexa.com player dashboard</li>
+          <li data-i18n="roadmap.p1.item4">Today Dashboard + Daily Routine</li>
+          <li data-i18n="roadmap.p1.item5">Coach player management</li>
+          <li data-i18n="roadmap.p1.item6">Invite via link</li>
+          <li data-i18n="roadmap.p1.item7">PWA + offline sync</li>
         </ul>
       </div>
       <div class="roadmap-card">
-        <div class="roadmap-phase p2">Phase 2 — Intelligence</div>
-        <h3>Full feature set</h3>
+        <div class="roadmap-phase p2" data-i18n="roadmap.p2.phase">Phase 2 — Intelligence</div>
+        <h3 data-i18n="roadmap.p2.title">Full feature set</h3>
         <ul class="roadmap-list">
-          <li>Weekly Planner + Habits module</li>
-          <li>Goals + Wellness Check-in</li>
-          <li>Notification system</li>
-          <li>Assistant coach roles</li>
-          <li>Performance analytics</li>
-          <li>Multi-language (AR/FA)</li>
-          <li>Calendar system choice</li>
+          <li data-i18n="roadmap.p2.item1">Weekly Planner + Habits module</li>
+          <li data-i18n="roadmap.p2.item2">Goals + Wellness Check-in</li>
+          <li data-i18n="roadmap.p2.item3">Notification system</li>
+          <li data-i18n="roadmap.p2.item4">Assistant coach roles</li>
+          <li data-i18n="roadmap.p2.item5">Performance analytics</li>
+          <li data-i18n="roadmap.p2.item6">Multi-language (AR/FA)</li>
+          <li data-i18n="roadmap.p2.item7">Calendar system choice</li>
         </ul>
       </div>
       <div class="roadmap-card">
-        <div class="roadmap-phase p3">Phase 3 — Scale</div>
-        <h3>Growth ready</h3>
+        <div class="roadmap-phase p3" data-i18n="roadmap.p3.phase">Phase 3 — Scale</div>
+        <h3 data-i18n="roadmap.p3.title">Growth ready</h3>
         <ul class="roadmap-list">
-          <li>Multi-tenant (sell to other coaches)</li>
-          <li>Subscription billing</li>
-          <li>Data export / import</li>
-          <li>Light theme</li>
-          <li>Advanced injury tracking</li>
-          <li>Video clip attachments</li>
-          <li>Custom domain per tenant</li>
+          <li data-i18n="roadmap.p3.item1">Multi-tenant (sell to other coaches)</li>
+          <li data-i18n="roadmap.p3.item2">Subscription billing</li>
+          <li data-i18n="roadmap.p3.item3">Data export / import</li>
+          <li data-i18n="roadmap.p3.item4">Light theme</li>
+          <li data-i18n="roadmap.p3.item5">Advanced injury tracking</li>
+          <li data-i18n="roadmap.p3.item6">Video clip attachments</li>
+          <li data-i18n="roadmap.p3.item7">Custom domain per tenant</li>
         </ul>
       </div>
     </div>
@@ -1811,42 +1873,42 @@
     <button class="modal-close" onclick="closeAuth()">×</button>
     <div class="modal-logo">ATH<span>VEXA</span></div>
     <div class="form-tabs">
-      <button class="form-tab active" id="tabLogin" onclick="switchTab('login')">Sign in</button>
-      <button class="form-tab" id="tabRegister" onclick="switchTab('register')">Register free</button>
+      <button class="form-tab active" id="tabLogin" onclick="switchTab('login')" data-i18n="auth.signIn">Sign in</button>
+      <button class="form-tab" id="tabRegister" onclick="switchTab('register')" data-i18n="auth.registerFree">Register free</button>
     </div>
 
     <div id="loginForm">
       <div class="form-group">
-        <label class="form-label">Email address</label>
-        <input class="form-input" type="email" placeholder="coach@email.com" autocomplete="email">
+        <label class="form-label" data-i18n="auth.email">Email address</label>
+        <input class="form-input" type="email" data-i18n-placeholder="auth.emailPlaceholder" placeholder="coach@email.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" type="password" placeholder="••••••••" autocomplete="current-password">
+        <label class="form-label" data-i18n="auth.password">Password</label>
+        <input class="form-input" type="password" data-i18n-placeholder="auth.passwordPlaceholder" placeholder="••••••••" autocomplete="current-password">
       </div>
       <div class="remember-row">
         <input type="checkbox" id="rememberMe" checked>
-        <label for="rememberMe">Keep me signed in</label>
+        <label for="rememberMe" data-i18n="auth.remember">Keep me signed in</label>
       </div>
-      <button class="form-submit" onclick="goToApp()">Sign in to Athvexa</button>
-      <div class="form-footer">Forgot your password? <a href="#">Reset it</a></div>
+      <button class="form-submit" onclick="goToApp()" data-i18n="auth.submitSignIn">Sign in to Athvexa</button>
+      <div class="form-footer"><span data-i18n="auth.forgot">Forgot your password?</span> <a href="#" data-i18n="auth.reset">Reset it</a></div>
     </div>
 
     <div id="registerForm" style="display:none">
       <div class="form-group">
-        <label class="form-label">Your name</label>
-        <input class="form-input" type="text" placeholder="Coach Ali" autocomplete="name">
+        <label class="form-label" data-i18n="auth.name">Your name</label>
+        <input class="form-input" type="text" data-i18n-placeholder="auth.namePlaceholder" placeholder="Coach Ali" autocomplete="name">
       </div>
       <div class="form-group">
-        <label class="form-label">Email address</label>
-        <input class="form-input" type="email" placeholder="coach@email.com" autocomplete="email">
+        <label class="form-label" data-i18n="auth.email">Email address</label>
+        <input class="form-input" type="email" data-i18n-placeholder="auth.emailPlaceholder" placeholder="coach@email.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" type="password" placeholder="Min 8 characters" autocomplete="new-password">
+        <label class="form-label" data-i18n="auth.password">Password</label>
+        <input class="form-input" type="password" data-i18n-placeholder="auth.passwordMin" placeholder="Min 8 characters" autocomplete="new-password">
       </div>
-      <button class="form-submit" onclick="goToApp()">Create free account</button>
-      <div class="form-footer">Already have an account? <a href="#" onclick="switchTab('login')">Sign in</a></div>
+      <button class="form-submit" onclick="goToApp()" data-i18n="auth.submitRegister">Create free account</button>
+      <div class="form-footer"><span data-i18n="auth.alreadyHave">Already have an account?</span> <a href="#" onclick="switchTab('login')" data-i18n="auth.signIn">Sign in</a></div>
     </div>
   </div>
 </div>
@@ -1855,11 +1917,11 @@
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">ATH<span>VEXA</span></div>
-    <div class="footer-copy">Â© 2025 Athvexa. Football Performance Platform.</div>
+    <div class="footer-copy" data-i18n="footer.copy">© 2025 Athvexa. Football Performance Platform.</div>
     <div class="footer-links">
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
-      <a href="#">Contact</a>
+      <a href="#" data-i18n="footer.privacy">Privacy</a>
+      <a href="#" data-i18n="footer.terms">Terms</a>
+      <a href="#" data-i18n="footer.contact">Contact</a>
     </div>
   </div>
 </footer>
@@ -1892,43 +1954,41 @@ function toggleMobile() {
   document.getElementById('mobileMenu').classList.toggle('open');
 }
 
+function getLocalizedPreview(key) {
+  const m = window.__ATHVEXA_MESSAGES__ || {};
+  return {
+    title: m['preview.' + key + '.title'] || key,
+    description: m['preview.' + key + '.description'] || '',
+    alt: m['preview.' + key + '.alt'] || '',
+    showLabel: (m['preview.show'] || 'Show {title} preview').replace('{title}', m['preview.' + key + '.title'] || key),
+  };
+}
+
 const productPreviews = [
   {
     key: 'dashboard',
-    title: 'Dashboard',
-    description: 'See team readiness, alerts, check-ins, and today’s priorities at a glance.',
-    alt: 'Dashboard preview showing team readiness, alerts, and daily priorities',
     html: `<div class="preview-ui"><div class="preview-kicker">Team status — today</div><div class="preview-hero"><span>Readiness</span><strong>78</strong><small>4 alerts to review</small></div><div class="preview-row"><b>Ali Hassan</b><span class="good">Ready</span><strong>84</strong></div><div class="preview-row"><b>Omar Khalid</b><span class="warn">Fatigued</span><strong>71</strong></div><div class="preview-row"><b>Tariq Salem</b><span class="bad">Needs attention</span><strong>45</strong></div><div class="preview-note">3 check-ins missing before training</div></div>`
   },
   {
     key: 'players',
-    title: 'Players',
-    description: 'Open any player profile and review their status, history, programs, and assessments.',
-    alt: 'Players preview showing roster cards with readiness and profile status',
     html: `<div class="preview-ui"><div class="preview-kicker">Players</div><div class="preview-search">Search players</div><div class="preview-player"><div class="avatar">A</div><div><b>Ali Hassan</b><span>Forward · Active program</span></div><strong>84</strong></div><div class="preview-player"><div class="avatar">Y</div><div><b>Yusuf Noor</b><span>Midfielder · Assessment due</span></div><strong>92</strong></div><div class="preview-player"><div class="avatar">T</div><div><b>Tariq Salem</b><span>Recovery watch</span></div><strong class="bad-text">45</strong></div></div>`
   },
   {
     key: 'programs',
-    title: 'Programs',
-    description: 'Create training plans, assign them to players, and monitor completion.',
-    alt: 'Programs preview showing active training plan progress and assigned players',
     html: `<div class="preview-ui"><div class="preview-kicker">Programs</div><div class="preview-card"><b>Pre-season speed block</b><span>12 players assigned</span><div class="bar"><i style="width:68%"></i></div><small>68% completion</small></div><div class="preview-card"><b>Recovery week</b><span>5 sessions · low intensity</span><div class="bar amber"><i style="width:42%"></i></div><small>42% completion</small></div><button class="preview-action">Assign program</button></div>`
   },
   {
     key: 'assessments',
-    title: 'Assessments',
-    description: 'Record performance tests and compare progress over time.',
-    alt: 'Assessments preview showing performance tests and score changes over time',
     html: `<div class="preview-ui"><div class="preview-kicker">Assessments</div><div class="preview-score"><span>Sprint speed</span><strong>88</strong><small>+6 since last test</small></div><div class="preview-row"><b>Strength</b><span class="good">82/100</span></div><div class="preview-row"><b>Endurance</b><span class="warn">69/100</span></div><div class="preview-row"><b>Mobility</b><span class="good">91/100</span></div></div>`
   },
   {
     key: 'reports',
-    title: 'Reports',
-    description: 'Identify players who need attention and review team trends.',
-    alt: 'Reports preview showing attention list and team readiness trend',
     html: `<div class="preview-ui"><div class="preview-kicker">Reports</div><div class="trend"><i style="height:52%"></i><i style="height:66%"></i><i style="height:44%"></i><i style="height:72%"></i><i style="height:61%"></i></div><div class="preview-note bad-note">2 players need attention</div><div class="preview-row"><b>Low sleep</b><span>Omar Khalid</span></div><div class="preview-row"><b>Soreness spike</b><span>Tariq Salem</span></div></div>`
   }
-];
+].map(function(item) {
+  const loc = getLocalizedPreview(item.key);
+  return Object.assign({}, item, loc);
+});
 
 let activeProductIndex = 0;
 const productTabs = document.getElementById('productPreviewTabs');
@@ -1953,7 +2013,7 @@ function renderProductTabs() {
 
 function renderProductDots() {
   if (!productDots) return;
-  productDots.innerHTML = productPreviews.map((item, idx) => `<button class="product-dot${idx === activeProductIndex ? ' active' : ''}" type="button" aria-label="Show ${item.title} preview" ${idx === activeProductIndex ? 'aria-current="true"' : ''} data-product-index="${idx}"></button>`).join('');
+  productDots.innerHTML = productPreviews.map((item, idx) => `<button class="product-dot${idx === activeProductIndex ? ' active' : ''}" type="button" aria-label="${item.showLabel}" ${idx === activeProductIndex ? 'aria-current="true"' : ''} data-product-index="${idx}"></button>`).join('');
 }
 
 function updateProductControls() {

@@ -65,6 +65,7 @@ export async function getMessageContacts(session: MessageSession) {
     return coaches.map((coach) => ({
       id: coach.id,
       name: coach.name,
+      role: coach.role as "COACH" | "ASSISTANT",
       roleLabel: coach.role === "ASSISTANT" ? "Assistant coach" : "Coach",
     }));
   }
@@ -78,7 +79,12 @@ export async function getMessageContacts(session: MessageSession) {
     orderBy: { name: "asc" },
   });
 
-  return players.map((player) => ({ id: player.id, name: player.name, roleLabel: "Player" }));
+  return players.map((player) => ({
+    id: player.id,
+    name: player.name,
+    role: "PLAYER" as const,
+    roleLabel: "Player",
+  }));
 }
 
 export async function canAccessConversation(session: MessageSession, conversationId: string) {

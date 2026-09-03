@@ -13,10 +13,9 @@ import {
 } from "@/components/icons";
 import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getCoachContext } from "@/lib/coachContext";
-import { getCurrentTeamMembership, teamRoleLabel } from "@/lib/teamContext";
+import { getCurrentTeamMembership } from "@/lib/teamContext";
 import { getUserPreferences } from "@/lib/userPreferences";
-import { t } from "@/lib/i18n";
-import { roleLabel as translateRole } from "@/lib/i18n";
+import { roleLabel as translateRole, t, teamRoleLabel } from "@/lib/i18n";
 
 function SettingCard({
   title,
@@ -120,7 +119,7 @@ export default async function SettingsPage() {
               <TeamProfileSettings
                 team={team}
                 ownerName={session.name}
-                roleLabel={membership ? teamRoleLabel(membership.role) : translateRole(session.role, locale)}
+                roleLabel={membership ? teamRoleLabel(membership.role, locale) : translateRole(session.role, locale)}
                 canEdit={session.role === "ASSISTANT" || canManageRoles || membership?.role === "OWNER" || membership?.role === "HEAD_COACH"}
                 locale={locale}
               />

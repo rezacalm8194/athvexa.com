@@ -214,7 +214,7 @@ export default function ProgramsPageView({ locale }: { locale: Locale }) {
 
         {programs === null && !error && <SkeletonRows count={4} height="h-[86px]" />}
 
-        {error && <ErrorState message={t(locale, "coach.programs.loadError")} onRetry={load} />}
+        {error && <ErrorState locale={locale} message={t(locale, "coach.programs.loadError")} onRetry={load} />}
 
         {trueEmpty && (
           <EmptyState

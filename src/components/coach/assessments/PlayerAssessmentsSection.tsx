@@ -172,7 +172,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
       </div>
 
       {loading ? <SkeletonRows count={4} /> : null}
-      {!loading && error ? <ErrorState message={error} onRetry={loadAssessments} /> : null}
+      {!loading && error ? <ErrorState locale={locale} message={error} onRetry={loadAssessments} /> : null}
       {!loading && !error && assessments.length === 0 ? (
         <EmptyState
           icon={ClipboardCheckIcon}

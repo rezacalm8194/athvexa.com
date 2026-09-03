@@ -176,7 +176,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
 
             <div className="p-0">
               {loading ? <div className="p-4"><SkeletonRows count={6} /></div> : null}
-              {!loading && error ? <div className="p-4"><ErrorState message={error} onRetry={loadPlayers} /></div> : null}
+              {!loading && error ? <div className="p-4"><ErrorState locale={locale} message={error} onRetry={loadPlayers} /></div> : null}
               {!loading && !error && players.length === 0 ? (
                 <div className="p-4">
                   <EmptyState icon={UsersIcon} title={t(locale, "coach.assessments.emptyTitle")} description={t(locale, "coach.assessments.emptyBody")} action={hasFilters ? <button className="btn-ghost !px-4 !py-2 text-sm" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>{t(locale, "coach.assessments.clearFilters")}</button> : undefined} />

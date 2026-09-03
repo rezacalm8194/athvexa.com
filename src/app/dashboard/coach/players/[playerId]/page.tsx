@@ -7,9 +7,9 @@ import StatusBadge from "@/components/coach/shared/StatusBadge";
 import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon } from "@/components/icons";
 import { db, ensureDatabase } from "@/lib/db";
 import { formatScore } from "@/lib/formatScore";
-import { t, type Locale } from "@/lib/i18n";
+import { t, teamRoleLabel, type Locale } from "@/lib/i18n";
 import { getSession } from "@/lib/session";
-import { ensureLegacyTeamMemberships, teamRoleLabel } from "@/lib/teamContext";
+import { ensureLegacyTeamMemberships } from "@/lib/teamContext";
 import { getUserPreferences } from "@/lib/userPreferences";
 
 type Tone = "good" | "warn" | "bad" | "neutral";
@@ -206,7 +206,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge label={status.label} tone={status.tone} />
               <span className="rounded bg-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-smoke-3">
-                {teamRoleLabel(membership.role)}
+                {teamRoleLabel(membership.role, locale)}
               </span>
             </div>
           </div>

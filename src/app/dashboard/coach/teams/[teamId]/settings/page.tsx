@@ -3,7 +3,8 @@ import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getSession } from "@/lib/session";
-import { requireTeamMembership, teamRoleLabel } from "@/lib/teamContext";
+import { teamRoleLabel } from "@/lib/i18n";
+import { requireTeamMembership } from "@/lib/teamContext";
 import { getUserPreferences } from "@/lib/userPreferences";
 
 export default async function TeamSettingsPage({ params }: { params: Promise<{ teamId: string }> }) {
@@ -31,7 +32,7 @@ export default async function TeamSettingsPage({ params }: { params: Promise<{ t
         <TeamProfileSettings
           team={membership.team}
           ownerName={session.name}
-          roleLabel={teamRoleLabel(membership.role)}
+          roleLabel={teamRoleLabel(membership.role, locale)}
           canEdit={canEdit}
           locale={locale}
         />

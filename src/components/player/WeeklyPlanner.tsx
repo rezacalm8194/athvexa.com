@@ -26,6 +26,19 @@ function categoryColor(name: string) {
   return CATEGORIES.find((c) => c.name === name)?.color ?? "#888888";
 }
 
+function categoryLabel(name: string, locale: Locale) {
+  const keyByName: Record<string, string> = {
+    Training: "player.planner.catTraining",
+    Gym: "player.planner.catGym",
+    Match: "player.planner.catMatch",
+    Recovery: "player.planner.catRecovery",
+    Rest: "player.planner.catRest",
+    Other: "player.planner.catOther",
+  };
+  const key = keyByName[name];
+  return key ? t(locale, key) : name;
+}
+
 export default function WeeklyPlanner({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
   const [weekKey, setWeekKey] = useState(() => toKey(mondayOf()));
   const [dates, setDates] = useState<string[]>([]);
@@ -141,7 +154,7 @@ export default function WeeklyPlanner({ locale, timeZone }: { locale: Locale; ti
                     >
                       <button
                         onClick={() => toggle(item)}
-                        aria-label={item.done ? "Mark not done" : "Mark done"}
+                        aria-label={item.done ? t(locale, "player.planner.markNotDone") : t(locale, "player.planner.markDone")}
                         className="mt-0.5 flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-[4px] text-[9px]"
                         style={{
                           background: item.done ? categoryColor(item.category) : "transparent",
@@ -165,12 +178,12 @@ export default function WeeklyPlanner({ locale, timeZone }: { locale: Locale; ti
                             background: `${categoryColor(item.category)}1a`,
                           }}
                         >
-                          {item.category}
+                          {categoryLabel(item.category, locale)}
                         </span>
                       </div>
                       <button
                         onClick={() => remove(item)}
-                        aria-label="Delete item"
+                        aria-label={t(locale, "player.planner.deleteItem")}
                         className="shrink-0 text-smoke-3 opacity-0 transition-opacity hover:text-red group-hover:opacity-100"
                       >
                         ✕
@@ -195,7 +208,7 @@ export default function WeeklyPlanner({ locale, timeZone }: { locale: Locale; ti
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c.name} value={c.name}>
-                          {c.name}
+                          {categoryLabel(c.name, locale)}
                         </option>
                       ))}
                     </select>

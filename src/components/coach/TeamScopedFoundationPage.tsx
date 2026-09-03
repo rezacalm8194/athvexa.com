@@ -1,8 +1,7 @@
 import Link from "next/link";
 import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
-import { teamRoleLabel } from "@/lib/teamContext";
-import type { Locale } from "@/lib/i18n";
+import { teamRoleLabel, t, type Locale } from "@/lib/i18n";
 
 type Props = {
   sessionName: string;
@@ -27,6 +26,8 @@ export default function TeamScopedFoundationPage({
   section,
   legacyHref,
 }: Props) {
+  const roleLabel = teamRoleLabel(membershipRole, locale);
+
   return (
     <main className="min-h-screen bg-ink">
       <ServerDashboardNav
@@ -36,21 +37,19 @@ export default function TeamScopedFoundationPage({
       />
       <CoachNav locale={locale} />
       <section className="mx-auto max-w-[1280px] px-6 py-8">
-        <div className="eyebrow">Team workspace</div>
+        <div className="eyebrow">{t(locale, "coach.teamScoped.eyebrow")}</div>
         <h1 className="mt-2 font-display text-4xl font-extrabold tracking-wide text-white">{team.name}</h1>
         <p className="mt-2 text-sm text-smoke-3">
-          {section} is team-scoped and ready for migration. Your access is verified as {teamRoleLabel(membershipRole)}.
+          {t(locale, "coach.teamScoped.body", { section, role: roleLabel })}
         </p>
         <div className="card mt-8 p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-display text-2xl font-bold text-white">{section}</h2>
-              <p className="mt-1 text-sm text-smoke-3">
-                Existing coach tools are unchanged while the multi-team foundation is introduced.
-              </p>
+              <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.teamScoped.cardBody")}</p>
             </div>
             <Link href={legacyHref} className="btn-primary justify-center !px-4 !py-3 text-sm">
-              Open current {section.toLowerCase()}
+              {t(locale, "coach.teamScoped.openCurrent", { section: section.toLowerCase() })}
             </Link>
           </div>
         </div>

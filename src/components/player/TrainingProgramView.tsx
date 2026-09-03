@@ -78,10 +78,10 @@ export default function TrainingProgramView({ locale, timeZone }: { locale: Loca
     fetch("/api/player/training", { cache: "no-store" })
       .then((res) => res.json().then((payload) => ({ ok: res.ok, payload })))
       .then(({ ok, payload }) => {
-        if (!ok) throw new Error(payload.error || "Could not load training program");
+        if (!ok) throw new Error(payload.error || t(locale, "player.training.loadError"));
         setData(payload);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load training program"));
+      .catch((err) => setError(err instanceof Error ? err.message : t(locale, "player.training.loadError")));
   }
 
   useEffect(() => {
@@ -103,14 +103,14 @@ export default function TrainingProgramView({ locale, timeZone }: { locale: Loca
         }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not update this session.");
-      setSuccess(payload.message || "Session updated.");
+      if (!res.ok) throw new Error(payload.error || t(locale, "player.training.updateError"));
+      setSuccess(payload.message || t(locale, "player.training.sessionUpdated"));
       setCompleting(null);
       setCompletionNotes("");
       setCompletionTime(toDatetimeLocal());
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update this session.");
+      setError(err instanceof Error ? err.message : t(locale, "player.training.updateError"));
     } finally {
       setBusyId(null);
     }

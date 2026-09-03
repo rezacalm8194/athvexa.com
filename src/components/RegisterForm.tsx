@@ -83,12 +83,18 @@ export default function RegisterForm({
           className="input-field"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={role === "PLAYER" ? "Ali Hassan" : role === "ASSISTANT" ? "Assistant name" : "Coach Ali"}
+          placeholder={
+            role === "PLAYER"
+              ? t(locale, "auth.namePhPlayer")
+              : role === "ASSISTANT"
+                ? t(locale, "auth.namePhAssistant")
+                : t(locale, "auth.namePhCoach")
+          }
           autoComplete="name"
           required
         />
       </Field>
-      <div className="grid grid-cols-2 gap-1 rounded-md border border-line-1 bg-ink-2 p-1" role="group" aria-label="Registration method">
+      <div className="grid grid-cols-2 gap-1 rounded-md border border-line-1 bg-ink-2 p-1" role="group" aria-label={t(locale, "auth.registerMethodAria")}>
         {(["email", "phone"] as const).map((type) => (
           <button
             key={type}

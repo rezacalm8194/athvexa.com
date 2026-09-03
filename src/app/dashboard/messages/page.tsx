@@ -19,7 +19,7 @@ export default async function MessagesPage() {
         settingsHref={session.role === "PLAYER" ? undefined : "/dashboard/coach/settings"}
       />
       {session.role === "PLAYER" ? <PlayerSubNav locale={locale} /> : <CoachNav locale={locale} />}
-      <MessagesPageView role={session.role as "COACH" | "ASSISTANT" | "PLAYER"} />
+      <MessagesPageView role={session.role as "COACH" | "ASSISTANT" | "PLAYER"} locale={locale} />
     </main>
   );
 }

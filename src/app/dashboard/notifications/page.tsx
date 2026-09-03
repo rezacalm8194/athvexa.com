@@ -16,7 +16,7 @@ export default async function NotificationsPage() {
         locale={locale}
         settingsHref={session.role === "PLAYER" ? undefined : "/dashboard/coach/settings"}
       />
-      <NotificationsCenter />
+      <NotificationsCenter locale={locale} />
     </main>
   );
 }

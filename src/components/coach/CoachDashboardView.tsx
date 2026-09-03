@@ -137,6 +137,7 @@ export default function CoachDashboardView({
               <div className="card p-5">
                 <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.dashboard.teamRoster")}</h2>
                 <TeamRosterList
+                  locale={locale}
                   members={members ?? []}
                   canManageRoles={canManageRoles}
                   updatingId={updatingId}

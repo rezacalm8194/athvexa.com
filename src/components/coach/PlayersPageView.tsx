@@ -192,7 +192,7 @@ export default function PlayersPageView({
   if (error) {
     return (
       <div className="card p-5">
-        <ErrorState message={error} onRetry={loadPlayers} />
+        <ErrorState locale={locale} message={error} onRetry={loadPlayers} />
       </div>
     );
   }

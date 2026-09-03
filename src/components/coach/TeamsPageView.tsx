@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PlusIcon, UsersIcon } from "@/components/icons";
-import { t, type Locale } from "@/lib/i18n";
+import { t, teamRoleLabel, type Locale } from "@/lib/i18n";
 
 type Team = {
   id: string;
@@ -45,19 +45,6 @@ function LogoMark({ team }: { team: Team }) {
       )}
     </div>
   );
-}
-
-function teamRoleDisplay(role: string | undefined, fallback: string, locale: Locale) {
-  const keyByRole: Record<string, string> = {
-    OWNER: "coach.teams.roleOwner",
-    HEAD_COACH: "coach.teams.roleHeadCoach",
-    ASSISTANT_COACH: "coach.teams.roleAssistantCoach",
-    ANALYST: "coach.teams.roleAnalyst",
-    PHYSIO: "coach.teams.rolePhysio",
-    PLAYER: "coach.teams.rolePlayer",
-  };
-  if (role && keyByRole[role]) return t(locale, keyByRole[role]);
-  return fallback;
 }
 
 export default function TeamsPageView({ locale }: { locale: Locale }) {
@@ -197,7 +184,7 @@ export default function TeamsPageView({ locale }: { locale: Locale }) {
                   </div>
                   <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
                     <div className="truncate text-sm font-bold text-white">
-                      {teamRoleDisplay(team.role, team.roleLabel, locale)}
+                      {team.role ? teamRoleLabel(team.role, locale) : team.roleLabel}
                     </div>
                     <div className="mt-1 text-xs text-smoke-3">{t(locale, "coach.teams.yourRole")}</div>
                   </div>

@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BellIcon, ChevronDownIcon, LogOutIcon, MailIcon, SettingsIcon } from "@/components/icons";
-import { t, type Locale } from "@/lib/i18n";
+import { t, teamRoleLabel, type Locale } from "@/lib/i18n";
 
 type HeaderTeam = {
   id: string;
   name: string;
+  role?: string;
   roleLabel: string;
   logo?: string | null;
 };
@@ -130,7 +131,7 @@ export default function DashboardNav({
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-semibold text-white">{currentTeam.name}</span>
                   <span className="block truncate text-[10px] uppercase tracking-[0.08em] text-smoke-3">
-                    {currentTeam.roleLabel}
+                    {currentTeam.role ? teamRoleLabel(currentTeam.role, locale) : currentTeam.roleLabel}
                   </span>
                 </span>
                 <ChevronDownIcon className={`h-4 w-4 shrink-0 text-smoke-3 transition-transform ${teamOpen ? "rotate-180" : ""}`} />
@@ -157,7 +158,7 @@ export default function DashboardNav({
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">{team.name}</span>
                         <span className="block truncate text-[10px] uppercase tracking-[0.08em] text-smoke-3">
-                          {team.roleLabel}
+                          {team.role ? teamRoleLabel(team.role, locale) : team.roleLabel}
                         </span>
                       </span>
                       {team.id === currentTeam.id && <span className="h-2 w-2 rounded-full bg-red" />}
