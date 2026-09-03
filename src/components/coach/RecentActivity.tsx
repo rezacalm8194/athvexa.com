@@ -1,6 +1,7 @@
 import { relativeTime } from "@/lib/format";
 import Link from "next/link";
 import { ClipboardCheckIcon, UsersIcon } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
 type Activity = {
   id: string;
@@ -22,10 +23,18 @@ const toneColor: Record<Activity["tone"], string> = {
   neutral: "#8a8f98",
 };
 
-export default function RecentActivity({ items, loading }: { items: Activity[] | null; loading: boolean }) {
+export default function RecentActivity({
+  items,
+  loading,
+  locale,
+}: {
+  items: Activity[] | null;
+  loading: boolean;
+  locale: Locale;
+}) {
   return (
     <div className="card p-5">
-      <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">Recent activity</h2>
+      <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.dashboard.recentActivity")}</h2>
 
       {loading && (
         <div className="space-y-2">
@@ -37,7 +46,7 @@ export default function RecentActivity({ items, loading }: { items: Activity[] |
 
       {!loading && items && items.length === 0 && (
         <p className="rounded-md border border-dashed border-line-1 px-3 py-4 text-center text-xs text-smoke-3">
-          Check-ins from your players will show up here.
+          {t(locale, "coach.dashboard.activityEmpty")}
         </p>
       )}
 
@@ -56,7 +65,9 @@ export default function RecentActivity({ items, loading }: { items: Activity[] |
                   <span className="block font-semibold text-white">{item.title}</span>
                   <span>{item.description}</span>
                   {item.actionHref ? (
-                    <Link href={item.actionHref} className="ml-1 font-medium text-red hover:text-red-glow">Review</Link>
+                    <Link href={item.actionHref} className="ml-1 font-medium text-red hover:text-red-glow">
+                      {t(locale, "coach.dashboard.review")}
+                    </Link>
                   ) : null}
                 </>
               ) : (
@@ -68,10 +79,10 @@ export default function RecentActivity({ items, loading }: { items: Activity[] |
                   ) : (
                     <span className="font-semibold text-white">{item.playerName}</span>
                   )}{" "}
-                  logged a readiness score of <span className="font-semibold text-white">{item.score}</span>
+                  {t(locale, "coach.dashboard.loggedScore")} <span className="font-semibold text-white">{item.score}</span>
                 </>
               )}
-              <span className="block text-[11px] text-smoke-3">{relativeTime(item.updatedAt)}</span>
+              <span className="block text-[11px] text-smoke-3">{relativeTime(item.updatedAt, locale)}</span>
             </span>
           </li>
         ))}

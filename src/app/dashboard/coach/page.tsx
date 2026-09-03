@@ -12,7 +12,7 @@ export default async function CoachDashboardPage() {
     <main className="min-h-screen bg-ink">
       <ServerDashboardNav name={session.name} locale={locale} settingsHref="/dashboard/coach/settings" />
       <CoachNav locale={locale} />
-      <CoachDashboardView coachName={session.name} teamName={team?.name ?? null} canManageRoles={canManageRoles} />
+      <CoachDashboardView coachName={session.name} teamName={team?.name ?? null} canManageRoles={canManageRoles} locale={locale} />
     </main>
   );
 }

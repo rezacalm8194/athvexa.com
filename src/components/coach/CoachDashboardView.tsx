@@ -9,6 +9,7 @@ import RecentActivity from "@/components/coach/RecentActivity";
 import InvitePanel from "@/components/coach/InvitePanel";
 import TeamRosterList, { type Member } from "@/components/coach/TeamRosterList";
 import { UsersIcon, MailIcon, ClipboardCheckIcon, AlertIcon } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
 type Overview = {
   kpis: { activePlayers: number; pendingInvitations: number; reportsToday: number; needsAttention: number };
@@ -31,10 +32,12 @@ export default function CoachDashboardView({
   coachName,
   teamName,
   canManageRoles,
+  locale,
 }: {
   coachName: string;
   teamName: string | null;
   canManageRoles: boolean;
+  locale: Locale;
 }) {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -79,27 +82,34 @@ export default function CoachDashboardView({
   const firstName = coachName.split(" ")[0];
 
   const summaryLine = overview
-    ? `${overview.kpis.reportsToday} of ${overview.kpis.activePlayers} player${
-        overview.kpis.activePlayers === 1 ? "" : "s"
-      } checked in today${overview.kpis.needsAttention > 0 ? ` · ${overview.kpis.needsAttention} need attention` : ""}`
-    : "Loading today's summary…";
+    ? `${t(locale, "coach.dashboard.summary", {
+        checked: overview.kpis.reportsToday,
+        active: overview.kpis.activePlayers,
+      })}${
+        overview.kpis.needsAttention > 0
+          ? t(locale, "coach.dashboard.summaryAttention", { count: overview.kpis.needsAttention })
+          : ""
+      }`
+    : t(locale, "coach.dashboard.summaryLoading");
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-8">
       <div className="mb-6">
-        <div className="eyebrow">{teamName ?? "Team status"} — today</div>
+        <div className="eyebrow">
+          {t(locale, "coach.dashboard.eyebrow", { team: teamName ?? t(locale, "coach.dashboard.teamStatus") })}
+        </div>
         <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">
-          Welcome back, {firstName}
+          {t(locale, "coach.dashboard.welcome", { name: firstName })}
         </h1>
         <p className="mt-1 text-sm text-smoke-3">{summaryLine}</p>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Active players" value={overview?.kpis.activePlayers ?? 0} icon={UsersIcon} loading={!overview} />
-        <KpiCard label="Pending invitations" value={overview?.kpis.pendingInvitations ?? 0} icon={MailIcon} loading={!overview} />
-        <KpiCard label="Reports submitted today" value={overview?.kpis.reportsToday ?? 0} icon={ClipboardCheckIcon} loading={!overview} />
+        <KpiCard label={t(locale, "coach.dashboard.kpiActivePlayers")} value={overview?.kpis.activePlayers ?? 0} icon={UsersIcon} loading={!overview} />
+        <KpiCard label={t(locale, "coach.dashboard.kpiPendingInvites")} value={overview?.kpis.pendingInvitations ?? 0} icon={MailIcon} loading={!overview} />
+        <KpiCard label={t(locale, "coach.dashboard.kpiReportsToday")} value={overview?.kpis.reportsToday ?? 0} icon={ClipboardCheckIcon} loading={!overview} />
         <KpiCard
-          label="Players requiring attention"
+          label={t(locale, "coach.dashboard.kpiNeedsAttention")}
           value={overview?.kpis.needsAttention ?? 0}
           icon={AlertIcon}
           tone={overview && overview.kpis.needsAttention > 0 ? "warn" : "neutral"}
@@ -109,7 +119,7 @@ export default function CoachDashboardView({
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-5">
-          <QuickActions canManageRoles={canManageRoles} />
+          <QuickActions canManageRoles={canManageRoles} locale={locale} />
 
           {members === null && (
             <div className="card space-y-2 p-5">
@@ -119,13 +129,13 @@ export default function CoachDashboardView({
             </div>
           )}
 
-          {members !== null && !hasPlayers && <EmptyRosterState teamName={teamName} />}
+          {members !== null && !hasPlayers && <EmptyRosterState teamName={teamName} locale={locale} />}
 
           {hasPlayers && (
             <>
-              <PlayersAttention players={overview?.playersNeedingAttention ?? null} loading={!overview} />
+              <PlayersAttention players={overview?.playersNeedingAttention ?? null} loading={!overview} locale={locale} />
               <div className="card p-5">
-                <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">Team roster</h2>
+                <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.dashboard.teamRoster")}</h2>
                 <TeamRosterList
                   members={members ?? []}
                   canManageRoles={canManageRoles}
@@ -147,7 +157,7 @@ export default function CoachDashboardView({
               onChange={loadOverview}
             />
           </div>
-          <RecentActivity items={overview?.recentActivity ?? null} loading={!overview} />
+          <RecentActivity items={overview?.recentActivity ?? null} loading={!overview} locale={locale} />
         </div>
       </div>
     </div>

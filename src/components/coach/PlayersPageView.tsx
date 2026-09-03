@@ -8,6 +8,7 @@ import StatusBadge from "@/components/coach/shared/StatusBadge";
 import StatusFilter from "@/components/coach/shared/StatusFilter";
 import { CopyIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
+import type { Locale } from "@/lib/i18n";
 
 type PlayerStatus = "all" | "ready" | "attention" | "not_checked_in";
 
@@ -61,7 +62,13 @@ function inviteMessage(invite: CreatedInvite) {
   return `You're invited to join your team on Athvexa: ${invite.url}`;
 }
 
-export default function PlayersPageView({ canManageRoles: _canManageRoles }: { canManageRoles: boolean }) {
+export default function PlayersPageView({
+  canManageRoles: _canManageRoles,
+  locale,
+}: {
+  canManageRoles: boolean;
+  locale: Locale;
+}) {
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<PlayerStatus>("all");
@@ -205,7 +212,7 @@ export default function PlayersPageView({ canManageRoles: _canManageRoles }: { c
   return (
     <>
       {players.length === 0 ? (
-        <EmptyRosterState teamName={null} onInvite={openInvite} />
+        <EmptyRosterState teamName={null} locale={locale} onInvite={openInvite} />
       ) : (
         <div className="card p-5">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

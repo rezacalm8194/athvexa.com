@@ -28,7 +28,11 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
-  const { teamOwnerId } = auth;
+  const { teamOwnerId, session } = auth;
+  const { ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
+  await ensureRezaDemoRoster({ coachId: session.sub }).catch((error) => {
+    console.error("[programs] demo roster seed skipped", error);
+  });
 
   const { searchParams } = req.nextUrl;
   const search = searchParams.get("search")?.trim() ?? "";

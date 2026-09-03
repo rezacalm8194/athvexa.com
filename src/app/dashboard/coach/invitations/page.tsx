@@ -12,7 +12,7 @@ export default async function InvitationsPage() {
     <main className="min-h-screen bg-ink">
       <ServerDashboardNav name={session.name} locale={locale} settingsHref="/dashboard/coach/settings" />
       <CoachNav locale={locale} />
-      <InvitationsPageView coachName={session.name} canManageRoles={canManageRoles} />
+      <InvitationsPageView coachName={session.name} canManageRoles={canManageRoles} locale={locale} />
     </main>
   );
 }

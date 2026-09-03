@@ -12,6 +12,7 @@ import { PlusIcon, UsersIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/Toast";
 import { ASSESSMENT_TYPES, AssessmentType } from "@/lib/assessmentTypes";
 import { formatScore } from "@/lib/formatScore";
+import { t, type Locale } from "@/lib/i18n";
 
 type LatestAssessment = {
   id: string;
@@ -41,7 +42,7 @@ type AssessmentResponse = {
   };
 };
 
-export default function AssessmentsPageView() {
+export default function AssessmentsPageView({ locale }: { locale: Locale }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -118,8 +119,8 @@ export default function AssessmentsPageView() {
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-red">Coach tools</p>
-          <h1 className="mt-1 font-display text-3xl font-black text-white">Assessments</h1>
-          <p className="mt-1 text-sm text-smoke-3">One row per player. History lives on the player profile.</p>
+          <h1 className="mt-1 font-display text-3xl font-black text-white">{t(locale, "coach.assessments.title")}</h1>
+          <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.assessments.subtitle")}</p>
         </div>
         {!loading && kpis.totalPlayers > 0 ? (
           <p className="text-sm text-smoke-3">

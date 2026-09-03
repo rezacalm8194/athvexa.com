@@ -20,6 +20,7 @@ import {
   UsersIcon,
   WhatsAppIcon,
 } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
 type InviteRole = "PLAYER" | "ASSISTANT" | "COACH";
 type RoleFilter = "all" | InviteRole;
@@ -95,7 +96,15 @@ function expiryLabel(value: string) {
   return `Expired ${daysAgo} ${daysAgo === 1 ? "day" : "days"} ago`;
 }
 
-export default function InvitationsPageView({ coachName, canManageRoles }: { coachName: string; canManageRoles: boolean }) {
+export default function InvitationsPageView({
+  coachName,
+  canManageRoles,
+  locale,
+}: {
+  coachName: string;
+  canManageRoles: boolean;
+  locale: Locale;
+}) {
   const { showToast } = useToast();
   const [data, setData] = useState<InviteResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -309,8 +318,8 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Team access</p>
-          <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">Invitations</h1>
-          <p className="mt-2 text-sm text-smoke-3">Invite players and assistant coaches and manage team access.</p>
+          <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">{t(locale, "coach.invitations.title")}</h1>
+          <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.invitations.subtitle")}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setInviteOpen(true)}>
@@ -365,7 +374,7 @@ export default function InvitationsPageView({ coachName, canManageRoles }: { coa
       <div className="mt-5 rounded-lg border border-line-1 bg-ink-3">
         <div className="flex items-center justify-between border-b border-line-1 px-4 py-4">
           <div>
-            <h2 className="font-display text-lg font-black text-white">Invitation list</h2>
+            <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.invitations.listTitle")}</h2>
             <p className="mt-1 text-xs text-smoke-4">{loading ? "Loading..." : `${invites.length} shown`}</p>
           </div>
           {hasFilters ? (
