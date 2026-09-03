@@ -148,6 +148,7 @@ function StatusBadge({ status, locale }: { status: OverallStatus; locale: Locale
 function ProgressShareActions({ player, filters, locale }: { player: PlayerProgress; filters: ReportsResponse["filters"]; locale: Locale }) {
   const { showToast } = useToast();
   const [sending, setSending] = useState(false);
+  const [open, setOpen] = useState(false);
   const reportUrl = typeof window === "undefined"
     ? ""
     : `${window.location.origin}/dashboard/coach/reports?${new URLSearchParams({ range: "custom", from: filters.from, to: filters.to, playerId: player.id })}`;
@@ -171,6 +172,7 @@ function ProgressShareActions({ player, filters, locale }: { player: PlayerProgr
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || t(locale, "coach.reports.shareError"));
       showToast(t(locale, "coach.reports.sentToPlayer"));
+      setOpen(false);
     } catch (error) {
       showToast(error instanceof Error ? error.message : t(locale, "coach.reports.shareError"), "error");
     } finally {
@@ -182,29 +184,28 @@ function ProgressShareActions({ player, filters, locale }: { player: PlayerProgr
     try {
       await navigator.clipboard.writeText(reportUrl);
       showToast(t(locale, "coach.reports.linkCopied"));
+      setOpen(false);
     } catch {
       showToast(t(locale, "coach.reports.copyError"), "error");
     }
   }
 
-  return (
-    <div className="flex flex-wrap items-center justify-end gap-2" aria-label={t(locale, "coach.reports.shareAria", { player: player.name })}>
-      <button type="button" onClick={sendToPlayer} disabled={sending} className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-red/50 bg-red/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red disabled:cursor-wait disabled:opacity-60">
-        <LinkIcon className="h-4 w-4" />
-        {sending ? t(locale, "coach.reports.sending") : t(locale, "coach.reports.sendToPlayer")}
-      </button>
-      <button type="button" onClick={copyLink} className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-2 px-3 py-2 text-xs font-bold text-smoke-2 transition-colors hover:border-red hover:text-white">
-        <CopyIcon className="h-4 w-4" />
-        {t(locale, "coach.reports.copyReportLink")}
-      </button>
-      <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-2 px-3 py-2 text-xs font-bold text-smoke-2 transition-colors hover:border-[#25D366] hover:text-white" aria-label={t(locale, "coach.reports.shareWhatsApp", { player: player.name })}>
-        <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-      </a>
-      <a href={`https://t.me/share/url?url=${encodeURIComponent(reportUrl)}&text=${encodeURIComponent(message.replace(reportUrl, ""))}`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-2 px-3 py-2 text-xs font-bold text-smoke-2 transition-colors hover:border-[#2AABEE] hover:text-white" aria-label={t(locale, "coach.reports.shareTelegram", { player: player.name })}>
-        <TelegramIcon className="h-4 w-4" /> Telegram
-      </a>
-    </div>
-  );
+  return <>
+    <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-md border border-red/50 bg-red/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red" aria-label={t(locale, "coach.reports.shareAria", { player: player.name })}>
+      <LinkIcon className="h-4 w-4" />{t(locale, "coach.reports.openShare")}
+    </button>
+    {open ? <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label={t(locale, "coach.reports.shareAria", { player: player.name })}>
+      <div className="w-full max-w-sm rounded-xl border border-line-2 bg-ink-3 p-5 shadow-2xl shadow-black/60">
+        <div className="flex items-start justify-between gap-4"><div><h3 className="font-display text-xl font-black text-white">{t(locale, "coach.reports.shareModalTitle")}</h3><p className="mt-1 text-sm text-smoke-3">{player.name}</p></div><button type="button" onClick={() => setOpen(false)} className="min-h-10 rounded-md px-3 text-sm font-bold text-smoke-3 hover:bg-white/5 hover:text-white">{t(locale, "coach.reports.close")}</button></div>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button type="button" onClick={sendToPlayer} disabled={sending} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-red/50 bg-red/10 px-3 text-xs font-bold text-white hover:bg-red disabled:opacity-60"><LinkIcon className="h-5 w-5" />{sending ? t(locale, "coach.reports.sending") : t(locale, "coach.reports.sendToPlayer")}</button>
+          <button type="button" onClick={copyLink} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-line-2 px-3 text-xs font-bold text-smoke-2 hover:border-red hover:text-white"><CopyIcon className="h-5 w-5" />{t(locale, "coach.reports.copyReportLink")}</button>
+          <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-line-2 px-3 text-xs font-bold text-smoke-2 hover:border-[#25D366] hover:text-white"><WhatsAppIcon className="h-5 w-5" />WhatsApp</a>
+          <a href={`https://t.me/share/url?url=${encodeURIComponent(reportUrl)}&text=${encodeURIComponent(message.replace(reportUrl, ""))}`} target="_blank" rel="noreferrer" className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-line-2 px-3 text-xs font-bold text-smoke-2 hover:border-[#2AABEE] hover:text-white"><TelegramIcon className="h-5 w-5" />Telegram</a>
+        </div>
+      </div>
+    </div> : null}
+  </>;
 }
 
 function MetricTile({ label, value }: { label: string; value: string | number }) {

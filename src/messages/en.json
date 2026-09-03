@@ -595,6 +595,9 @@
       "shareWhatsApp": "Share {player}'s report on WhatsApp",
       "shareTelegram": "Share {player}'s report on Telegram",
       "shareMessage": "{player}'s progress report: {progress}% program progress, latest readiness {readiness}. Report: {link}"
+      ,"openShare": "Share report",
+      "shareModalTitle": "Share progress report",
+      "close": "Close"
     },
     "invite": {
       "eyebrow": "Invitation",

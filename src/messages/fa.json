@@ -595,6 +595,9 @@
       "shareWhatsApp": "ارسال گزارش {player} در واتساپ",
       "shareTelegram": "ارسال گزارش {player} در تلگرام",
       "shareMessage": "گزارش پیشرفت {player}: پیشرفت برنامه {progress}٪، آمادگی اخیر {readiness}. گزارش: {link}"
+      ,"openShare": "ارسال گزارش",
+      "shareModalTitle": "ارسال گزارش پیشرفت",
+      "close": "بستن"
     },
     "invite": {
       "eyebrow": "دعوت‌نامه",
