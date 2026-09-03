@@ -117,9 +117,12 @@ export async function notifyPlayerOfProgramAssignment({
 
   if (isNew) {
     const dedupeKey = `program-assigned:${programId}:${playerId}`;
-    const alreadyNotified = await db.notification.findUnique({ where: { dedupeKey }, select: { id: true } });
     let conversationId: string | null = null;
-    if (!alreadyNotified) {
+    const existingConversation = await db.messageConversation.findUnique({
+      where: { coachId_playerId: { coachId, playerId } },
+      select: { id: true, messages: { where: { contextType: "PROGRAM" }, take: 1, select: { id: true } } },
+    });
+    if (!existingConversation || existingConversation.messages.length === 0) {
       const { conversation } = await sendCoachToPlayerMessage({
         coachId,
         playerId,

@@ -1,5 +1,7 @@
 /**
- * Attach two assistant coaches and two test players to rezacalm993@gmail.com.
+ * Attach the test player rezacalm993@gmail.com to the coach
+ * rezasafarinet1@gmail.com, with an inbox message, a training program,
+ * today's checklist, and a weekly planner.
  *
  *   npx tsx scripts/seed-reza-test-roster.ts
  */
@@ -8,7 +10,7 @@ import { ensureRezaDemoRoster } from "../src/lib/seedTestRoster";
 
 async function main() {
   await ensureRezaDemoRoster();
-  console.log("Demo roster ensured for rezacalm993@gmail.com");
+  console.log("Demo roster ensured for rezacalm993@gmail.com under rezasafarinet1@gmail.com");
   console.log("Test user password: TestAthvexa123!");
 }
 

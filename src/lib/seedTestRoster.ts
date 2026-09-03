@@ -2,7 +2,9 @@ import { db } from "@/lib/db";
 import { notifyPlayerOfProgramAssignment, notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
 import { weekDates } from "@/lib/week";
 
-export const DEMO_COACH_EMAIL = "rezasafrarinet1@gmail.com";
+// Keep this exact: a previous demo seed misspelled "safarinet" as
+// "safrarinet", which meant it never found the actual coach account.
+export const DEMO_COACH_EMAIL = "rezasafarinet1@gmail.com";
 export const DEMO_PLAYER_EMAIL = "rezacalm993@gmail.com";
 
 const DEMO_PROGRAM_NAME = "برنامه هفتگی آمادگی";
@@ -26,11 +28,11 @@ function isEmail(value: string | null | undefined, expected: string) {
 }
 
 export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?: string }) {
-  const coach = await db.user.findFirst({
-    where: { email: { contains: "rezasafrarinet1@" } },
+  const coach = await db.user.findUnique({
+    where: { email: DEMO_COACH_EMAIL },
     select: { id: true, role: true, email: true, name: true },
   });
-  if (!coach || !isEmail(coach.email, DEMO_COACH_EMAIL)) return;
+  if (!coach) return;
   if (options?.coachId && options.coachId !== coach.id) return;
 
   if (coach.role !== "COACH") {
@@ -104,12 +106,18 @@ export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?
   await ensurePlayerPlanner(player.id);
   await ensureCoachNote(player.id, coach.name);
 
-  const hasInviteNotice = await db.notification.findFirst({
-    where: { userId: player.id, type: { in: ["TEAM_INVITE", "PROGRAM_ASSIGNED"] } },
-    select: { id: true },
-  });
+  const [hasTeamInviteNotice, hasProgramAssignmentNotice] = await Promise.all([
+    db.notification.findUnique({
+      where: { dedupeKey: `team-invite:${coach.id}:${player.id}` },
+      select: { id: true },
+    }),
+    db.notification.findUnique({
+      where: { dedupeKey: `program-assigned:${program.id}:${player.id}` },
+      select: { id: true },
+    }),
+  ]);
 
-  if (!hadMembership || !hasInviteNotice) {
+  if (!hadMembership || !hasTeamInviteNotice) {
     await notifyPlayerOfTeamInvite({
       playerId: player.id,
       coachId: coach.id,
@@ -119,7 +127,7 @@ export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?
     });
   }
 
-  if (!hadAssignment || !hasInviteNotice) {
+  if (!hadAssignment || !hasProgramAssignmentNotice) {
     await notifyPlayerOfProgramAssignment({
       playerId: player.id,
       coachId: coach.id,
