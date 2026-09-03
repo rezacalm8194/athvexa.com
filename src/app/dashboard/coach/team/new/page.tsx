@@ -4,6 +4,7 @@ import { db, ensureDatabase } from "@/lib/db";
 import ServerDashboardNav from "@/components/ServerDashboardNav";
 import TeamSetupForm from "@/components/coach/TeamSetupForm";
 import { getUserPreferences } from "@/lib/userPreferences";
+import { t } from "@/lib/i18n";
 
 export default async function TeamSetupPage() {
   const session = await getSession();
@@ -24,15 +25,13 @@ export default async function TeamSetupPage() {
     <main className="min-h-screen bg-ink">
       <ServerDashboardNav name={session.name} locale={locale} />
       <div className="mx-auto max-w-md px-6 py-16">
-        <div className="eyebrow">One quick step</div>
+        <div className="eyebrow">{t(locale, "coach.teams.setupEyebrow")}</div>
         <h1 className="mt-1 font-display text-3xl font-extrabold tracking-wide text-white">
-          Set up your team
+          {t(locale, "coach.teams.setupPageTitle")}
         </h1>
-        <p className="mt-2 text-sm text-smoke-3">
-          Give your team a name first — you'll be able to invite players and assistant coaches right after.
-        </p>
+        <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.teams.setupPageBody")}</p>
         <div className="card mt-6 p-6">
-          <TeamSetupForm />
+          <TeamSetupForm locale={locale} />
         </div>
       </div>
     </main>

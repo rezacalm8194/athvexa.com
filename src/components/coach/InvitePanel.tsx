@@ -5,6 +5,7 @@ import Link from "next/link";
 import { relativeTime } from "@/lib/format";
 import { shortenUrlForDisplay } from "@/lib/invites";
 import { CopyIcon, PlusIcon, RefreshIcon, TrashIcon, WhatsAppIcon, TelegramIcon } from "@/components/icons";
+import { t, type Locale } from "@/lib/i18n";
 
 type InviteRole = "PLAYER" | "ASSISTANT";
 type InviteStatusValue = "pending" | "accepted" | "revoked" | "expired";
@@ -26,23 +27,17 @@ const STATUS_STYLE: Record<InviteStatusValue, string> = {
   expired: "bg-white/10 text-smoke-3",
 };
 
-const STATUS_LABEL: Record<InviteStatusValue, string> = {
-  pending: "Pending",
-  accepted: "Accepted",
-  revoked: "Revoked",
-  expired: "Expired",
-};
-
 export default function InvitePanel({
   coachName,
   canManageRoles,
+  locale,
   limit,
   showViewAll = false,
   onChange,
 }: {
   coachName: string;
   canManageRoles: boolean;
-  /** Cap how many invitations are listed — omit to show all. */
+  locale: Locale;
   limit?: number;
   showViewAll?: boolean;
   onChange?: () => void;
@@ -54,6 +49,13 @@ export default function InvitePanel({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+
+  const statusLabel: Record<InviteStatusValue, string> = {
+    pending: t(locale, "coach.invitations.pending"),
+    accepted: t(locale, "coach.invitations.accepted"),
+    revoked: t(locale, "coach.invitations.revoked"),
+    expired: t(locale, "coach.invitations.expired"),
+  };
 
   function loadInvites() {
     fetch("/api/coach/invites")
@@ -80,7 +82,7 @@ export default function InvitePanel({
       loadInvites();
       onChange?.();
     } else {
-      setError(data.error ?? "Could not generate an invite link. Try again.");
+      setError(data.error ?? t(locale, "coach.invite.generateError"));
     }
   }
 
@@ -92,8 +94,8 @@ export default function InvitePanel({
 
   function shareMessage(invite: Invite) {
     return invite.role === "ASSISTANT"
-      ? `${coachName} invited you to join their coaching staff on Athvexa: ${invite.url}`
-      : `${coachName} invited you to join their team on Athvexa: ${invite.url}`;
+      ? t(locale, "coach.invite.shareStaff", { name: coachName, url: invite.url })
+      : t(locale, "coach.invite.sharePlayer", { name: coachName, url: invite.url });
   }
 
   function sendViaWhatsApp(invite: Invite) {
@@ -103,8 +105,8 @@ export default function InvitePanel({
   function sendViaTelegram(invite: Invite) {
     const caption =
       invite.role === "ASSISTANT"
-        ? `${coachName} invited you to join their coaching staff on Athvexa`
-        : `${coachName} invited you to join their team on Athvexa`;
+        ? t(locale, "coach.invite.shareCaptionStaff", { name: coachName })
+        : t(locale, "coach.invite.shareCaptionPlayer", { name: coachName });
     window.open(
       `https://t.me/share/url?url=${encodeURIComponent(invite.url)}&text=${encodeURIComponent(caption)}`,
       "_blank"
@@ -146,8 +148,8 @@ export default function InvitePanel({
   return (
     <div className="card p-5">
       <div className="mb-4">
-        <h2 className="font-display text-lg font-bold tracking-wide text-white">Invite your team</h2>
-        <p className="mt-0.5 text-sm text-smoke-3">Who do you want to invite?</p>
+        <h2 className="font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.invite.panelTitle")}</h2>
+        <p className="mt-0.5 text-sm text-smoke-3">{t(locale, "coach.invite.panelSubtitle")}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -159,7 +161,7 @@ export default function InvitePanel({
               inviteRole === "PLAYER" ? "bg-red text-white" : "text-smoke-3 hover:text-white"
             }`}
           >
-            Player
+            {t(locale, "coach.invite.player")}
           </button>
           {canManageRoles && (
             <button
@@ -169,17 +171,13 @@ export default function InvitePanel({
                 inviteRole === "ASSISTANT" ? "bg-red text-white" : "text-smoke-3 hover:text-white"
               }`}
             >
-              Assistant coach
+              {t(locale, "coach.invite.assistant")}
             </button>
           )}
         </div>
-        <button
-          onClick={generateInvite}
-          className="btn-primary !px-4 !py-2.5 text-xs"
-          disabled={generating}
-        >
+        <button onClick={generateInvite} className="btn-primary !px-4 !py-2.5 text-xs" disabled={generating}>
           <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
-          {generating ? "Generating…" : "Generate invite link"}
+          {generating ? t(locale, "coach.invite.generating") : t(locale, "coach.invite.generate")}
         </button>
       </div>
 
@@ -187,10 +185,10 @@ export default function InvitePanel({
 
       <div className="mt-5">
         <div className="mb-2 flex items-center justify-between">
-          <span className="eyebrow">Recent invitations</span>
+          <span className="eyebrow">{t(locale, "coach.invite.recent")}</span>
           {showViewAll && invites && invites.length > (limit ?? 0) && (
             <Link href="/dashboard/coach/invitations" className="text-xs font-medium text-red hover:text-red-glow">
-              View all
+              {t(locale, "coach.invite.viewAll")}
             </Link>
           )}
         </div>
@@ -205,7 +203,7 @@ export default function InvitePanel({
 
         {invites && invites.length === 0 && (
           <p className="rounded-md border border-dashed border-line-1 px-3 py-4 text-center text-xs text-smoke-3">
-            No invitations sent yet. Generate one above to get started.
+            {t(locale, "coach.invite.empty")}
           </p>
         )}
 
@@ -220,12 +218,12 @@ export default function InvitePanel({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-smoke-4">
-                    {invite.role === "ASSISTANT" ? "Assistant" : "Player"}
+                    {invite.role === "ASSISTANT" ? t(locale, "coach.invite.assistantShort") : t(locale, "coach.invite.player")}
                   </span>
                   <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${STATUS_STYLE[invite.status]}`}>
-                    {STATUS_LABEL[invite.status]}
+                    {statusLabel[invite.status]}
                   </span>
-                  <span className="text-[11px] text-smoke-3">{relativeTime(invite.createdAt)}</span>
+                  <span className="text-[11px] text-smoke-3">{relativeTime(invite.createdAt, locale)}</span>
                 </div>
                 <code className="truncate text-xs text-smoke-4" title={invite.url}>
                   {shortenUrlForDisplay(invite.url)}
@@ -236,15 +234,15 @@ export default function InvitePanel({
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
                   <button onClick={() => copy(invite)} className="btn-ghost !px-2.5 !py-1.5 text-[11px]">
                     <CopyIcon className="mr-1 h-3.5 w-3.5" />
-                    {copiedId === invite.id ? "Copied" : "Copy link"}
+                    {copiedId === invite.id ? t(locale, "coach.invite.copied") : t(locale, "coach.invite.copyLink")}
                   </button>
                   <button onClick={() => sendViaWhatsApp(invite)} className="btn-ghost !px-2.5 !py-1.5 text-[11px]">
                     <WhatsAppIcon className="mr-1 h-3.5 w-3.5" />
-                    WhatsApp
+                    {t(locale, "coach.invite.whatsapp")}
                   </button>
                   <button onClick={() => sendViaTelegram(invite)} className="btn-ghost !px-2.5 !py-1.5 text-[11px]">
                     <TelegramIcon className="mr-1 h-3.5 w-3.5" />
-                    Telegram
+                    {t(locale, "coach.invite.telegram")}
                   </button>
                   <button
                     onClick={() => revoke(invite)}
@@ -252,7 +250,7 @@ export default function InvitePanel({
                     className="btn-ghost !px-2.5 !py-1.5 text-[11px] text-red-glow hover:border-red/50 disabled:opacity-50"
                   >
                     <TrashIcon className="mr-1 h-3.5 w-3.5" />
-                    Revoke
+                    {t(locale, "coach.invite.revoke")}
                   </button>
                 </div>
               )}
@@ -265,7 +263,7 @@ export default function InvitePanel({
                     className="btn-ghost !px-2.5 !py-1.5 text-[11px] disabled:opacity-50"
                   >
                     <RefreshIcon className="mr-1 h-3.5 w-3.5" />
-                    {busyId === invite.id ? "Generating…" : "Regenerate link"}
+                    {busyId === invite.id ? t(locale, "coach.invite.generating") : t(locale, "coach.invite.regenerate")}
                   </button>
                 </div>
               )}

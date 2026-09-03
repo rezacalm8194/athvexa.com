@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
 import { useToast } from "@/components/ui/Toast";
+import { t, type Locale } from "@/lib/i18n";
 
 type Detail = {
   id: string;
@@ -22,7 +23,41 @@ const STATUS_TONE = { DRAFT: "neutral", ACTIVE: "good", ARCHIVED: "warn" } as co
 
 type PlayerOption = { id: string; name: string; email: string; role: string };
 
-export default function ProgramDetailModal({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged?: () => void }) {
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const MONDAY_2024 = new Date("2024-01-01T12:00:00Z");
+
+function weekdayLabel(day: string, locale: Locale) {
+  const index = DAYS.indexOf(day);
+  if (index === -1) return day;
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { weekday: "long" }).format(
+    new Date(MONDAY_2024.getTime() + index * 86400000)
+  );
+}
+
+function programStatusLabel(status: Detail["status"], locale: Locale) {
+  if (status === "ACTIVE") return t(locale, "coach.programs.statusActive");
+  if (status === "DRAFT") return t(locale, "coach.programs.statusDraft");
+  return t(locale, "coach.programs.statusArchived");
+}
+
+function intensityLabel(intensity: string, locale: Locale) {
+  if (intensity === "LOW") return t(locale, "coach.programs.intensityLow");
+  if (intensity === "MEDIUM") return t(locale, "coach.programs.intensityMedium");
+  if (intensity === "HIGH") return t(locale, "coach.programs.intensityHigh");
+  return intensity;
+}
+
+export default function ProgramDetailModal({
+  id,
+  locale,
+  onClose,
+  onChanged,
+}: {
+  id: string;
+  locale: Locale;
+  onClose: () => void;
+  onChanged?: () => void;
+}) {
   const { showToast } = useToast();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [players, setPlayers] = useState<PlayerOption[]>([]);
@@ -82,12 +117,12 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
     });
     setSavingAssignments(false);
     if (res.ok) {
-      showToast("Program assignments updated", "success");
+      showToast(t(locale, "coach.programs.assignmentsUpdated"), "success");
       loadDetail();
       onChanged?.();
     } else {
       const data = await res.json().catch(() => ({}));
-      showToast(data.error ?? "Could not update assignments", "error");
+      showToast(data.error ?? t(locale, "coach.programs.assignmentsError"), "error");
     }
   }
 
@@ -99,7 +134,7 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
   return (
     <div className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8" onClick={onClose}>
       <div className="w-full max-w-xl rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
-        {error && <p className="text-sm text-red-glow">Could not load this program.</p>}
+        {error && <p className="text-sm text-red-glow">{t(locale, "coach.programs.detailLoadError")}</p>}
         {!detail && !error && <div className="h-32 animate-pulse rounded-md bg-white/5" />}
         {detail && (
           <>
@@ -108,33 +143,33 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
                 <h2 className="font-display text-xl font-bold text-white">{detail.name}</h2>
                 {detail.goal && <p className="mt-0.5 text-sm text-smoke-3">{detail.goal}</p>}
               </div>
-              <StatusBadge label={detail.status} tone={STATUS_TONE[detail.status]} />
+              <StatusBadge label={programStatusLabel(detail.status, locale)} tone={STATUS_TONE[detail.status]} />
             </div>
             {detail.description && <p className="mt-3 text-sm text-paper">{detail.description}</p>}
 
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div>
-                <div className="eyebrow">Duration</div>
+                <div className="eyebrow">{t(locale, "coach.programs.duration")}</div>
                 <div className="mt-0.5 text-white">{detail.durationWeeks}w</div>
               </div>
               <div>
-                <div className="eyebrow">Per week</div>
+                <div className="eyebrow">{t(locale, "coach.programs.perWeek")}</div>
                 <div className="mt-0.5 text-white">{detail.sessionsPerWeek}</div>
               </div>
               <div>
-                <div className="eyebrow">Start</div>
+                <div className="eyebrow">{t(locale, "coach.programs.start")}</div>
                 <div className="mt-0.5 text-white">{detail.startDate ?? "—"}</div>
               </div>
               <div>
-                <div className="eyebrow">End</div>
+                <div className="eyebrow">{t(locale, "coach.programs.end")}</div>
                 <div className="mt-0.5 text-white">{detail.endDate ?? "—"}</div>
               </div>
             </div>
 
             <div className="mt-5">
-              <span className="eyebrow">Sessions ({detail.sessions.length})</span>
+              <span className="eyebrow">{t(locale, "coach.programs.sessionsCount", { count: detail.sessions.length })}</span>
               {detail.sessions.length === 0 ? (
-                <p className="mt-2 text-xs text-smoke-3">No sessions added.</p>
+                <p className="mt-2 text-xs text-smoke-3">{t(locale, "coach.programs.noSessions")}</p>
               ) : (
                 <div className="mt-2 flex flex-col gap-2">
                   {detail.sessions.map((s) => (
@@ -142,7 +177,9 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
                       <div className="flex flex-wrap items-center justify-between gap-1">
                         <span className="font-medium text-white">{s.title}</span>
                         <span className="text-xs text-smoke-3">
-                          {s.day} · {s.durationMinutes ? `${s.durationMinutes} min` : "—"} · {s.intensity}
+                          {weekdayLabel(s.day, locale)} ·{" "}
+                          {s.durationMinutes ? t(locale, "common.minutes", { value: s.durationMinutes }) : "—"} ·{" "}
+                          {intensityLabel(s.intensity, locale)}
                         </span>
                       </div>
                       {s.notes && <p className="mt-1 text-xs text-smoke-3">{s.notes}</p>}
@@ -153,9 +190,9 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
             </div>
 
             <div className="mt-5">
-              <span className="eyebrow">Assigned players ({detail.assignedPlayers.length})</span>
+              <span className="eyebrow">{t(locale, "coach.programs.assignedCount", { count: detail.assignedPlayers.length })}</span>
               {detail.assignedPlayers.length === 0 ? (
-                <p className="mt-2 text-xs text-smoke-3">No players assigned yet.</p>
+                <p className="mt-2 text-xs text-smoke-3">{t(locale, "coach.programs.noAssigned")}</p>
               ) : (
                 <div className="mt-2 flex flex-col gap-1.5">
                   {detail.assignedPlayers.map((p) => (
@@ -170,17 +207,17 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
 
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="eyebrow">Manage assignments</span>
+                <span className="eyebrow">{t(locale, "coach.programs.manageAssignments")}</span>
                 <button
                   className="btn-ghost !px-3 !py-1.5 text-xs"
                   onClick={saveAssignments}
                   disabled={!assignmentsChanged || savingAssignments}
                 >
-                  {savingAssignments ? "Saving..." : "Save assignments"}
+                  {savingAssignments ? t(locale, "common.saving") : t(locale, "coach.programs.saveAssignments")}
                 </button>
               </div>
               {players.length === 0 ? (
-                <p className="text-xs text-smoke-3">No players on your roster yet.</p>
+                <p className="text-xs text-smoke-3">{t(locale, "coach.programs.noRoster")}</p>
               ) : (
                 <div className="max-h-40 overflow-y-auto rounded-md border border-line-1 p-2">
                   {players.map((player) => (
@@ -202,7 +239,9 @@ export default function ProgramDetailModal({ id, onClose, onChanged }: { id: str
         )}
 
         <div className="mt-6 flex justify-end">
-          <button onClick={onClose} className="btn-ghost !px-4 !py-2.5 text-sm">Close</button>
+          <button onClick={onClose} className="btn-ghost !px-4 !py-2.5 text-sm">
+            {t(locale, "coach.programs.close")}
+          </button>
         </div>
       </div>
     </div>

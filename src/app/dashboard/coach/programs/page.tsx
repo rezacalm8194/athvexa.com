@@ -19,7 +19,7 @@ export default async function ProgramsPage() {
           <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "coach.programs.title")}</h1>
           <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.programs.subtitle")}</p>
         </div>
-        <ProgramsPageView />
+        <ProgramsPageView locale={locale} />
       </div>
     </main>
   );

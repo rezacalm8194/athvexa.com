@@ -96,12 +96,12 @@ function daysAgo(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function displayValue(value: number | null, suffix = "") {
-  return value == null ? "No data" : `${value}${suffix}`;
+function displayValue(value: number | null, locale: Locale, suffix = "") {
+  return value == null ? t(locale, "coach.reports.noData") : `${value}${suffix}`;
 }
 
-function displayChange(value: number | null) {
-  if (value == null) return "No comparison";
+function displayChange(value: number | null, locale: Locale) {
+  if (value == null) return t(locale, "coach.reports.noComparison");
   const rounded = Number(value.toFixed(2));
   return rounded > 0 ? `+${rounded}` : String(rounded);
 }
@@ -113,15 +113,25 @@ function changeStyle(value: number | null) {
   return "text-smoke-2";
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00`));
+function formatDate(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00`));
 }
 
-function formatMaybeDate(value: string | null) {
-  return value ? formatDate(value) : "Not set";
+function formatMaybeDate(value: string | null, locale: Locale) {
+  return value ? formatDate(value, locale) : t(locale, "coach.reports.notSet");
 }
 
-function StatusBadge({ status }: { status: OverallStatus }) {
+function statusLabel(status: OverallStatus, locale: Locale) {
+  const map: Record<OverallStatus, string> = {
+    Good: t(locale, "coach.reports.statusGood"),
+    Watch: t(locale, "coach.reports.statusWatch"),
+    Attention: t(locale, "coach.reports.statusAttention"),
+    "No data": t(locale, "coach.reports.statusNoData"),
+  };
+  return map[status];
+}
+
+function StatusBadge({ status, locale }: { status: OverallStatus; locale: Locale }) {
   const style =
     status === "Good"
       ? "bg-[#4CAF50]/15 text-[#80D987]"
@@ -131,7 +141,7 @@ function StatusBadge({ status }: { status: OverallStatus }) {
           ? "bg-red/15 text-red-glow"
           : "bg-white/10 text-smoke-3";
 
-  return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${style}`}>{status}</span>;
+  return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${style}`}>{statusLabel(status, locale)}</span>;
 }
 
 function MetricTile({ label, value }: { label: string; value: string | number }) {
@@ -143,14 +153,14 @@ function MetricTile({ label, value }: { label: string; value: string | number })
   );
 }
 
-function ReadinessChart({ data }: { data: TrendPoint[] }) {
+function ReadinessChart({ data, locale }: { data: TrendPoint[]; locale: Locale }) {
   const hasData = data.some((point) => point.averageReadiness != null);
   const maxCheckIns = Math.max(1, ...data.map((point) => point.checkIns));
 
   if (!hasData) {
     return (
       <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-line-1 text-sm text-smoke-3">
-        No trend data for this range.
+        {t(locale, "coach.reports.noTrend")}
       </div>
     );
   }
@@ -166,13 +176,17 @@ function ReadinessChart({ data }: { data: TrendPoint[] }) {
                 <div
                   className="w-full max-w-8 rounded-t bg-red transition-all"
                   style={{ height: `${Math.max(readiness, 4)}%` }}
-                  title={`${formatDate(point.date)}: ${point.averageReadiness ?? "No data"} readiness, ${point.checkIns} check-ins`}
+                  title={t(locale, "coach.reports.chartTitle", {
+                    date: formatDate(point.date, locale),
+                    readiness: point.averageReadiness ?? t(locale, "coach.reports.noData"),
+                    checkIns: point.checkIns,
+                  })}
                 />
               </div>
               <div className="h-1.5 w-full rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-white/40" style={{ width: `${(point.checkIns / maxCheckIns) * 100}%` }} />
               </div>
-              <div className="text-center text-[10px] text-smoke-4">{formatDate(point.date)}</div>
+              <div className="text-center text-[10px] text-smoke-4">{formatDate(point.date, locale)}</div>
             </div>
           );
         })}
@@ -206,10 +220,10 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
     try {
       const res = await fetch(`/api/coach/reports?${queryString}`, { cache: "no-store" });
       const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error || "Could not load reports");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.reports.loadError"));
       setData(payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load reports");
+      setError(err instanceof Error ? err.message : t(locale, "coach.reports.loadError"));
     } finally {
       setLoading(false);
     }
@@ -239,7 +253,7 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Coach tools</p>
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">{t(locale, "coach.reports.eyebrow")}</p>
         <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">{t(locale, "coach.reports.title")}</h1>
         <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.reports.subtitle")}</p>
       </div>
@@ -250,11 +264,11 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red"
             value={range}
             onChange={(event) => setRange(event.target.value as RangeValue)}
-            aria-label="Report range"
+            aria-label={t(locale, "coach.reports.rangeAria")}
           >
-            <option value="week">This week</option>
-            <option value="month">Last 30 days</option>
-            <option value="custom">Custom date range</option>
+            <option value="week">{t(locale, "coach.reports.rangeWeek")}</option>
+            <option value="month">{t(locale, "coach.reports.rangeMonth")}</option>
+            <option value="custom">{t(locale, "coach.reports.rangeCustom")}</option>
           </select>
           <input
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red disabled:opacity-50"
@@ -262,7 +276,7 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
             value={from}
             onChange={(event) => setFrom(event.target.value)}
             disabled={range !== "custom"}
-            aria-label="From date"
+            aria-label={t(locale, "coach.reports.fromAria")}
           />
           <input
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red disabled:opacity-50"
@@ -270,15 +284,15 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
             value={to}
             onChange={(event) => setTo(event.target.value)}
             disabled={range !== "custom"}
-            aria-label="To date"
+            aria-label={t(locale, "coach.reports.toAria")}
           />
           <select
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red"
             value={playerId}
             onChange={(event) => setPlayerId(event.target.value)}
-            aria-label="Player"
+            aria-label={t(locale, "coach.reports.playerAria")}
           >
-            <option value="all">All players</option>
+            <option value="all">{t(locale, "coach.reports.allPlayers")}</option>
             {players.map((player) => (
               <option key={player.id} value={player.id}>
                 {player.name || player.email}
@@ -299,11 +313,11 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
         {loading ? <SkeletonRows count={7} height="h-20" /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={loadReports} /> : null}
         {hasNoPlayers ? (
-          <EmptyState icon={UsersIcon} title="No players yet" description="Add players to your team before reviewing reports." />
+          <EmptyState icon={UsersIcon} title={t(locale, "coach.reports.emptyPlayersTitle")} description={t(locale, "coach.reports.emptyPlayersBody")} />
         ) : null}
         {hasNoReportData ? (
           <div className="mb-5">
-            <EmptyState icon={BarChartIcon} title="No report data yet" description="Players need to complete check-ins before this report can show trends." />
+            <EmptyState icon={BarChartIcon} title={t(locale, "coach.reports.emptyDataTitle")} description={t(locale, "coach.reports.emptyDataBody")} />
           </div>
         ) : null}
 
@@ -312,12 +326,12 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
             <div className="rounded-lg border border-line-1 bg-ink-3 p-4">
               <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.teamOverview")}</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                <MetricTile label="Active players" value={overview?.activePlayers ?? 0} />
-                <MetricTile label="Check-in rate" value={`${overview?.checkInRate ?? 0}%`} />
-                <MetricTile label="Average readiness" value={displayValue(overview?.averageReadiness ?? null)} />
-                <MetricTile label="Average sleep" value={displayValue(overview?.averageSleep ?? null, "h")} />
-                <MetricTile label="Average fatigue" value={displayValue(overview?.averageFatigue ?? null)} />
-                <MetricTile label="Average soreness" value={displayValue(overview?.averageSoreness ?? null)} />
+                <MetricTile label={t(locale, "coach.reports.activePlayers")} value={overview?.activePlayers ?? 0} />
+                <MetricTile label={t(locale, "coach.reports.checkInRate")} value={`${overview?.checkInRate ?? 0}%`} />
+                <MetricTile label={t(locale, "coach.reports.averageReadiness")} value={displayValue(overview?.averageReadiness ?? null, locale)} />
+                <MetricTile label={t(locale, "coach.reports.averageSleep")} value={displayValue(overview?.averageSleep ?? null, locale, "h")} />
+                <MetricTile label={t(locale, "coach.reports.averageFatigue")} value={displayValue(overview?.averageFatigue ?? null, locale)} />
+                <MetricTile label={t(locale, "coach.reports.averageSoreness")} value={displayValue(overview?.averageSoreness ?? null, locale)} />
               </div>
             </div>
 
@@ -325,13 +339,13 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.reports.weeklyTrend")}</h2>
-                  <p className="text-xs text-smoke-4">Red bars show average readiness. Gray rails show check-in volume.</p>
+                  <p className="text-xs text-smoke-4">{t(locale, "coach.reports.trendHint")}</p>
                 </div>
                 <div className="text-xs text-smoke-4">
-                  {formatDate(data.filters.from)} - {formatDate(data.filters.to)}
+                  {formatDate(data.filters.from, locale)} - {formatDate(data.filters.to, locale)}
                 </div>
               </div>
-              <ReadinessChart data={data.trendData} />
+              <ReadinessChart data={data.trendData} locale={locale} />
             </div>
 
             <div className="rounded-lg border border-line-1 bg-ink-3">
@@ -340,19 +354,19 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
               </div>
               <div className="p-4">
                 {data.attentionPlayers.length === 0 ? (
-                  <EmptyState icon={ClipboardCheckIcon} title="No players require attention" description="Every scoped player has a healthy latest check-in state." />
+                  <EmptyState icon={ClipboardCheckIcon} title={t(locale, "coach.reports.attentionEmptyTitle")} description={t(locale, "coach.reports.attentionEmptyBody")} />
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[820px] text-left text-sm">
                       <thead className="text-xs uppercase tracking-wide text-smoke-4">
                         <tr className="border-b border-line-1">
-                          <th className="px-3 py-3 font-bold">Player name</th>
-                          <th className="px-3 py-3 font-bold">Main warning reason</th>
-                          <th className="px-3 py-3 font-bold">Readiness</th>
-                          <th className="px-3 py-3 font-bold">Sleep</th>
-                          <th className="px-3 py-3 font-bold">Fatigue</th>
-                          <th className="px-3 py-3 font-bold">Soreness</th>
-                          <th className="px-3 py-3 text-right font-bold">Profile</th>
+                          <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colPlayerName")}</th>
+                          <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colWarning")}</th>
+                          <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colReadiness")}</th>
+                          <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colSleep")}</th>
+                          <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colFatigue")}</th>
+                          <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colSoreness")}</th>
+                          <th className="px-3 py-3 text-right font-bold">{t(locale, "coach.reports.colProfile")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -360,13 +374,13 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
                           <tr key={player.id} className="border-b border-line-1 last:border-b-0">
                             <td className="px-3 py-4 font-bold text-white">{player.name}</td>
                             <td className="px-3 py-4 text-red-glow">{player.reason}</td>
-                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.readiness)}</td>
-                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, "h")}</td>
-                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.fatigue)}</td>
-                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.soreness)}</td>
+                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.readiness, locale)}</td>
+                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, locale, "h")}</td>
+                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.fatigue, locale)}</td>
+                            <td className="px-3 py-4 text-smoke-2">{displayValue(player.soreness, locale)}</td>
                             <td className="px-3 py-4 text-right">
                               <Link className="text-xs font-bold text-red hover:text-red-glow" href={player.profileHref}>
-                                View profile
+                                {t(locale, "coach.reports.viewProfile")}
                               </Link>
                             </td>
                           </tr>
@@ -386,17 +400,17 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
                 <table className="w-full min-w-[1320px] text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-smoke-4">
                     <tr className="border-b border-line-1">
-                      <th className="px-3 py-3 font-bold">Player</th>
-                      <th className="px-3 py-3 font-bold">Latest assessment type</th>
-                      <th className="px-3 py-3 font-bold">Latest assessment score</th>
-                      <th className="px-3 py-3 font-bold">Score change</th>
-                      <th className="px-3 py-3 font-bold">Assessment date</th>
-                      <th className="px-3 py-3 font-bold">Readiness</th>
-                      <th className="px-3 py-3 font-bold">Sleep</th>
-                      <th className="px-3 py-3 font-bold">Active program</th>
-                      <th className="px-3 py-3 font-bold">Program dates</th>
-                      <th className="px-3 py-3 font-bold">Active assignment</th>
-                      <th className="px-3 py-3 font-bold">Overall status</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colPlayer")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colAssessmentType")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colAssessmentScore")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colScoreChange")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colAssessmentDate")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colReadiness")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colSleep")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colActiveProgram")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colProgramDates")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colActiveAssignment")}</th>
+                      <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colOverallStatus")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -414,40 +428,44 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
                               {player.latestAssessment.type}
                             </Link>
                           ) : (
-                            "No assessment"
+                            t(locale, "coach.reports.noAssessment")
                           )}
                         </td>
-                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatScore(player.latestAssessment.score) : "No assessment"}</td>
-                        <td className={`px-3 py-4 font-semibold ${changeStyle(player.assessmentChange)}`}>{displayChange(player.assessmentChange)}</td>
-                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatDate(player.latestAssessment.date) : "No assessment"}</td>
-                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness)}</td>
-                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, "h")}</td>
+                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatScore(player.latestAssessment.score) : t(locale, "coach.reports.noAssessment")}</td>
+                        <td className={`px-3 py-4 font-semibold ${changeStyle(player.assessmentChange)}`}>{displayChange(player.assessmentChange, locale)}</td>
+                        <td className="px-3 py-4 text-smoke-2">{player.latestAssessment ? formatDate(player.latestAssessment.date, locale) : t(locale, "coach.reports.noAssessment")}</td>
+                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.latestReadiness, locale)}</td>
+                        <td className="px-3 py-4 text-smoke-2">{displayValue(player.sleep, locale, "h")}</td>
                         <td className="px-3 py-4 text-smoke-2">
                           {player.activeProgram ? (
                             <div>
                               <div className="font-semibold text-white">{player.activeProgram.name}</div>
                               <div className="text-xs text-smoke-4">
-                                {player.activeProgram.progress}% · {player.activeProgram.completedSessions} completed · {player.activeProgram.remainingSessions} remaining
+                                {t(locale, "coach.reports.programProgress", {
+                                  progress: player.activeProgram.progress,
+                                  completed: player.activeProgram.completedSessions,
+                                  remaining: player.activeProgram.remainingSessions,
+                                })}
                               </div>
                             </div>
                           ) : (
-                            "No active program"
+                            t(locale, "coach.reports.noActiveProgram")
                           )}
                         </td>
                         <td className="px-3 py-4 text-smoke-2">
                           {player.activeProgram
-                            ? `${formatMaybeDate(player.activeProgram.startDate)} - ${formatMaybeDate(player.activeProgram.endDate)}`
-                            : "No active program"}
+                            ? `${formatMaybeDate(player.activeProgram.startDate, locale)} - ${formatMaybeDate(player.activeProgram.endDate, locale)}`
+                            : t(locale, "coach.reports.noActiveProgram")}
                         </td>
                         <td className="px-3 py-4">
                           <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
                             player.hasActiveAssignment ? "bg-[#4CAF50]/15 text-[#80D987]" : "bg-white/10 text-smoke-3"
                           }`}>
-                            {player.hasActiveAssignment ? "Active" : "None"}
+                            {player.hasActiveAssignment ? t(locale, "coach.reports.assignmentActive") : t(locale, "coach.reports.assignmentNone")}
                           </span>
                         </td>
                         <td className="px-3 py-4">
-                          <StatusBadge status={player.overallStatus} />
+                          <StatusBadge status={player.overallStatus} locale={locale} />
                         </td>
                       </tr>
                     ))}

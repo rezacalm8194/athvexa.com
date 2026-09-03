@@ -188,7 +188,7 @@ export default function DashboardNav({
 
           <Link
             href="/dashboard/messages"
-            aria-label="Messages"
+            aria-label={t(locale, "nav.messages")}
             className="relative flex h-9 w-9 items-center justify-center rounded-md border border-line-1 text-smoke-4 transition-colors hover:border-smoke-4 hover:text-paper-pure"
           >
             <MailIcon className="h-[18px] w-[18px]" />
@@ -201,7 +201,7 @@ export default function DashboardNav({
 
           <Link
             href="/dashboard/notifications"
-            aria-label="Notifications"
+            aria-label={t(locale, "nav.notifications")}
             className="relative flex h-9 w-9 items-center justify-center rounded-md border border-line-1 text-smoke-4 transition-colors hover:border-smoke-4 hover:text-paper-pure"
           >
             <BellIcon className="h-[18px] w-[18px]" />

@@ -77,6 +77,16 @@ function TogglePlaceholder({ label, checked = false }: { label: string; checked?
   );
 }
 
+const SETTINGS_NAV = [
+  { id: "team-profile", labelKey: "coach.settings.navTeamProfile", Icon: SettingsIcon },
+  { id: "staff-management", labelKey: "coach.settings.navStaff", Icon: UsersIcon },
+  { id: "player-defaults", labelKey: "coach.settings.navDefaults", Icon: ClipboardListIcon },
+  { id: "notifications", labelKey: "coach.settings.navNotifications", Icon: BellIcon },
+  { id: "security", labelKey: "coach.settings.navSecurity", Icon: CheckCircleIcon },
+  { id: "subscription", labelKey: "coach.settings.navSubscription", Icon: MailIcon },
+  { id: "danger-zone", labelKey: "coach.settings.navDanger", Icon: AlertIcon },
+] as const;
+
 export default async function SettingsPage() {
   const { session, team: fallbackTeam, canManageRoles } = await getCoachContext();
   const { locale } = await getUserPreferences(session.sub);
@@ -97,23 +107,12 @@ export default async function SettingsPage() {
 
         <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
           <aside className="h-fit rounded-lg border border-white/5 bg-ink-3 p-3 lg:sticky lg:top-24">
-            {[
-              ["Team Profile", SettingsIcon],
-              ["Staff Management", UsersIcon],
-              ["Player Defaults", ClipboardListIcon],
-              ["Notifications", BellIcon],
-              ["Security", CheckCircleIcon],
-              ["Subscription", MailIcon],
-              ["Danger Zone", AlertIcon],
-            ].map(([label, Icon]) => {
-              const TypedIcon = Icon as typeof SettingsIcon;
-              return (
-                <a key={label as string} href={`#${String(label).toLowerCase().replace(/\s+/g, "-")}`} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-smoke-3 hover:bg-white/5 hover:text-white">
-                  <TypedIcon className="h-4 w-4" />
-                  {label as string}
-                </a>
-              );
-            })}
+            {SETTINGS_NAV.map(({ id, labelKey, Icon }) => (
+              <a key={id} href={`#${id}`} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-smoke-3 hover:bg-white/5 hover:text-white">
+                <Icon className="h-4 w-4" />
+                {t(locale, labelKey)}
+              </a>
+            ))}
           </aside>
 
           <div className="space-y-5">
@@ -123,93 +122,94 @@ export default async function SettingsPage() {
                 ownerName={session.name}
                 roleLabel={membership ? teamRoleLabel(membership.role) : translateRole(session.role, locale)}
                 canEdit={session.role === "ASSISTANT" || canManageRoles || membership?.role === "OWNER" || membership?.role === "HEAD_COACH"}
+                locale={locale}
               />
             </div>
 
             <div id="staff-management">
               <SettingCard
-                title="Staff Management"
-                description="Assistants have full day-to-day operational access. Staff roles, ownership, billing, and other sensitive controls remain with the head coach."
-                action={<PlaceholderButton>{canManageRoles ? "Invite staff" : "Coach only"}</PlaceholderButton>}
+                title={t(locale, "coach.settings.staffTitle")}
+                description={t(locale, "coach.settings.staffDesc")}
+                action={<PlaceholderButton>{canManageRoles ? t(locale, "coach.settings.inviteStaff") : t(locale, "coach.settings.coachOnly")}</PlaceholderButton>}
               >
                 <div className="grid gap-3 md:grid-cols-3">
-                  <SettingRow label="Current permission" value={canManageRoles ? "Owner controls enabled" : "Full operational access"} />
-                  <SettingRow label="Assistant invites" value={canManageRoles ? "Available" : "Restricted"} />
-                  <SettingRow label="Role changes" value="Owner only" />
+                  <SettingRow label={t(locale, "coach.settings.currentPermission")} value={canManageRoles ? t(locale, "coach.settings.ownerControls") : t(locale, "coach.settings.fullOps")} />
+                  <SettingRow label={t(locale, "coach.settings.assistantInvites")} value={canManageRoles ? t(locale, "coach.settings.available") : t(locale, "coach.settings.restricted")} />
+                  <SettingRow label={t(locale, "coach.settings.roleChanges")} value={t(locale, "coach.settings.ownerOnly")} />
                 </div>
               </SettingCard>
             </div>
 
             <div id="player-defaults">
               <SettingCard
-                title="Player Defaults"
-                description="Default check-in expectations and roster-level preferences. These controls are placeholders until defaults are persisted."
-                action={<PlaceholderButton>Update defaults</PlaceholderButton>}
+                title={t(locale, "coach.settings.defaultsTitle")}
+                description={t(locale, "coach.settings.defaultsDesc")}
+                action={<PlaceholderButton>{t(locale, "coach.settings.updateDefaults")}</PlaceholderButton>}
               >
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <SettingRow label="Daily check-in reminder" value="Enabled by default" />
-                  <SettingRow label="Readiness attention threshold" value="Below 40" />
-                  <SettingRow label="Sleep attention threshold" value="Below 6 hours" />
-                  <SettingRow label="Program assignment visibility" value="Active programs only" />
+                  <SettingRow label={t(locale, "coach.settings.dailyReminder")} value={t(locale, "coach.settings.enabledDefault")} />
+                  <SettingRow label={t(locale, "coach.settings.readinessThreshold")} value={t(locale, "coach.settings.below40")} />
+                  <SettingRow label={t(locale, "coach.settings.sleepThreshold")} value={t(locale, "coach.settings.below6h")} />
+                  <SettingRow label={t(locale, "coach.settings.programVisibility")} value={t(locale, "coach.settings.activeOnly")} />
                 </div>
               </SettingCard>
             </div>
 
             <div id="notifications">
               <SettingCard
-                title="Notifications"
-                description="Choose which operational alerts should be surfaced. Delivery preferences will be wired later."
-                action={<PlaceholderButton>Save preferences</PlaceholderButton>}
+                title={t(locale, "coach.settings.notifTitle")}
+                description={t(locale, "coach.settings.notifDesc")}
+                action={<PlaceholderButton>{t(locale, "coach.settings.savePrefs")}</PlaceholderButton>}
               >
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <TogglePlaceholder label="Player check-ins" checked />
-                  <TogglePlaceholder label="Low readiness alerts" checked />
-                  <TogglePlaceholder label="Session completion alerts" checked />
-                  <TogglePlaceholder label="Weekly summary email" />
+                  <TogglePlaceholder label={t(locale, "coach.settings.notifCheckIns")} checked />
+                  <TogglePlaceholder label={t(locale, "coach.settings.notifLowReadiness")} checked />
+                  <TogglePlaceholder label={t(locale, "coach.settings.notifSession")} checked />
+                  <TogglePlaceholder label={t(locale, "coach.settings.notifWeekly")} />
                 </div>
               </SettingCard>
             </div>
 
             <div id="security">
               <SettingCard
-                title="Security"
-                description="Account and access controls for the team workspace. Advanced controls are shown as placeholders."
-                action={<PlaceholderButton>Review access</PlaceholderButton>}
+                title={t(locale, "coach.settings.securityTitle")}
+                description={t(locale, "coach.settings.securityDesc")}
+                action={<PlaceholderButton>{t(locale, "coach.settings.reviewAccess")}</PlaceholderButton>}
               >
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <SettingRow label="Team ownership" value="Coach-scoped access" />
-                  <SettingRow label="Player data access" value="Roster only" />
-                  <SettingRow label="Session policy" value="Secure HTTP-only session" />
-                  <SettingRow label="Assistant activity" value="Visible in dashboard and notifications" />
+                  <SettingRow label={t(locale, "coach.settings.teamOwnership")} value={t(locale, "coach.settings.coachScoped")} />
+                  <SettingRow label={t(locale, "coach.settings.playerDataAccess")} value={t(locale, "coach.settings.rosterOnly")} />
+                  <SettingRow label={t(locale, "coach.settings.sessionPolicy")} value={t(locale, "coach.settings.secureSession")} />
+                  <SettingRow label={t(locale, "coach.settings.assistantActivity")} value={t(locale, "coach.settings.activityVisible")} />
                 </div>
               </SettingCard>
             </div>
 
             <div id="subscription">
               <SettingCard
-                title="Subscription"
-                description="Plan, billing, and usage limits. Billing integration is not active yet."
-                action={<PlaceholderButton>Manage plan</PlaceholderButton>}
+                title={t(locale, "coach.settings.subTitle")}
+                description={t(locale, "coach.settings.subDesc")}
+                action={<PlaceholderButton>{t(locale, "coach.settings.managePlan")}</PlaceholderButton>}
               >
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <SettingRow label="Plan" value="Athvexa Team" />
-                  <SettingRow label="Billing status" value="Placeholder" />
-                  <SettingRow label="Roster capacity" value="Not enforced" />
+                  <SettingRow label={t(locale, "coach.settings.plan")} value={t(locale, "coach.settings.planValue")} />
+                  <SettingRow label={t(locale, "coach.settings.billingStatus")} value={t(locale, "coach.settings.placeholder")} />
+                  <SettingRow label={t(locale, "coach.settings.rosterCapacity")} value={t(locale, "coach.settings.notEnforced")} />
                 </div>
               </SettingCard>
             </div>
 
             <div id="danger-zone">
               <SettingCard
-                title="Danger Zone"
-                description="High-impact actions are collected here and intentionally disabled until backend safeguards are implemented."
+                title={t(locale, "coach.settings.dangerTitle")}
+                description={t(locale, "coach.settings.dangerDesc")}
                 tone="danger"
                 action={<TrashIcon className="h-5 w-5 text-red-glow" />}
               >
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <PlaceholderButton danger>Archive team</PlaceholderButton>
-                  <PlaceholderButton danger>Remove all invitations</PlaceholderButton>
-                  <PlaceholderButton danger>Delete team workspace</PlaceholderButton>
+                  <PlaceholderButton danger>{t(locale, "coach.settings.archiveTeam")}</PlaceholderButton>
+                  <PlaceholderButton danger>{t(locale, "coach.settings.removeInvites")}</PlaceholderButton>
+                  <PlaceholderButton danger>{t(locale, "coach.settings.deleteWorkspace")}</PlaceholderButton>
                 </div>
               </SettingCard>
             </div>

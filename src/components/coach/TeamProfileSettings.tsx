@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { t, type Locale } from "@/lib/i18n";
 
 export type TeamProfileValue = {
   id: string;
@@ -39,11 +40,13 @@ export default function TeamProfileSettings({
   ownerName,
   roleLabel,
   canEdit,
+  locale,
 }: {
   team: TeamProfileValue | null;
   ownerName: string;
   roleLabel: string;
   canEdit: boolean;
+  locale: Locale;
 }) {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -91,11 +94,11 @@ export default function TeamProfileSettings({
         body: JSON.stringify(form),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Could not save team profile.");
-      setSuccess("Team profile saved.");
+      if (!res.ok) throw new Error(data.error ?? t(locale, "coach.settings.saveError"));
+      setSuccess(t(locale, "coach.settings.saved"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save team profile.");
+      setError(err instanceof Error ? err.message : t(locale, "coach.settings.saveError"));
     } finally {
       setSaving(false);
     }
@@ -104,10 +107,10 @@ export default function TeamProfileSettings({
   if (!team) {
     return (
       <section className="rounded-lg border border-white/5 bg-ink-3 p-5">
-        <h2 className="font-display text-lg font-bold text-white">Team Profile</h2>
-        <p className="mt-1 max-w-2xl text-sm text-smoke-3">Create a team before you can edit its public identity and sport context.</p>
+        <h2 className="font-display text-lg font-bold text-white">{t(locale, "coach.settings.profileTitle")}</h2>
+        <p className="mt-1 max-w-2xl text-sm text-smoke-3">{t(locale, "coach.settings.profileEmpty")}</p>
         <a href="/dashboard/coach/teams?create=1" className="btn-primary mt-5 !px-3.5 !py-2 text-xs">
-          Create team
+          {t(locale, "coach.settings.createTeam")}
         </a>
       </section>
     );
@@ -119,95 +122,96 @@ export default function TeamProfileSettings({
     <form onSubmit={save} className="rounded-lg border border-white/5 bg-ink-3 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-display text-lg font-bold text-white">Team Profile</h2>
+          <h2 className="font-display text-lg font-bold text-white">{t(locale, "coach.settings.profileTitle")}</h2>
           <p className="mt-1 max-w-2xl text-sm text-smoke-3">
-            {canEdit
-              ? "Update the public identity and core sport context for this team."
-              : "Only a head coach can change this team's public identity."}
+            {canEdit ? t(locale, "coach.settings.profileEditHint") : t(locale, "coach.settings.profileReadOnlyHint")}
           </p>
         </div>
         <button className="btn-ghost !px-3.5 !py-2 text-xs" type="submit" disabled={!canEdit || saving}>
-          {saving ? "Saving..." : "Save changes"}
+          {saving ? t(locale, "coach.settings.saving") : t(locale, "coach.settings.saveChanges")}
         </button>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <Field label="Team name">
+        <Field label={t(locale, "coach.settings.fieldName")}>
           <input
             className={inputClass}
             value={form.name}
             onChange={(event) => updateField("name", event.target.value)}
-            placeholder="e.g. Athvexa U19"
+            placeholder={t(locale, "coach.settings.placeholderName")}
             required
             disabled={!canEdit || saving}
           />
         </Field>
-        <Field label="Sport">
+        <Field label={t(locale, "coach.settings.fieldSport")}>
           <input
             className={inputClass}
             value={form.sport}
             onChange={(event) => updateField("sport", event.target.value)}
-            placeholder="e.g. Football"
+            placeholder={t(locale, "coach.settings.placeholderSport")}
             disabled={!canEdit || saving}
           />
         </Field>
-        <Field label="Age group">
+        <Field label={t(locale, "coach.settings.fieldAgeGroup")}>
           <input
             className={inputClass}
             value={form.ageGroup}
             onChange={(event) => updateField("ageGroup", event.target.value)}
-            placeholder="e.g. U19"
+            placeholder={t(locale, "coach.settings.placeholderAge")}
             disabled={!canEdit || saving}
           />
         </Field>
-        <Field label="Season">
+        <Field label={t(locale, "coach.settings.fieldSeason")}>
           <input
             className={inputClass}
             value={form.season}
             onChange={(event) => updateField("season", event.target.value)}
-            placeholder="e.g. 2026/27"
+            placeholder={t(locale, "coach.settings.placeholderSeason")}
             disabled={!canEdit || saving}
           />
         </Field>
-        <Field label="Country">
+        <Field label={t(locale, "coach.settings.fieldCountry")}>
           <input
             className={inputClass}
             value={form.country}
             onChange={(event) => updateField("country", event.target.value)}
-            placeholder="Country"
+            placeholder={t(locale, "coach.settings.fieldCountry")}
             disabled={!canEdit || saving}
           />
         </Field>
-        <Field label="Time zone">
+        <Field label={t(locale, "coach.settings.fieldTimeZone")}>
           <input
             className={inputClass}
             value={form.timeZone}
             onChange={(event) => updateField("timeZone", event.target.value)}
-            placeholder="e.g. Asia/Tehran"
+            placeholder={t(locale, "coach.settings.placeholderTz")}
             disabled={!canEdit || saving}
           />
         </Field>
-        <Field label="Units">
+        <Field label={t(locale, "coach.settings.fieldUnits")}>
           <select
             className={`${inputClass} bg-ink-2`}
             value={form.units}
             onChange={(event) => updateField("units", event.target.value)}
             disabled={!canEdit || saving}
           >
-            <option value="METRIC">Metric</option>
-            <option value="IMPERIAL">Imperial</option>
+            <option value="METRIC">{t(locale, "coach.settings.unitsMetric")}</option>
+            <option value="IMPERIAL">{t(locale, "coach.settings.unitsImperial")}</option>
           </select>
         </Field>
-        <Field label="Default language">
+        <Field label={t(locale, "coach.settings.fieldLanguage")}>
           <select
             className={`${inputClass} bg-ink-2`}
             value={form.defaultLanguage}
             onChange={(event) => updateField("defaultLanguage", event.target.value)}
             disabled={!canEdit || saving}
-          ><option value="en">English</option><option value="fa">فارسی</option></select>
+          >
+            <option value="en">{t(locale, "coach.settings.langEn")}</option>
+            <option value="fa">{t(locale, "coach.settings.langFa")}</option>
+          </select>
         </Field>
-        <ReadOnlyField label="Owner" value={ownerName} />
-        <ReadOnlyField label="Role" value={roleLabel} />
+        <ReadOnlyField label={t(locale, "coach.settings.fieldOwner")} value={ownerName} />
+        <ReadOnlyField label={t(locale, "coach.settings.fieldRole")} value={roleLabel} />
       </div>
 
       {error ? <p className="mt-4 text-sm text-red-glow">{error}</p> : null}

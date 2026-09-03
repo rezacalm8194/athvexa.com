@@ -33,6 +33,7 @@ export default async function TeamSettingsPage({ params }: { params: Promise<{ t
           ownerName={session.name}
           roleLabel={teamRoleLabel(membership.role)}
           canEdit={canEdit}
+          locale={locale}
         />
       </section>
     </main>
