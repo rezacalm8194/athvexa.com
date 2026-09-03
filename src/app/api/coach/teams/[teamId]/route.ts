@@ -14,7 +14,7 @@ const updateSchema = z.object({
   timeZone: z.string().trim().max(80).optional().or(z.literal("")),
   logo: z.string().trim().max(500).optional().or(z.literal("")),
   units: z.enum(["METRIC", "IMPERIAL"]).optional(),
-  defaultLanguage: z.string().trim().min(2).max(12).optional(),
+  defaultLanguage: z.enum(["en", "fa"]).optional(),
 });
 
 function clean(value?: string) {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { WEEKDAY_LABELS, addDays, mondayOf, shortLabel, toKey, todayKey } from "@/lib/week";
+import { addDays, mondayOf, shortLabel, toKey, todayKey, weekdayLabels } from "@/lib/week";
+import { t, type Locale } from "@/lib/i18n";
 
 type PlanItem = {
   id: string;
@@ -25,7 +26,7 @@ function categoryColor(name: string) {
   return CATEGORIES.find((c) => c.name === name)?.color ?? "#888888";
 }
 
-export default function WeeklyPlanner() {
+export default function WeeklyPlanner({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
   const [weekKey, setWeekKey] = useState(() => toKey(mondayOf()));
   const [dates, setDates] = useState<string[]>([]);
   const [items, setItems] = useState<PlanItem[]>([]);
@@ -80,35 +81,36 @@ export default function WeeklyPlanner() {
   }
 
   const isCurrentWeek = weekKey === toKey(mondayOf());
+  const labels = weekdayLabels(locale);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="eyebrow">Phase 2</div>
+          <div className="eyebrow">{t(locale, "common.phase2")}</div>
           <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">
-            Weekly Planner
+            {t(locale, "player.planner.title")}
           </h1>
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setWeekKey(addDays(weekKey, -7))}>
-            ← Prev
+            {t(locale, "player.planner.prev")}
           </button>
           <button
             className="btn-ghost !px-3 !py-2 text-xs disabled:opacity-40"
             disabled={isCurrentWeek}
             onClick={() => setWeekKey(toKey(mondayOf()))}
           >
-            This week
+            {t(locale, "player.planner.thisWeek")}
           </button>
           <button className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setWeekKey(addDays(weekKey, 7))}>
-            Next →
+            {t(locale, "player.planner.next")}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-sm text-smoke-3">Loading the week…</div>
+        <div className="text-sm text-smoke-3">{t(locale, "player.planner.loadingWeek")}</div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
           {dates.map((date, i) => {
@@ -122,15 +124,15 @@ export default function WeeklyPlanner() {
                 }`}
               >
                 <div className="mb-2 flex items-baseline justify-between">
-                  <span className="eyebrow">{WEEKDAY_LABELS[i]}</span>
+                  <span className="eyebrow">{labels[i]}</span>
                   <span className={`text-xs ${isToday ? "font-semibold text-red" : "text-smoke-3"}`}>
-                    {shortLabel(date)}
+                    {shortLabel(date, locale, timeZone)}
                   </span>
                 </div>
 
                 <div className="flex flex-1 flex-col gap-1.5">
                   {dayItems.length === 0 && (
-                    <div className="py-2 text-xs text-smoke-3">Nothing planned</div>
+                    <div className="py-2 text-xs text-smoke-3">{t(locale, "player.planner.nothingPlanned")}</div>
                   )}
                   {dayItems.map((item) => (
                     <div

@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Barlow_Condensed } from "next/font/google";
+import { Inter, Barlow_Condensed, Vazirmatn } from "next/font/google";
+import { cookies, headers } from "next/headers";
+import { getSession } from "@/lib/session";
+import { db, ensureDatabase } from "@/lib/db";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker";
 import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
@@ -19,6 +22,7 @@ const barlow = Barlow_Condensed({
   display: "swap",
   preload: false,
 });
+const vazirmatn = Vazirmatn({ subsets: ["arabic"], variable: "--font-vazirmatn", display: "swap", preload: false });
 
 export const metadata: Metadata = {
   title: "Athvexa — Football Performance Platform",
@@ -39,10 +43,19 @@ export const viewport: Viewport = {
   themeColor: "#0A0A0A",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  let userLocale: string | null = null;
+  if (session) {
+    await ensureDatabase();
+    userLocale = (await db.user.findUnique({ where: { id: session.sub }, select: { locale: true } }))?.locale ?? null;
+  }
+  const cookieLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+  const acceptLanguage = (await headers()).get("accept-language")?.toLowerCase() ?? "";
+  const locale = userLocale === "fa" || (!userLocale && (cookieLocale === "fa" || (!cookieLocale && acceptLanguage.startsWith("fa")))) ? "fa" : "en";
   return (
-    <html lang="en" className={`${inter.variable} ${barlow.variable}`}>
-      <body className="font-body antialiased">
+    <html lang={locale} dir={locale === "fa" ? "rtl" : "ltr"} className={`${inter.variable} ${barlow.variable} ${vazirmatn.variable}`}>
+      <body className={`font-body antialiased ${locale === "fa" ? "font-vazirmatn" : ""}`}>
         <RegisterServiceWorker />
         <ToastProvider>{children}</ToastProvider>
       </body>

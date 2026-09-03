@@ -5,6 +5,8 @@ import Link from "next/link";
 import ScoreCard from "./ScoreCard";
 import StatInput from "./StatInput";
 import WellnessSlider from "./WellnessSlider";
+import { formatDate } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 
 type Task = { id: string; label: string; done: boolean };
 type Log = {
@@ -40,18 +42,16 @@ type ActiveProgram = {
   nextSession: { id: string; title: string; day: string; durationMinutes: number | null; intensity: string } | null;
 } | null;
 
-function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(
-    new Date(`${value}T00:00:00`)
-  );
+function formatLongDate(value: string, locale: Locale, timeZone: string | null) {
+  return formatDate(`${value}T12:00:00Z`, { weekday: "long", month: "long", day: "numeric", year: "numeric" }, locale, timeZone);
 }
 
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T00:00:00`));
+function formatShortDate(value: string, locale: Locale, timeZone: string | null) {
+  return formatDate(`${value}T12:00:00Z`, { month: "short", day: "numeric", year: "numeric" }, locale, timeZone);
 }
 
-function durationLabel(value: number | null | undefined) {
-  return value == null ? "Not set" : `${value} min`;
+function durationLabel(value: number | null | undefined, locale: Locale) {
+  return value == null ? t(locale, "common.notSet") : t(locale, "common.minutes", { value });
 }
 
 function SummaryCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -63,7 +63,7 @@ function SummaryCard({ title, children }: { title: string; children: React.React
   );
 }
 
-export default function TodayDashboard({ playerName }: { playerName: string }) {
+export default function TodayDashboard({ playerName, locale, timeZone }: { playerName: string; locale: Locale; timeZone: string | null }) {
   const [log, setLog] = useState<Log | null>(null);
   const [coachMessage, setCoachMessage] = useState<string | null>(null);
   const [todayDate, setTodayDate] = useState<string | null>(null);
@@ -114,102 +114,115 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
   }
 
   if (loading || !log) {
-    return <div className="p-8 text-sm text-smoke-3">Loading today's dashboard…</div>;
+    return <div className="p-8 text-sm text-smoke-3">{t(locale, "player.today.loading")}</div>;
   }
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <div className="eyebrow">Today</div>
+        <div className="eyebrow">{t(locale, "player.today.eyebrow")}</div>
         <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">
-          Welcome, {playerName}
+          {t(locale, "player.today.welcome", { name: playerName })}
         </h1>
-        <p className="mt-1 text-sm text-smoke-3">{todayDate ? formatLongDate(todayDate) : ""}</p>
+        <p className="mt-1 text-sm text-smoke-3">{todayDate ? formatLongDate(todayDate, locale, timeZone) : ""}</p>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
-        <SummaryCard title="Today's training">
+        <SummaryCard title={t(locale, "player.today.todaysTraining")}>
           {todaysTraining ? (
             <div>
               <h2 className="font-display text-lg font-bold text-white">{todaysTraining.title}</h2>
               <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
-                <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{durationLabel(todaysTraining.durationMinutes)}</span>
+                <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{durationLabel(todaysTraining.durationMinutes, locale)}</span>
                 <span className="rounded bg-red/15 px-2 py-1 font-bold text-red-glow">{todaysTraining.intensity}</span>
                 <span className="rounded bg-[#4CAF50]/15 px-2 py-1 font-bold text-[#80D987]">{todaysTraining.status}</span>
               </div>
               {todaysTraining.notes && <p className="mt-3 text-xs text-smoke-3">{todaysTraining.notes}</p>}
             </div>
           ) : (
-            <p className="text-sm text-smoke-3">No training session is scheduled for today.</p>
+            <p className="text-sm text-smoke-3">{t(locale, "player.today.noTrainingToday")}</p>
           )}
         </SummaryCard>
 
-        <SummaryCard title="Today's check-in">
+        <SummaryCard title={t(locale, "player.today.todaysCheckIn")}>
           <div className="flex flex-col gap-3">
             <div>
-              <div className="font-display text-xl font-black text-white">{checkInCompleted ? "Completed" : "Not completed"}</div>
+              <div className="font-display text-xl font-black text-white">
+                {checkInCompleted ? t(locale, "player.today.checkInCompleted") : t(locale, "player.today.checkInNotCompleted")}
+              </div>
               <p className="mt-1 text-xs text-smoke-3">
-                {checkInCompleted ? "Your readiness data is saved for today." : "Add your recovery and wellness numbers for today."}
+                {checkInCompleted ? t(locale, "player.today.checkInSaved") : t(locale, "player.today.checkInPrompt")}
               </p>
             </div>
             {!checkInCompleted && (
               <Link href="/dashboard/player/check-in" className="btn-primary w-fit !px-4 !py-2 text-xs">
-                Complete today's check-in
+                {t(locale, "player.today.completeCheckInCta")}
               </Link>
             )}
           </div>
         </SummaryCard>
 
-        <SummaryCard title="Current assessment">
+        <SummaryCard title={t(locale, "player.today.currentAssessment")}>
           {currentAssessment ? (
             <div id="current-assessment">
               <div className="font-display text-3xl font-black text-white">{currentAssessment.score}</div>
               <p className="mt-1 text-sm text-smoke-3">
-                {currentAssessment.type} on {formatShortDate(currentAssessment.date)}
+                {t(locale, "player.today.assessmentOn", {
+                  type: currentAssessment.type,
+                  date: formatShortDate(currentAssessment.date, locale, timeZone),
+                })}
               </p>
             </div>
           ) : (
             <p id="current-assessment" className="text-sm text-smoke-3">
-              No assessment has been recorded yet.
+              {t(locale, "player.today.noAssessment")}
             </p>
           )}
         </SummaryCard>
 
-        <SummaryCard title="Active program">
+        <SummaryCard title={t(locale, "player.today.activeProgram")}>
           {activeProgram ? (
             <div>
               <h2 className="font-display text-lg font-bold text-white">{activeProgram.name}</h2>
-              <p className="mt-1 text-xs text-smoke-3">{activeProgram.goal || "No goal set."}</p>
+              <p className="mt-1 text-xs text-smoke-3">{activeProgram.goal || t(locale, "player.today.noGoal")}</p>
               <div className="mt-3">
                 <div className="mb-1 flex justify-between text-xs text-smoke-4">
-                  <span>Progress</span>
-                  <span>{activeProgram.progress == null ? "Schedule not set" : `${activeProgram.progress}%`}</span>
+                  <span>{t(locale, "player.today.progress")}</span>
+                  <span>
+                    {activeProgram.progress == null
+                      ? t(locale, "player.today.scheduleNotSet")
+                      : `${activeProgram.progress}%`}
+                  </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/10">
                   <div className="h-full rounded-full bg-red" style={{ width: `${activeProgram.progress ?? 0}%` }} />
                 </div>
               </div>
               <p className="mt-3 text-xs text-smoke-3">
-                Next session: {activeProgram.nextSession ? `${activeProgram.nextSession.title} (${activeProgram.nextSession.day})` : "No sessions added."}
+                {t(locale, "player.today.nextSession", {
+                  session: activeProgram.nextSession
+                    ? `${activeProgram.nextSession.title} (${activeProgram.nextSession.day})`
+                    : t(locale, "player.today.noSessionsAdded"),
+                })}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-smoke-3">No active training program has been assigned yet.</p>
+            <p className="text-sm text-smoke-3">{t(locale, "player.today.noActiveProgram")}</p>
           )}
         </SummaryCard>
       </div>
 
       <section className="mb-6 rounded-lg border border-white/5 bg-ink-3 p-4">
-        <div className="eyebrow mb-3">Quick actions</div>
+        <div className="eyebrow mb-3">{t(locale, "player.today.quickActions")}</div>
         <div className="flex flex-wrap gap-2">
           <Link href="/dashboard/player/training" className="btn-ghost !px-3.5 !py-2 text-xs">
-            Open training
+            {t(locale, "player.today.openTraining")}
           </Link>
           <Link href="/dashboard/player/check-in" className="btn-ghost !px-3.5 !py-2 text-xs">
-            Complete check-in
+            {t(locale, "player.today.completeCheckIn")}
           </Link>
           <a href="#current-assessment" className="btn-ghost !px-3.5 !py-2 text-xs">
-            View assessments
+            {t(locale, "player.today.viewAssessments")}
           </a>
         </div>
       </section>
@@ -219,8 +232,8 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
 
         <div className="grid grid-cols-2 gap-3">
           <StatInput
-            label="Sleep"
-            unit="hours"
+            label={t(locale, "player.today.sleep")}
+            unit={t(locale, "player.today.hours")}
             value={log.sleepHours}
             step={0.5}
             max={14}
@@ -228,8 +241,8 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
             onCommit={(v) => patch("sleepHours", v)}
           />
           <StatInput
-            label="Water"
-            unit="liters"
+            label={t(locale, "player.today.water")}
+            unit={t(locale, "player.today.liters")}
             value={log.waterLiters}
             step={0.1}
             max={6}
@@ -241,16 +254,16 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
 
       <section className="mt-8">
         <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">
-          How are you feeling?
+          {t(locale, "player.today.howFeeling")}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <WellnessSlider label="Energy" value={log.energy} color="#4CAF50" onCommit={(v) => patch("energy", v)} />
-          <WellnessSlider label="Fatigue" value={log.fatigue} color="#E02020" onCommit={(v) => patch("fatigue", v)} />
-          <WellnessSlider label="Soreness" value={log.soreness} color="#FFC107" onCommit={(v) => patch("soreness", v)} />
-          <WellnessSlider label="Mood" value={log.mood} color="#2196F3" onCommit={(v) => patch("mood", v)} />
-          <WellnessSlider label="Stress" value={log.stress} color="#E02020" onCommit={(v) => patch("stress", v)} />
+          <WellnessSlider label={t(locale, "player.today.energy")} value={log.energy} color="#4CAF50" onCommit={(v) => patch("energy", v)} />
+          <WellnessSlider label={t(locale, "player.today.fatigue")} value={log.fatigue} color="#E02020" onCommit={(v) => patch("fatigue", v)} />
+          <WellnessSlider label={t(locale, "player.today.soreness")} value={log.soreness} color="#FFC107" onCommit={(v) => patch("soreness", v)} />
+          <WellnessSlider label={t(locale, "player.today.mood")} value={log.mood} color="#2196F3" onCommit={(v) => patch("mood", v)} />
+          <WellnessSlider label={t(locale, "player.today.stress")} value={log.stress} color="#E02020" onCommit={(v) => patch("stress", v)} />
           <WellnessSlider
-            label="Sleep quality"
+            label={t(locale, "player.today.sleepQuality")}
             value={log.sleepQuality}
             color="#9C27B0"
             onCommit={(v) => patch("sleepQuality", v)}
@@ -260,7 +273,7 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
 
       <section className="mt-8">
         <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">
-          Today's tasks
+          {t(locale, "player.today.todaysTasks")}
         </h2>
         <div className="flex flex-col gap-2">
           {log.tasks.map((task) => (
@@ -291,7 +304,7 @@ export default function TodayDashboard({ playerName }: { playerName: string }) {
 
       {coachMessage && (
         <section className="mt-8 rounded-md border border-white/5 bg-ink-3 p-4">
-          <div className="eyebrow mb-2">Coach message</div>
+          <div className="eyebrow mb-2">{t(locale, "player.today.coachMessage")}</div>
           <p className="text-sm leading-relaxed text-white">{coachMessage}</p>
         </section>
       )}

@@ -1,9 +1,12 @@
 import AuthShell from "@/components/AuthShell";
 import RegisterForm from "@/components/RegisterForm";
 import { db, ensureDatabase } from "@/lib/db";
+import { roleLabel, t } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/userPreferences";
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const locale = await getRequestLocale();
   await ensureDatabase();
   const invite = await db.invite.findUnique({
     where: { token },
@@ -14,12 +17,9 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
   if (!invite || !isValid) {
     return (
-      <AuthShell
-        title="This invite link isn't valid"
-        subtitle="It may have expired or already been used. Ask your coach to send a new one."
-      >
+      <AuthShell title={t(locale, "auth.inviteInvalidTitle")} subtitle={t(locale, "auth.inviteInvalidSubtitle")}>
         <a href="/register" className="btn-primary block text-center">
-          Create an account instead
+          {t(locale, "auth.createAccountInstead")}
         </a>
       </AuthShell>
     );
@@ -30,21 +30,18 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     ? await db.team.findUnique({ where: { id: invite.teamId }, select: { name: true } })
     : await db.team.findFirst({ where: { coachId: invite.coachId }, orderBy: { createdAt: "asc" }, select: { name: true } });
   const teamLabel = team?.name ?? invite.coach.name;
+  const isStaff = role === "ASSISTANT" || role === "COACH";
 
   return (
     <AuthShell
-      title={
-        role === "ASSISTANT" || role === "COACH"
-          ? `Join ${teamLabel}'s staff on Athvexa`
-          : `Join ${teamLabel} on Athvexa`
-      }
+      title={t(locale, isStaff ? "auth.inviteJoinStaff" : "auth.inviteJoinPlayer", { team: teamLabel })}
       subtitle={
-        role === "ASSISTANT" || role === "COACH"
-          ? `Create your ${role === "COACH" ? "coach" : "assistant coach"} account to help manage the roster.`
-          : "Create your player account to get today's training and check in."
+        isStaff
+          ? t(locale, "auth.inviteStaffSubtitle", { role: roleLabel(role, locale) })
+          : t(locale, "auth.invitePlayerSubtitle")
       }
     >
-      <RegisterForm inviteToken={token} inviteRole={role} />
+      <RegisterForm locale={locale} inviteToken={token} inviteRole={role} />
     </AuthShell>
   );
 }

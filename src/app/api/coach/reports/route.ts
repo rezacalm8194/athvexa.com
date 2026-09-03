@@ -322,7 +322,9 @@ export async function GET(req: NextRequest) {
         assessmentChange,
       }),
       profileHref: coachPlayerProfileHref(player.id),
-      assessmentHref: latestAssessment ? `/dashboard/coach/assessments?assessmentId=${latestAssessment.id}` : null,
+      assessmentHref: latestAssessment
+        ? `${coachPlayerProfileHref(player.id)}?assessmentId=${encodeURIComponent(latestAssessment.id)}#assessments`
+        : null,
     };
   });
 

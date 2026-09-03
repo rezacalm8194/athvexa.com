@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function LoginForm() {
+export default function LoginForm({ locale }: { locale: Locale }) {
   const router = useRouter();
   const passwordRef = useRef<HTMLInputElement>(null);
   const [identifier, setIdentifier] = useState("");
@@ -26,8 +27,8 @@ export default function LoginForm() {
       if (!res.ok) {
         const message =
           res.status === 401
-            ? "Incorrect email, phone number, or password. Please check your credentials and try again."
-            : data.error ?? "Something went wrong. Try again.";
+            ? t(locale, "auth.invalidLogin")
+            : data.error ?? t(locale, "auth.genericError");
         setError(message);
         if (res.status === 401) {
           setPassword("");
@@ -35,10 +36,10 @@ export default function LoginForm() {
         }
         return;
       }
-      router.push(data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      router.push(!data.user?.onboardingCompletedAt ? "/onboarding/preferences" : data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
       router.refresh();
     } catch {
-      setError("Could not sign in. Check the server database settings and try again.");
+      setError(t(locale, "auth.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-smoke-4">Email address or phone number</span>
+        <span className="text-xs font-medium text-smoke-4">{t(locale, "auth.emailOrPhone")}</span>
         <input
           className="input-field"
           type="text"
@@ -60,7 +61,7 @@ export default function LoginForm() {
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-smoke-4">Password</span>
+        <span className="text-xs font-medium text-smoke-4">{t(locale, "auth.password")}</span>
         <input
           ref={passwordRef}
           className="input-field"
@@ -80,7 +81,7 @@ export default function LoginForm() {
           onChange={(e) => setRemember(e.target.checked)}
           className="h-4 w-4 rounded border-line-2 bg-ink-3 accent-red"
         />
-        Keep me signed in
+        {t(locale, "auth.remember")}
       </label>
 
       {error && (
@@ -94,12 +95,12 @@ export default function LoginForm() {
       )}
 
       <button type="submit" className="btn-primary mt-1" disabled={loading}>
-        {loading ? "Signing in…" : "Sign in to Athvexa"}
+        {loading ? t(locale, "auth.signingIn") : t(locale, "auth.signInToAthvexa")}
       </button>
       <p className="text-center text-sm text-smoke-3">
-        New to Athvexa?{" "}
+        {t(locale, "auth.newHere")}{" "}
         <a href="/register" className="text-white hover:text-red-glow">
-          Register free
+          {t(locale, "auth.register")}
         </a>
       </p>
     </form>

@@ -14,7 +14,7 @@ const teamSchema = z.object({
   timeZone: z.string().trim().max(80).optional().or(z.literal("")),
   logo: z.string().trim().max(500).optional().or(z.literal("")),
   units: z.enum(["METRIC", "IMPERIAL"]).default("METRIC"),
-  defaultLanguage: z.string().trim().min(2).max(12).default("en"),
+  defaultLanguage: z.enum(["en", "fa"]).optional(),
 });
 
 function clean(value?: string) {
@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
+  const owner = await db.user.findUnique({ where: { id: session.sub }, select: { locale: true, timeZone: true } });
   const team = await db.team.create({
     data: {
       name: data.name,
@@ -114,10 +115,10 @@ export async function POST(req: NextRequest) {
       ageGroup: clean(data.ageGroup),
       season: clean(data.season),
       country: clean(data.country),
-      timeZone: clean(data.timeZone),
+      timeZone: clean(data.timeZone) ?? owner?.timeZone ?? undefined,
       logo: clean(data.logo),
       units: data.units,
-      defaultLanguage: data.defaultLanguage,
+      defaultLanguage: data.defaultLanguage ?? owner?.locale ?? "en",
       coachId: session.sub,
       members: {
         create: { userId: session.sub, role: "OWNER" },

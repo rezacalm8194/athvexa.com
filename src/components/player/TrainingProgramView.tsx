@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ClipboardListIcon } from "@/components/icons";
+import { formatDate } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 
 type TrainingSession = {
   id: string;
@@ -34,20 +36,20 @@ type TrainingResponse = {
   program: TrainingProgram | null;
 };
 
-function displayDate(value: string | null) {
-  if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T00:00:00`));
+function displayDate(value: string | null, locale: Locale, timeZone: string | null) {
+  if (!value) return t(locale, "common.notSet");
+  return formatDate(`${value}T12:00:00Z`, { month: "short", day: "numeric", year: "numeric" }, locale, timeZone);
 }
 
-function displayDuration(value: number | null) {
-  return value == null ? "Not set" : `${value} min`;
+function displayDuration(value: number | null, locale: Locale) {
+  return value == null ? t(locale, "common.notSet") : t(locale, "common.minutes", { value });
 }
 
-function statusLabel(value: TrainingSession["status"]) {
-  if (value === "NOT_STARTED") return "Not started";
-  if (value === "IN_PROGRESS") return "In progress";
-  if (value === "COMPLETED") return "Completed";
-  return "Skipped";
+function statusLabel(value: TrainingSession["status"], locale: Locale) {
+  if (value === "NOT_STARTED") return t(locale, "player.training.statusNotStarted");
+  if (value === "IN_PROGRESS") return t(locale, "player.training.statusInProgress");
+  if (value === "COMPLETED") return t(locale, "player.training.statusCompleted");
+  return t(locale, "player.training.statusSkipped");
 }
 
 function statusStyle(value: TrainingSession["status"]) {
@@ -62,7 +64,7 @@ function toDatetimeLocal(date = new Date()) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-export default function TrainingProgramView() {
+export default function TrainingProgramView({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
   const [data, setData] = useState<TrainingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -129,9 +131,9 @@ export default function TrainingProgramView() {
   return (
     <section className="mx-auto w-full max-w-3xl px-6 py-8">
       <div className="mb-6">
-        <div className="eyebrow">Training</div>
-        <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Training program</h1>
-        <p className="mt-1 text-sm text-smoke-3">Your current assigned program and this week&apos;s sessions.</p>
+        <div className="eyebrow">{t(locale, "player.training.eyebrow")}</div>
+        <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.training.title")}</h1>
+        <p className="mt-1 text-sm text-smoke-3">{t(locale, "player.training.subtitle")}</p>
       </div>
 
       {!data && !error ? (
@@ -146,7 +148,7 @@ export default function TrainingProgramView() {
         <div className="card px-5 py-8 text-center">
           <p className="text-sm text-red-glow">{error}</p>
           <button className="btn-ghost mt-4 !px-4 !py-2 text-xs" onClick={load}>
-            Try again
+            {t(locale, "common.tryAgain")}
           </button>
         </div>
       ) : null}
@@ -159,7 +161,7 @@ export default function TrainingProgramView() {
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-smoke-4">
             <ClipboardListIcon className="h-6 w-6" />
           </div>
-          <p className="font-display text-base font-bold text-white">No training program has been assigned yet.</p>
+          <p className="font-display text-base font-bold text-white">{t(locale, "player.training.notAssigned")}</p>
         </div>
       ) : null}
 
@@ -169,42 +171,42 @@ export default function TrainingProgramView() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-black text-white">{data.program.name}</h2>
-                <p className="mt-1 text-sm text-smoke-3">{data.program.goal || "No goal set."}</p>
+                <p className="mt-1 text-sm text-smoke-3">{data.program.goal || t(locale, "player.training.noGoal")}</p>
               </div>
-              <span className="w-fit rounded-full bg-[#4CAF50]/15 px-2.5 py-1 text-xs font-bold text-[#80D987]">Active</span>
+              <span className="w-fit rounded-full bg-[#4CAF50]/15 px-2.5 py-1 text-xs font-bold text-[#80D987]">{t(locale, "player.training.active")}</span>
             </div>
             <div className="mt-5">
               <div className="mb-1 flex justify-between text-xs text-smoke-4">
-                <span>Program progress</span>
+                <span>{t(locale, "player.training.programProgress")}</span>
                 <span>{data.program.progress}%</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-red" style={{ width: `${data.program.progress}%` }} />
               </div>
               <div className="mt-2 text-xs text-smoke-3">
-                {data.program.completedSessions} completed · {data.program.remainingSessions} remaining
+                {t(locale, "player.training.completedRemaining", { completed: data.program.completedSessions, remaining: data.program.remainingSessions })}
               </div>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
-                <div className="eyebrow">Start date</div>
-                <div className="mt-1 text-sm font-semibold text-white">{displayDate(data.program.startDate)}</div>
+                <div className="eyebrow">{t(locale, "player.training.startDate")}</div>
+                <div className="mt-1 text-sm font-semibold text-white">{displayDate(data.program.startDate, locale, timeZone)}</div>
               </div>
               <div className="rounded-md border border-line-1 bg-white/[0.03] p-3">
-                <div className="eyebrow">End date</div>
-                <div className="mt-1 text-sm font-semibold text-white">{displayDate(data.program.endDate)}</div>
+                <div className="eyebrow">{t(locale, "player.training.endDate")}</div>
+                <div className="mt-1 text-sm font-semibold text-white">{displayDate(data.program.endDate, locale, timeZone)}</div>
               </div>
             </div>
           </div>
 
           <div className="card p-5">
             <div className="mb-4">
-              <h2 className="font-display text-lg font-bold text-white">This week&apos;s sessions</h2>
-              <p className="mt-1 text-xs text-smoke-4">{data.program.sessions.length} scheduled</p>
+              <h2 className="font-display text-lg font-bold text-white">{t(locale, "player.training.thisWeekSessions")}</h2>
+              <p className="mt-1 text-xs text-smoke-4">{t(locale, "player.training.scheduledCount", { count: data.program.sessions.length })}</p>
             </div>
             {data.program.sessions.length === 0 ? (
               <p className="rounded-md border border-dashed border-line-1 px-4 py-6 text-center text-sm text-smoke-3">
-                No sessions have been added to this program.
+                {t(locale, "player.training.noSessions")}
               </p>
             ) : (
               <div className="flex flex-col gap-2">
@@ -213,17 +215,17 @@ export default function TrainingProgramView() {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <h3 className="font-semibold text-white">{session.title}</h3>
-                        <p className="mt-1 text-xs text-smoke-4">{session.notes || "No notes added."}</p>
+                        <p className="mt-1 text-xs text-smoke-4">{session.notes || t(locale, "player.training.noNotes")}</p>
                         {session.completedAt ? (
-                          <p className="mt-1 text-xs text-smoke-4">Completed at {new Date(session.completedAt).toLocaleString()}</p>
+                          <p className="mt-1 text-xs text-smoke-4">{t(locale, "player.training.completedAt", { datetime: formatDate(session.completedAt, { dateStyle: "medium", timeStyle: "short" }, locale, timeZone) })}</p>
                         ) : null}
                         {session.completionNotes ? <p className="mt-1 text-xs text-smoke-3">{session.completionNotes}</p> : null}
                       </div>
                       <div className="flex flex-wrap gap-1.5 text-xs">
                         <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{session.day}</span>
-                        <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{displayDuration(session.durationMinutes)}</span>
+                        <span className="rounded bg-white/10 px-2 py-1 text-smoke-2">{displayDuration(session.durationMinutes, locale)}</span>
                         <span className="rounded bg-red/15 px-2 py-1 font-bold text-red-glow">{session.intensity}</span>
-                        <span className={`rounded px-2 py-1 font-bold ${statusStyle(session.status)}`}>{statusLabel(session.status)}</span>
+                        <span className={`rounded px-2 py-1 font-bold ${statusStyle(session.status)}`}>{statusLabel(session.status, locale)}</span>
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -232,21 +234,21 @@ export default function TrainingProgramView() {
                         onClick={() => updateSession(session, "start")}
                         disabled={busyId === session.id || session.status === "COMPLETED"}
                       >
-                        Start
+                        {t(locale, "player.training.start")}
                       </button>
                       <button
                         className="btn-primary !px-3 !py-1.5 text-xs"
                         onClick={() => openComplete(session)}
                         disabled={busyId === session.id || session.status === "COMPLETED"}
                       >
-                        Complete
+                        {t(locale, "player.training.complete")}
                       </button>
                       <button
                         className="btn-ghost !px-3 !py-1.5 text-xs"
                         onClick={() => skipSession(session)}
                         disabled={busyId === session.id || session.status === "COMPLETED"}
                       >
-                        Skip
+                        {t(locale, "player.training.skip")}
                       </button>
                     </div>
                   </div>
@@ -260,10 +262,10 @@ export default function TrainingProgramView() {
       {completing ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4" onClick={() => setCompleting(null)}>
           <div className="w-full max-w-md rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <h2 className="font-display text-xl font-bold text-white">Complete session</h2>
+            <h2 className="font-display text-xl font-bold text-white">{t(locale, "player.training.completeSession")}</h2>
             <p className="mt-1 text-sm text-smoke-3">{completing.title}</p>
             <label className="mt-4 block text-xs font-medium text-smoke-3">
-              Completion time
+              {t(locale, "player.training.completionTime")}
               <input
                 className="input-field mt-1"
                 type="datetime-local"
@@ -272,20 +274,20 @@ export default function TrainingProgramView() {
               />
             </label>
             <label className="mt-4 block text-xs font-medium text-smoke-3">
-              Notes
+              {t(locale, "player.training.notes")}
               <textarea
                 className="input-field mt-1 min-h-24 resize-none"
                 value={completionNotes}
                 onChange={(event) => setCompletionNotes(event.target.value)}
-                placeholder="Optional notes about how it went"
+                placeholder={t(locale, "player.training.notesPlaceholder")}
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button className="btn-ghost !px-4 !py-2 text-xs" onClick={() => setCompleting(null)} disabled={busyId === completing.id}>
-                Cancel
+                {t(locale, "common.cancel")}
               </button>
               <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => updateSession(completing, "complete")} disabled={busyId === completing.id}>
-                {busyId === completing.id ? "Saving..." : "Mark completed"}
+                {busyId === completing.id ? t(locale, "common.saving") : t(locale, "player.training.markCompleted")}
               </button>
             </div>
           </div>

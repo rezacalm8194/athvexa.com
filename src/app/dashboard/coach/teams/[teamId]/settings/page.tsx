@@ -1,15 +1,17 @@
 import { notFound, redirect } from "next/navigation";
-import DashboardNav from "@/components/DashboardNav";
+import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import TeamProfileSettings from "@/components/coach/TeamProfileSettings";
 import { getSession } from "@/lib/session";
 import { requireTeamMembership, teamRoleLabel } from "@/lib/teamContext";
+import { getUserPreferences } from "@/lib/userPreferences";
 
 export default async function TeamSettingsPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = await params;
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.role === "PLAYER") redirect("/dashboard/player");
+  const { locale } = await getUserPreferences(session.sub);
 
   const membership = await requireTeamMembership(session.sub, teamId);
   if (!membership) notFound();
@@ -18,12 +20,8 @@ export default async function TeamSettingsPage({ params }: { params: Promise<{ t
 
   return (
     <main className="min-h-screen bg-ink">
-      <DashboardNav
-        name={session.name}
-        roleLabel={session.role === "COACH" ? "Coach" : "Assistant coach"}
-        settingsHref="/dashboard/coach/settings"
-      />
-      <CoachNav />
+      <ServerDashboardNav name={session.name} locale={locale} settingsHref="/dashboard/coach/settings" />
+      <CoachNav locale={locale} />
       <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Team settings</p>

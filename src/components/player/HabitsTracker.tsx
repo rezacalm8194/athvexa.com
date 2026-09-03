@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { WEEKDAY_LABELS, mondayOf, toKey, todayKey } from "@/lib/week";
+import { mondayOf, toKey, todayKey, weekdayLabels } from "@/lib/week";
+import { t, type Locale } from "@/lib/i18n";
 
 type Habit = {
   id: string;
@@ -15,7 +16,7 @@ type Habit = {
 const ICON_CHOICES = ["💧", "🏃", "🥗", "😴", "🧘", "🩹", "📚", "🦵"];
 const COLOR_CHOICES = ["#4CAF50", "#FFC107", "#2196F3", "#E02020", "#9C27B0", "#00BCD4"];
 
-export default function HabitsTracker() {
+export default function HabitsTracker({ locale }: { locale: Locale }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,7 @@ export default function HabitsTracker() {
   useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const today = todayKey();
+  const labels = weekdayLabels(locale);
 
   async function toggle(habit: Habit, date: string) {
     const has = habit.logs.some((l) => l.date === date);
@@ -86,11 +88,11 @@ export default function HabitsTracker() {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <div className="eyebrow">Phase 2</div>
-          <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Habits</h1>
+          <div className="eyebrow">{t(locale, "common.phase2")}</div>
+          <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">{t(locale, "player.habits.title")}</h1>
         </div>
         <button className="btn-primary !px-4 !py-2 text-xs" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? "Cancel" : "+ New habit"}
+          {showForm ? t(locale, "common.cancel") : t(locale, "player.habits.new")}
         </button>
       </div>
 
@@ -99,12 +101,12 @@ export default function HabitsTracker() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Habit name — e.g. Drink 3L water"
+            placeholder={t(locale, "player.habits.placeholder")}
             className="input-field mb-3"
           />
           <div className="mb-3 flex flex-wrap items-center gap-4">
             <div>
-              <div className="eyebrow mb-1.5">Icon</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.habits.icon")}</div>
               <div className="flex gap-1.5">
                 {ICON_CHOICES.map((i) => (
                   <button
@@ -119,7 +121,7 @@ export default function HabitsTracker() {
               </div>
             </div>
             <div>
-              <div className="eyebrow mb-1.5">Color</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.habits.color")}</div>
               <div className="flex gap-1.5">
                 {COLOR_CHOICES.map((c) => (
                   <button
@@ -133,7 +135,7 @@ export default function HabitsTracker() {
               </div>
             </div>
             <div>
-              <div className="eyebrow mb-1.5">Times / week: {targetDays}</div>
+              <div className="eyebrow mb-1.5">{t(locale, "player.habits.timesPerWeek", { count: targetDays })}</div>
               <input
                 type="range"
                 min={1}
@@ -145,16 +147,16 @@ export default function HabitsTracker() {
             </div>
           </div>
           <button className="btn-primary !px-4 !py-2 text-xs" onClick={createHabit}>
-            Create habit
+            {t(locale, "player.habits.create")}
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="text-sm text-smoke-3">Loading habits…</div>
+        <div className="text-sm text-smoke-3">{t(locale, "player.habits.loading")}</div>
       ) : habits.length === 0 ? (
         <div className="card p-6 text-center text-sm text-smoke-3">
-          No habits yet. Add your first one — small daily wins add up.
+          {t(locale, "player.habits.empty")}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -179,7 +181,7 @@ export default function HabitsTracker() {
                       onClick={() => archive(habit)}
                       className="text-xs text-smoke-3 opacity-0 transition-opacity hover:text-red group-hover:opacity-100"
                     >
-                      Archive
+                      {t(locale, "player.goals.archive")}
                     </button>
                   </div>
                 </div>
@@ -194,7 +196,7 @@ export default function HabitsTracker() {
                         onClick={() => toggle(habit, date)}
                         className="flex flex-1 flex-col items-center gap-1 disabled:opacity-30"
                       >
-                        <span className="text-[9px] uppercase text-smoke-3">{WEEKDAY_LABELS[i]}</span>
+                        <span className="text-[9px] uppercase text-smoke-3">{labels[i]}</span>
                         <span
                           className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
                           style={{

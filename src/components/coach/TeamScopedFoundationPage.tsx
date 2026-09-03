@@ -1,11 +1,13 @@
 import Link from "next/link";
-import DashboardNav from "@/components/DashboardNav";
+import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import { teamRoleLabel } from "@/lib/teamContext";
+import type { Locale } from "@/lib/i18n";
 
 type Props = {
   sessionName: string;
   sessionRole: string;
+  locale: Locale;
   team: {
     id: string;
     name: string;
@@ -18,7 +20,8 @@ type Props = {
 
 export default function TeamScopedFoundationPage({
   sessionName,
-  sessionRole,
+  sessionRole: _sessionRole,
+  locale,
   team,
   membershipRole,
   section,
@@ -26,12 +29,12 @@ export default function TeamScopedFoundationPage({
 }: Props) {
   return (
     <main className="min-h-screen bg-ink">
-      <DashboardNav
+      <ServerDashboardNav
         name={sessionName}
-        roleLabel={sessionRole === "COACH" ? "Coach" : "Assistant coach"}
+        locale={locale}
         settingsHref="/dashboard/coach/settings"
       />
-      <CoachNav />
+      <CoachNav locale={locale} />
       <section className="mx-auto max-w-[1280px] px-6 py-8">
         <div className="eyebrow">Team workspace</div>
         <h1 className="mt-2 font-display text-4xl font-extrabold tracking-wide text-white">{team.name}</h1>

@@ -199,13 +199,12 @@ export default function TeamProfileSettings({
           </select>
         </Field>
         <Field label="Default language">
-          <input
-            className={inputClass}
+          <select
+            className={`${inputClass} bg-ink-2`}
             value={form.defaultLanguage}
             onChange={(event) => updateField("defaultLanguage", event.target.value)}
-            placeholder="en"
             disabled={!canEdit || saving}
-          />
+          ><option value="en">English</option><option value="fa">فارسی</option></select>
         </Field>
         <ReadOnlyField label="Owner" value={ownerName} />
         <ReadOnlyField label="Role" value={roleLabel} />
