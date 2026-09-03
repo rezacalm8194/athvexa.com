@@ -129,6 +129,7 @@
     "contextAssessment": "ارزیابی",
     "contextDailyCheckIn": "چک‌این روزانه",
     "contextProgram": "برنامه",
+    "contextReport": "گزارش پیشرفت",
     "contextTeamInvite": "دعوت به تیم",
     "read": "خوانده‌شده",
     "unread": "خوانده‌نشده",
@@ -581,7 +582,19 @@
       "statusWatch": "تحت نظر",
       "statusAttention": "نیازمند توجه",
       "statusNoData": "بدون داده",
-      "chartTitle": "{date}: آمادگی {readiness}، {checkIns} ثبت وضعیت"
+      "chartTitle": "{date}: آمادگی {readiness}، {checkIns} ثبت وضعیت",
+      "colShare": "ارسال گزارش",
+      "sendToPlayer": "ارسال به حساب بازیکن",
+      "sending": "در حال ارسال…",
+      "sentToPlayer": "گزارش در پیام‌ها و اعلان بازیکن ارسال شد.",
+      "shareError": "ارسال گزارش انجام نشد.",
+      "copyReportLink": "کپی لینک گزارش",
+      "linkCopied": "لینک گزارش کپی شد.",
+      "copyError": "کپی لینک انجام نشد.",
+      "shareAria": "ارسال گزارش پیشرفت {player}",
+      "shareWhatsApp": "ارسال گزارش {player} در واتساپ",
+      "shareTelegram": "ارسال گزارش {player} در تلگرام",
+      "shareMessage": "گزارش پیشرفت {player}: پیشرفت برنامه {progress}٪، آمادگی اخیر {readiness}. گزارش: {link}"
     },
     "invite": {
       "eyebrow": "دعوت‌نامه",

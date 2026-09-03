@@ -129,6 +129,7 @@
     "contextAssessment": "Assessment",
     "contextDailyCheckIn": "Daily check-in",
     "contextProgram": "Program",
+    "contextReport": "Progress report",
     "contextTeamInvite": "Team invitation",
     "read": "Read",
     "unread": "Unread",
@@ -581,7 +582,19 @@
       "statusWatch": "Watch",
       "statusAttention": "Attention",
       "statusNoData": "No data",
-      "chartTitle": "{date}: {readiness} readiness, {checkIns} check-ins"
+      "chartTitle": "{date}: {readiness} readiness, {checkIns} check-ins",
+      "colShare": "Share report",
+      "sendToPlayer": "Send to player account",
+      "sending": "Sending…",
+      "sentToPlayer": "Report sent to the player's messages and notifications.",
+      "shareError": "Could not send the report.",
+      "copyReportLink": "Copy report link",
+      "linkCopied": "Report link copied.",
+      "copyError": "Could not copy the link.",
+      "shareAria": "Share {player}'s progress report",
+      "shareWhatsApp": "Share {player}'s report on WhatsApp",
+      "shareTelegram": "Share {player}'s report on Telegram",
+      "shareMessage": "{player}'s progress report: {progress}% program progress, latest readiness {readiness}. Report: {link}"
     },
     "invite": {
       "eyebrow": "Invitation",

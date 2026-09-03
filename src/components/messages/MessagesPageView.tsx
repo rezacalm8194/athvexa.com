@@ -38,13 +38,14 @@ type ConversationDetail = {
   messages: Message[];
 };
 
-const CONTEXT_TYPES = ["TRAINING_SESSION", "ASSESSMENT", "DAILY_CHECK_IN", "PROGRAM"] as const;
+const CONTEXT_TYPES = ["TRAINING_SESSION", "ASSESSMENT", "DAILY_CHECK_IN", "PROGRAM", "REPORT"] as const;
 
 const CONTEXT_KEYS: Record<(typeof CONTEXT_TYPES)[number], string> = {
   TRAINING_SESSION: "messages.contextTraining",
   ASSESSMENT: "messages.contextAssessment",
   DAILY_CHECK_IN: "messages.contextDailyCheckIn",
   PROGRAM: "messages.contextProgram",
+  REPORT: "messages.contextReport",
 };
 
 function formatTime(value: string, locale: Locale) {

@@ -6,9 +6,10 @@ import KpiCard from "@/components/coach/KpiCard";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
-import { AlertIcon, BarChartIcon, CalendarIcon, ClipboardCheckIcon, UsersIcon } from "@/components/icons";
+import { AlertIcon, BarChartIcon, CalendarIcon, ClipboardCheckIcon, CopyIcon, LinkIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
 import { formatScore } from "@/lib/formatScore";
 import { t, type Locale } from "@/lib/i18n";
+import { useToast } from "@/components/ui/Toast";
 
 type RangeValue = "week" | "month" | "custom";
 type OverallStatus = "Good" | "Watch" | "Attention" | "No data";
@@ -142,6 +143,68 @@ function StatusBadge({ status, locale }: { status: OverallStatus; locale: Locale
           : "bg-white/10 text-smoke-3";
 
   return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${style}`}>{statusLabel(status, locale)}</span>;
+}
+
+function ProgressShareActions({ player, filters, locale }: { player: PlayerProgress; filters: ReportsResponse["filters"]; locale: Locale }) {
+  const { showToast } = useToast();
+  const [sending, setSending] = useState(false);
+  const reportUrl = typeof window === "undefined"
+    ? ""
+    : `${window.location.origin}/dashboard/coach/reports?${new URLSearchParams({ range: "custom", from: filters.from, to: filters.to, playerId: player.id })}`;
+  const progress = player.activeProgram?.progress ?? 0;
+  const message = t(locale, "coach.reports.shareMessage", {
+    player: player.name,
+    progress,
+    readiness: player.latestReadiness ?? t(locale, "coach.reports.noData"),
+    link: reportUrl,
+  });
+
+  async function sendToPlayer() {
+    if (sending) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipientId: player.id, body: message, contextType: "REPORT" }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.reports.shareError"));
+      showToast(t(locale, "coach.reports.sentToPlayer"));
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t(locale, "coach.reports.shareError"), "error");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(reportUrl);
+      showToast(t(locale, "coach.reports.linkCopied"));
+    } catch {
+      showToast(t(locale, "coach.reports.copyError"), "error");
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2" aria-label={t(locale, "coach.reports.shareAria", { player: player.name })}>
+      <button type="button" onClick={sendToPlayer} disabled={sending} className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-red/50 bg-red/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red disabled:cursor-wait disabled:opacity-60">
+        <LinkIcon className="h-4 w-4" />
+        {sending ? t(locale, "coach.reports.sending") : t(locale, "coach.reports.sendToPlayer")}
+      </button>
+      <button type="button" onClick={copyLink} className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-2 px-3 py-2 text-xs font-bold text-smoke-2 transition-colors hover:border-red hover:text-white">
+        <CopyIcon className="h-4 w-4" />
+        {t(locale, "coach.reports.copyReportLink")}
+      </button>
+      <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-2 px-3 py-2 text-xs font-bold text-smoke-2 transition-colors hover:border-[#25D366] hover:text-white" aria-label={t(locale, "coach.reports.shareWhatsApp", { player: player.name })}>
+        <WhatsAppIcon className="h-4 w-4" /> WhatsApp
+      </a>
+      <a href={`https://t.me/share/url?url=${encodeURIComponent(reportUrl)}&text=${encodeURIComponent(message.replace(reportUrl, ""))}`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-2 px-3 py-2 text-xs font-bold text-smoke-2 transition-colors hover:border-[#2AABEE] hover:text-white" aria-label={t(locale, "coach.reports.shareTelegram", { player: player.name })}>
+        <TelegramIcon className="h-4 w-4" /> Telegram
+      </a>
+    </div>
+  );
 }
 
 function MetricTile({ label, value }: { label: string; value: string | number }) {
@@ -411,6 +474,7 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
                       <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colProgramDates")}</th>
                       <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colActiveAssignment")}</th>
                       <th className="px-3 py-3 font-bold">{t(locale, "coach.reports.colOverallStatus")}</th>
+                      <th className="px-3 py-3 text-right font-bold">{t(locale, "coach.reports.colShare")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -466,6 +530,9 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
                         </td>
                         <td className="px-3 py-4">
                           <StatusBadge status={player.overallStatus} locale={locale} />
+                        </td>
+                        <td className="px-3 py-4 text-right">
+                          <ProgressShareActions player={player} filters={data.filters} locale={locale} />
                         </td>
                       </tr>
                     ))}

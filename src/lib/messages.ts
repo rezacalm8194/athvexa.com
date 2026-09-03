@@ -24,6 +24,10 @@ export const MESSAGE_CONTEXTS = {
     label: "Program",
     href: "/dashboard/player/training",
   },
+  REPORT: {
+    label: "Progress report",
+    href: "/dashboard/player",
+  },
   TEAM_INVITE: {
     label: "Team invitation",
     href: "/dashboard/player",
