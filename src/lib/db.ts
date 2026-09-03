@@ -87,6 +87,7 @@ export function ensureDatabase() {
       await ensureSqliteSchema();
     }
     await ensureUserPreferenceColumns();
+    await ensureTeamWorkspaceColumns();
     await ensureAssessmentScoreIsReal();
     const { ensureRezaDemoRoster } = await import("./seedTestRoster");
     await ensureRezaDemoRoster().catch((error) => {
@@ -125,6 +126,27 @@ async function ensureUserPreferenceColumns() {
   }
   if (!columns.some((column) => column.name === "notifyWeeklyEmail")) {
     await sqliteExec(`ALTER TABLE "User" ADD COLUMN "notifyWeeklyEmail" BOOLEAN NOT NULL DEFAULT 0;`);
+  }
+}
+
+async function ensureTeamWorkspaceColumns() {
+  const tables = await db.$queryRawUnsafe<{ name: string }[]>(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Team' LIMIT 1`
+  );
+  if (tables.length === 0) return;
+
+  const teamColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Team");`);
+  for (const [name, type] of [
+    ["dailyReminderEnabled", "BOOLEAN NOT NULL DEFAULT 1"],
+    ["readinessThreshold", "INTEGER NOT NULL DEFAULT 40"],
+    ["sleepThresholdHours", "REAL NOT NULL DEFAULT 6"],
+    ["programVisibility", "TEXT NOT NULL DEFAULT 'ACTIVE_ONLY'"],
+    ["assistantActivityVisible", "BOOLEAN NOT NULL DEFAULT 1"],
+    ["rosterCapacity", "INTEGER NOT NULL DEFAULT 40"],
+  ] as const) {
+    if (!teamColumns.some((column) => column.name === name)) {
+      await sqliteExec(`ALTER TABLE "Team" ADD COLUMN "${name}" ${type};`);
+    }
   }
 }
 
@@ -511,6 +533,12 @@ async function ensureSqliteSchema() {
     ["logo", "TEXT"],
     ["units", "TEXT"],
     ["defaultLanguage", "TEXT"],
+    ["dailyReminderEnabled", "BOOLEAN NOT NULL DEFAULT 1"],
+    ["readinessThreshold", "INTEGER NOT NULL DEFAULT 40"],
+    ["sleepThresholdHours", "REAL NOT NULL DEFAULT 6"],
+    ["programVisibility", "TEXT NOT NULL DEFAULT 'ACTIVE_ONLY'"],
+    ["assistantActivityVisible", "BOOLEAN NOT NULL DEFAULT 1"],
+    ["rosterCapacity", "INTEGER NOT NULL DEFAULT 40"],
   ] as const) {
     if (!teamColumns.some((column) => column.name === name)) {
       await sqliteExec(`ALTER TABLE "Team" ADD COLUMN "${name}" ${type};`);

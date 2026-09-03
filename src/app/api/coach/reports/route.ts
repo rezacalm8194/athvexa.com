@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
+import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 const RANGE_VALUES = ["week", "month", "custom"] as const;
 type RangeValue = (typeof RANGE_VALUES)[number];
@@ -86,6 +87,8 @@ function statusFromSignals({
   fatigue,
   soreness,
   assessmentChange,
+  readinessThreshold,
+  sleepThresholdHours,
 }: {
   hasData: boolean;
   readiness: number | null;
@@ -93,11 +96,13 @@ function statusFromSignals({
   fatigue: number | null;
   soreness: number | null;
   assessmentChange: number | null;
+  readinessThreshold: number;
+  sleepThresholdHours: number;
 }): OverallStatus {
   if (!hasData) return "No data";
   if (
-    (readiness != null && readiness < 40) ||
-    (sleep != null && sleep < 6) ||
+    (readiness != null && readiness < readinessThreshold) ||
+    (sleep != null && sleep < sleepThresholdHours) ||
     (fatigue != null && fatigue >= 4) ||
     (soreness != null && soreness >= 4)
   ) {
@@ -105,8 +110,8 @@ function statusFromSignals({
   }
   if (
     (assessmentChange != null && assessmentChange <= -10) ||
-    (readiness != null && readiness >= 40 && readiness <= 59) ||
-    (sleep != null && sleep >= 6 && sleep <= 7)
+    (readiness != null && readiness >= readinessThreshold && readiness <= readinessThreshold + 19) ||
+    (sleep != null && sleep >= sleepThresholdHours && sleep <= sleepThresholdHours + 1)
   ) {
     return "Watch";
   }
@@ -118,6 +123,7 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const { teamOwnerId } = auth;
+  const workspace = await getTeamWorkspaceByCoachId(teamOwnerId);
   const { range, from, to } = resolveRange(req);
   const requestedPlayerId = req.nextUrl.searchParams.get("playerId")?.trim() ?? "";
 
@@ -236,8 +242,10 @@ export async function GET(req: NextRequest) {
       const todayLog = todayByPlayer.get(player.id);
       let reason = "";
       if (!todayLog) reason = "No check-in today";
-      else if (todayLog.score < 40) reason = "Readiness below 40";
-      else if (todayLog.sleepHours != null && todayLog.sleepHours < 6) reason = "Sleep below 6 hours";
+      else if (todayLog.score < workspace.readinessThreshold) reason = `Readiness below ${workspace.readinessThreshold}`;
+      else if (todayLog.sleepHours != null && todayLog.sleepHours < workspace.sleepThresholdHours) {
+        reason = `Sleep below ${workspace.sleepThresholdHours} hours`;
+      }
       else if (todayLog.fatigue != null && todayLog.fatigue >= 4) reason = "High fatigue";
       else if (todayLog.soreness != null && todayLog.soreness >= 4) reason = "High soreness";
 
@@ -320,6 +328,8 @@ export async function GET(req: NextRequest) {
         fatigue: latestLog?.fatigue ?? null,
         soreness: latestLog?.soreness ?? null,
         assessmentChange,
+        readinessThreshold: workspace.readinessThreshold,
+        sleepThresholdHours: workspace.sleepThresholdHours,
       }),
       profileHref: coachPlayerProfileHref(player.id),
       assessmentHref: latestAssessment

@@ -4,11 +4,12 @@ import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { inviteStatus } from "@/lib/invites";
 import { getTeamOwnerId } from "@/lib/teamContext";
+import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
-function statusFor(score: number) {
+function statusFor(score: number, readinessThreshold: number) {
   if (score >= 80) return { label: "Excellent", tone: "good" as const };
   if (score >= 60) return { label: "Ready", tone: "good" as const };
-  if (score >= 40) return { label: "Fatigued", tone: "warn" as const };
+  if (score >= readinessThreshold) return { label: "Fatigued", tone: "warn" as const };
   return { label: "Needs attention", tone: "bad" as const };
 }
 
@@ -25,6 +26,7 @@ export async function GET() {
   });
 
   const teamOwnerId = await getTeamOwnerId(session.sub);
+  const workspace = await getTeamWorkspaceByCoachId(teamOwnerId);
 
   const date = new Date().toISOString().slice(0, 10);
 
@@ -50,7 +52,7 @@ export async function GET() {
         player: { select: { id: true, name: true } },
       },
     }),
-    session.role === "COACH"
+    workspace.assistantActivityVisible && session.role === "COACH"
       ? db.notification.findMany({
           where: { userId: session.sub, type: "ASSISTANT_ACTIVITY" },
           orderBy: { createdAt: "desc" },
@@ -64,7 +66,7 @@ export async function GET() {
     const today = p.dailyLogs[0];
     const loggedToday = Boolean(today);
     const score = today?.score ?? 0;
-    const { tone, label } = statusFor(score);
+    const { tone, label } = statusFor(score, workspace.readinessThreshold);
     const needsAttention = !loggedToday || tone === "bad";
     return { id: p.id, name: p.name, loggedToday, score, tone, label, needsAttention };
   });
@@ -92,7 +94,7 @@ export async function GET() {
         score: log.score,
         date: log.date,
         updatedAt: log.updatedAt,
-        tone: statusFor(log.score).tone,
+        tone: statusFor(log.score, workspace.readinessThreshold).tone,
       })),
       ...assistantActivity.map((activity) => ({
         id: activity.id,

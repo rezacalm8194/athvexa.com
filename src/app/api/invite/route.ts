@@ -6,6 +6,7 @@ import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
+import { rosterUsage } from "@/lib/teamWorkspace";
 
 const schema = z.object({
   role: z.enum(["PLAYER", "ASSISTANT", "COACH"]).default("PLAYER"),
@@ -61,6 +62,16 @@ export async function POST(req: NextRequest) {
       { error: "Set up your team before inviting players or assistants" },
       { status: 400 }
     );
+  }
+
+  if (role === "PLAYER") {
+    const roster = await rosterUsage(teamOwnerId);
+    if (roster.remaining < 1) {
+      return NextResponse.json(
+        { error: `Roster is full (${roster.used}/${roster.capacity} players).` },
+        { status: 400 }
+      );
+    }
   }
 
   const invite = await db.invite.create({

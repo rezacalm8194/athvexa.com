@@ -1,6 +1,7 @@
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
 import { allowsNotificationType, getCoachNotificationPrefs } from "@/lib/userPreferences";
+import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 export type NotificationInput = {
   userId: string;
@@ -94,6 +95,9 @@ export async function notifyOwnerOfAssistantAction({
 }) {
   if (actorRole !== "ASSISTANT") return null;
 
+  const workspace = await getTeamWorkspaceByCoachId(ownerId);
+  if (!workspace.assistantActivityVisible) return null;
+
   return createNotification({
     userId: ownerId,
     title,
@@ -106,12 +110,14 @@ export async function notifyOwnerOfAssistantAction({
 
 export async function ensurePlayerReminderNotifications(userId: string) {
   const date = todayKey();
+  const player = await db.user.findUnique({ where: { id: userId }, select: { coachId: true } });
+  const workspace = await getTeamWorkspaceByCoachId(player?.coachId);
   const log = await db.dailyLog.findUnique({
     where: { playerId_date: { playerId: userId, date } },
     select: { id: true, score: true, sleepHours: true, fatigue: true, soreness: true, mood: true },
   });
   const hasCheckIn = Boolean(log && [log.sleepHours, log.fatigue, log.soreness, log.mood].some((value) => value != null));
-  if (!hasCheckIn) {
+  if (!hasCheckIn && workspace.dailyReminderEnabled) {
     await createNotification({
       userId,
       title: "Complete today's check-in",

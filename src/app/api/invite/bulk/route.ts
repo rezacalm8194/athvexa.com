@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
+import { rosterUsage } from "@/lib/teamWorkspace";
 
 const schema = z.object({
   contacts: z.array(z.string().trim().min(1)).min(1).max(100),
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
   if (!membership || membership.team.coachId !== teamOwnerId) {
     return NextResponse.json({ error: "Set up your team before inviting players" }, { status: 400 });
   }
+
+  const roster = await rosterUsage(teamOwnerId);
+  let remaining = roster.remaining;
 
   const seen = new Set<string>();
   const results: Array<{ contact: string; status: "created" | "duplicate" | "invalid"; url?: string }> = [];
@@ -75,6 +79,10 @@ export async function POST(req: NextRequest) {
       results.push({ contact: raw, status: "duplicate", url: buildInviteUrl(existing.token, req) });
       continue;
     }
+    if (remaining < 1) {
+      results.push({ contact: raw, status: "invalid" });
+      continue;
+    }
     const invite = await db.invite.create({
       data: {
         token: nanoid(12),
@@ -86,6 +94,7 @@ export async function POST(req: NextRequest) {
         expiresAt,
       },
     });
+    remaining -= 1;
     results.push({ contact: raw, status: "created", url: buildInviteUrl(invite.token, req) });
   }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -15,13 +16,15 @@ export async function GET() {
   }
 
   await ensureDatabase();
+  const player = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
+  const workspace = await getTeamWorkspaceByCoachId(player?.coachId);
   const today = todayKey();
 
   const assignment = await db.programAssignment.findFirst({
     where: {
       playerId: session.sub,
       program: {
-        status: "ACTIVE",
+        status: workspace.programVisibility === "ALL" ? { in: ["ACTIVE", "ARCHIVED"] } : "ACTIVE",
         OR: [
           { startDate: null },
           { startDate: { lte: today } },

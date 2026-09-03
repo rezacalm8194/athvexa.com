@@ -70,6 +70,12 @@ model Team {
   logo            String?
   units           String?
   defaultLanguage String?
+  dailyReminderEnabled     Boolean @default(true)
+  readinessThreshold       Int     @default(40)
+  sleepThresholdHours      Float   @default(6)
+  programVisibility        String  @default("ACTIVE_ONLY")
+  assistantActivityVisible Boolean @default(true)
+  rosterCapacity           Int     @default(40)
   coachId         String?
   coach           User?    @relation("TeamOwner", fields: [coachId], references: [id])
   members         TeamMember[]

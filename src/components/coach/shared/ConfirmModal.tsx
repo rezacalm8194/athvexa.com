@@ -7,6 +7,7 @@ export default function ConfirmModal({
   title,
   description,
   confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   danger = true,
   busy = false,
   onConfirm,
@@ -16,6 +17,7 @@ export default function ConfirmModal({
   title: string;
   description: string;
   confirmLabel?: string;
+  cancelLabel?: string;
   danger?: boolean;
   busy?: boolean;
   onConfirm: () => void;
@@ -45,7 +47,7 @@ export default function ConfirmModal({
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onCancel} className="btn-ghost !px-4 !py-2 text-xs" disabled={busy}>
-            Cancel
+            {cancelLabel}
           </button>
           <button
             onClick={onConfirm}

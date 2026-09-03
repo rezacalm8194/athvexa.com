@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { createNotification, todayKey } from "@/lib/notifications";
+import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 const checkInSchema = z.object({
   readiness: z.number({ invalid_type_error: "Readiness is required." }).int("Readiness must be a whole number.").min(1, "Readiness must be at least 1.").max(10, "Readiness must be 10 or less."),
@@ -112,6 +113,7 @@ export async function PUT(req: NextRequest) {
 
   const player = await db.user.findUnique({ where: { id: session.sub }, select: { name: true, coachId: true } });
   if (player?.coachId) {
+    const workspace = await getTeamWorkspaceByCoachId(player.coachId);
     await createNotification({
       userId: player.coachId,
       title: "Player submitted check-in",
@@ -121,7 +123,7 @@ export async function PUT(req: NextRequest) {
       relatedId: log.id,
       dedupeKey: `check-in-submitted:${player.coachId}:${session.sub}:${date}`,
     });
-    if (data.score < 40) {
+    if (data.score < workspace.readinessThreshold) {
       await createNotification({
         userId: player.coachId,
         title: "Player readiness is low",
