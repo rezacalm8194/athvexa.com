@@ -44,7 +44,7 @@ function formatDate(value: string | null, locale: Locale, emptyLabel: string) {
 }
 
 function playerStatus(player: Player): PlayerStatus {
-  if (!player.latestCheckIn) return "not_checked_in";
+  if (!player.loggedToday) return "not_checked_in";
   return player.tone === "bad" || player.tone === "warn" ? "attention" : "ready";
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
+import { getCurrentTeamMembership, listRosterPlayers } from "@/lib/teamContext";
 import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 const RANGE_VALUES = ["week", "month", "custom"] as const;
@@ -122,16 +123,13 @@ export async function GET(req: NextRequest) {
   const auth = await requireCoachApi();
   if (auth.error) return auth.error;
 
-  const { teamOwnerId } = auth;
+  const { teamOwnerId, session } = auth;
+  const membership = await getCurrentTeamMembership(session.sub);
   const workspace = await getTeamWorkspaceByCoachId(teamOwnerId);
   const { range, from, to } = resolveRange(req);
   const requestedPlayerId = req.nextUrl.searchParams.get("playerId")?.trim() ?? "";
 
-  const allPlayers = await db.user.findMany({
-    where: { coachId: teamOwnerId, role: "PLAYER" },
-    select: { id: true, name: true, email: true },
-    orderBy: { name: "asc" },
-  });
+  const allPlayers = await listRosterPlayers(teamOwnerId, membership?.teamId);
 
   const selectedPlayer = requestedPlayerId ? allPlayers.find((player) => player.id === requestedPlayerId) : null;
   if (requestedPlayerId && !selectedPlayer) {

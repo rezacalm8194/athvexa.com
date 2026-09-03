@@ -48,6 +48,13 @@
     "inviteJoinPlayer": "Join {team} on Athvexa",
     "inviteStaffSubtitle": "Create your {role} account to help manage the roster.",
     "invitePlayerSubtitle": "Create your player account to get today's training and check in.",
+    "inviteSignedInSubtitle": "Join {team} from this account.",
+    "inviteAccept": "Join this team",
+    "inviteAccepting": "Joining…",
+    "inviteAcceptHint": "You will join {team} and receive messages from your coach in this account.",
+    "inviteAlreadyMember": "You are already on {team}.",
+    "inviteOpenDashboard": "Open player dashboard",
+    "inviteAcceptFailed": "Could not accept this invitation. Ask your coach for a new link.",
     "namePhPlayer": "Ali Hassan",
     "namePhCoach": "Coach Ali",
     "namePhAssistant": "Assistant name",
@@ -122,6 +129,7 @@
     "contextAssessment": "Assessment",
     "contextDailyCheckIn": "Daily check-in",
     "contextProgram": "Program",
+    "contextTeamInvite": "Team invitation",
     "read": "Read",
     "unread": "Unread",
     "sendingWithContext": "Sending with context: {context}",
@@ -163,6 +171,18 @@
       },
       "assistantActivity": {
         "fallbackTitle": "Assistant activity"
+      },
+      "teamInvite": {
+        "title": "Team invitation",
+        "body": "{coach} invited you to join {team}."
+      },
+      "programAssigned": {
+        "title": "New program assigned",
+        "body": "{coach} assigned {program} to you."
+      },
+      "programUpdated": {
+        "title": "Program updated",
+        "body": "{coach} updated {program}."
       }
     }
   },
@@ -327,6 +347,15 @@
       "kpiReportsToday": "Reports submitted today",
       "kpiNeedsAttention": "Players requiring attention",
       "teamRoster": "Team roster",
+      "performanceTitle": "Player performance",
+      "colReadiness": "Today's readiness",
+      "colProgram": "Active program",
+      "noProgram": "No active program",
+      "performanceTitle": "Player performance",
+      "colReadiness": "Today's readiness",
+      "colProgram": "Active program",
+      "noProgram": "No active program",
+      "openReports": "Open full reports",
       "quickActions": "Quick actions",
       "invitePlayer": "Invite a player",
       "viewPlayers": "View players",

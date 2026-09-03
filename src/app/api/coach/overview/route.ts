@@ -3,7 +3,7 @@ import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { inviteStatus } from "@/lib/invites";
-import { getTeamOwnerId } from "@/lib/teamContext";
+import { getCurrentTeamMembership, getTeamOwnerId, listRosterPlayers } from "@/lib/teamContext";
 import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 function statusFor(score: number, readinessThreshold: number) {
@@ -26,32 +26,41 @@ export async function GET() {
   });
 
   const teamOwnerId = await getTeamOwnerId(session.sub);
+  const membership = await getCurrentTeamMembership(session.sub);
   const workspace = await getTeamWorkspaceByCoachId(teamOwnerId);
 
   const date = new Date().toISOString().slice(0, 10);
+  const rosterPlayers = await listRosterPlayers(teamOwnerId, membership?.teamId);
 
-  const [players, invites, recentLogs, assistantActivity] = await Promise.all([
-    db.user.findMany({
-      where: { coachId: teamOwnerId, role: "PLAYER" },
-      select: {
-        id: true,
-        name: true,
-        dailyLogs: { where: { date }, select: { score: true } },
-      },
-    }),
+  const rosterIds = rosterPlayers.map((player) => player.id);
+
+  const [players, invites, recentLogs, assistantActivity, assignments] = await Promise.all([
+    rosterIds.length
+      ? db.user.findMany({
+          where: { id: { in: rosterIds } },
+          select: {
+            id: true,
+            name: true,
+            dailyLogs: { where: { date }, select: { score: true } },
+          },
+          orderBy: { name: "asc" },
+        })
+      : Promise.resolve([]),
     db.invite.findMany({ where: { coachId: teamOwnerId } }),
-    db.dailyLog.findMany({
-      where: { player: { coachId: teamOwnerId } },
-      orderBy: { updatedAt: "desc" },
-      take: 8,
-      select: {
-        id: true,
-        score: true,
-        date: true,
-        updatedAt: true,
-        player: { select: { id: true, name: true } },
-      },
-    }),
+    rosterIds.length
+      ? db.dailyLog.findMany({
+          where: { playerId: { in: rosterIds } },
+          orderBy: { updatedAt: "desc" },
+          take: 8,
+          select: {
+            id: true,
+            score: true,
+            date: true,
+            updatedAt: true,
+            player: { select: { id: true, name: true } },
+          },
+        })
+      : Promise.resolve([]),
     workspace.assistantActivityVisible && session.role === "COACH"
       ? db.notification.findMany({
           where: { userId: session.sub, type: "ASSISTANT_ACTIVITY" },
@@ -60,7 +69,21 @@ export async function GET() {
           select: { id: true, title: true, description: true, actionHref: true, createdAt: true },
         })
       : Promise.resolve([]),
+    rosterIds.length
+      ? db.programAssignment.findMany({
+          where: { playerId: { in: rosterIds }, program: { status: "ACTIVE" } },
+          orderBy: { assignedAt: "desc" },
+          select: { playerId: true, program: { select: { id: true, name: true } } },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const activeProgramByPlayer = new Map<string, { id: string; name: string }>();
+  for (const assignment of assignments) {
+    if (!activeProgramByPlayer.has(assignment.playerId)) {
+      activeProgramByPlayer.set(assignment.playerId, assignment.program);
+    }
+  }
 
   const enriched = players.map((p) => {
     const today = p.dailyLogs[0];
@@ -68,7 +91,18 @@ export async function GET() {
     const score = today?.score ?? 0;
     const { tone, label } = statusFor(score, workspace.readinessThreshold);
     const needsAttention = !loggedToday || tone === "bad";
-    return { id: p.id, name: p.name, loggedToday, score, tone, label, needsAttention };
+    const program = activeProgramByPlayer.get(p.id) ?? null;
+    return {
+      id: p.id,
+      name: p.name,
+      loggedToday,
+      score,
+      tone,
+      label,
+      needsAttention,
+      activeProgram: program,
+      profileHref: coachPlayerProfileHref(p.id),
+    };
   });
 
   const activePlayers = players.length;
@@ -84,6 +118,7 @@ export async function GET() {
       needsAttention: playersNeedingAttention.length,
     },
     playersNeedingAttention: playersNeedingAttention.slice(0, 6),
+    playerSummaries: enriched,
     recentActivity: [
       ...recentLogs.map((log) => ({
         id: log.id,

@@ -78,6 +78,29 @@ export async function getAccessibleTeams(userId: string) {
   });
 }
 
+export async function listRosterPlayers(teamOwnerId: string, teamId?: string | null) {
+  const [byCoach, members] = await Promise.all([
+    db.user.findMany({
+      where: { coachId: teamOwnerId, role: "PLAYER" },
+      select: { id: true, name: true, email: true, phone: true },
+      orderBy: { name: "asc" },
+    }),
+    teamId
+      ? db.teamMember.findMany({
+          where: { teamId, role: "PLAYER" },
+          select: { user: { select: { id: true, name: true, email: true, phone: true } } },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const map = new Map<string, { id: string; name: string; email: string | null; phone: string | null }>();
+  for (const player of byCoach) map.set(player.id, player);
+  for (const member of members) {
+    if (member.user) map.set(member.user.id, member.user);
+  }
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function getCurrentTeamMembership(userId: string) {
   const memberships = await getAccessibleTeams(userId);
   if (memberships.length === 0) return null;

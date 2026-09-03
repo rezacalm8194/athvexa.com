@@ -3,8 +3,9 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
-import { buildInviteUrl } from "@/lib/invites";
+import { buildInviteUrl, normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
+import { deliverInviteToExistingUser } from "@/lib/playerInbox";
 import { rosterUsage } from "@/lib/teamWorkspace";
 
 const schema = z.object({
@@ -15,11 +16,10 @@ const schema = z.object({
 
 function parseContact(value: string) {
   const normalized = value.trim();
-  if (z.string().email().safeParse(normalized.toLowerCase()).success) {
-    return { email: normalized.toLowerCase(), phone: null };
-  }
-  const phone = normalized.replace(/[\s()-]/g, "");
-  if (/^\+?[1-9]\d{7,14}$/.test(phone)) return { email: null, phone };
+  const email = normalizeInviteEmail(normalized);
+  if (email) return { email, phone: null };
+  const phone = normalizeInvitePhone(normalized);
+  if (phone) return { email: null, phone };
   return null;
 }
 
@@ -96,6 +96,12 @@ export async function POST(req: NextRequest) {
     });
     remaining -= 1;
     results.push({ contact: raw, status: "created", url: buildInviteUrl(invite.token, req) });
+    await deliverInviteToExistingUser({
+      invite,
+      actorId: session.sub,
+      actorName: session.name,
+      teamName: membership.team.name,
+    });
   }
 
   return NextResponse.json({

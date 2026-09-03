@@ -3,9 +3,10 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
-import { buildInviteUrl } from "@/lib/invites";
+import { buildInviteUrl, normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
+import { deliverInviteToExistingUser } from "@/lib/playerInbox";
 import { rosterUsage } from "@/lib/teamWorkspace";
 
 const schema = z.object({
@@ -31,8 +32,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid invitation details" }, { status: 400 });
   }
   const role = parsed.data.role;
-  const email = parsed.data.email || null;
-  const phone = parsed.data.phone || null;
+  const email = normalizeInviteEmail(parsed.data.email);
+  let phone: string | null = null;
+  if (parsed.data.phone) {
+    phone = normalizeInvitePhone(parsed.data.phone);
+    if (!phone) {
+      const stripped = parsed.data.phone.replace(/[\s()-]/g, "");
+      phone = stripped || null;
+    }
+  }
   const expiresAt = parsed.data.expiresAt
     ? new Date(parsed.data.expiresAt)
     : new Date(Date.now() + 1000 * 60 * 60 * 24 * (parsed.data.expiresInDays ?? 14));
@@ -97,6 +105,13 @@ export async function POST(req: NextRequest) {
     relatedId: invite.id,
   });
 
+  const delivery = await deliverInviteToExistingUser({
+    invite,
+    actorId: session.sub,
+    actorName: session.name,
+    teamName: membership.team.name,
+  });
+
   return NextResponse.json({
     id: invite.id,
     url: buildInviteUrl(invite.token, req),
@@ -107,5 +122,7 @@ export async function POST(req: NextRequest) {
     useCount: invite.useCount,
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
+    notifiedExistingPlayer: delivery.notified,
+    joinedExistingPlayer: delivery.joined,
   });
 }

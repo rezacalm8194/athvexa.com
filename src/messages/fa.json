@@ -48,6 +48,13 @@
     "inviteJoinPlayer": "به تیم {team} در اَت‌وِکسا بپیوندید",
     "inviteStaffSubtitle": "حساب {role} خود را بسازید تا در مدیریت فهرست کمک کنید.",
     "invitePlayerSubtitle": "حساب بازیکن خود را بسازید تا تمرین امروز را بگیرید و وضعیت ثبت کنید.",
+    "inviteSignedInSubtitle": "با همین حساب به تیم {team} بپیوندید.",
+    "inviteAccept": "پیوستن به این تیم",
+    "inviteAccepting": "در حال پیوستن…",
+    "inviteAcceptHint": "به تیم {team} اضافه می‌شوید و پیام مربی در همین حساب می‌آید.",
+    "inviteAlreadyMember": "شما از قبل عضو تیم {team} هستید.",
+    "inviteOpenDashboard": "باز کردن داشبورد بازیکن",
+    "inviteAcceptFailed": "پذیرش این دعوت انجام نشد. از مربی لینک جدید بخواهید.",
     "namePhPlayer": "علی حسن",
     "namePhCoach": "مربی علی",
     "namePhAssistant": "نام دستیار",
@@ -122,6 +129,7 @@
     "contextAssessment": "ارزیابی",
     "contextDailyCheckIn": "چک‌این روزانه",
     "contextProgram": "برنامه",
+    "contextTeamInvite": "دعوت به تیم",
     "read": "خوانده‌شده",
     "unread": "خوانده‌نشده",
     "sendingWithContext": "ارسال با زمینه: {context}",
@@ -163,6 +171,18 @@
       },
       "assistantActivity": {
         "fallbackTitle": "فعالیت دستیار"
+      },
+      "teamInvite": {
+        "title": "دعوت به تیم",
+        "body": "{coach} شما را به تیم {team} دعوت کرد."
+      },
+      "programAssigned": {
+        "title": "برنامه جدید اختصاص داده شد",
+        "body": "{coach} برنامه {program} را برای شما تعیین کرد."
+      },
+      "programUpdated": {
+        "title": "برنامه به‌روز شد",
+        "body": "{coach} برنامه {program} را به‌روز کرد."
       }
     }
   },
@@ -327,6 +347,15 @@
       "kpiReportsToday": "گزارش‌های ثبت‌شده امروز",
       "kpiNeedsAttention": "بازیکنان نیازمند توجه",
       "teamRoster": "فهرست تیم",
+      "performanceTitle": "خلاصه عملکرد بازیکنان",
+      "colReadiness": "آمادگی امروز",
+      "colProgram": "برنامه فعال",
+      "noProgram": "برنامه فعال نیست",
+      "performanceTitle": "خلاصه عملکرد بازیکنان",
+      "colReadiness": "آمادگی امروز",
+      "colProgram": "برنامه فعال",
+      "noProgram": "برنامه فعال نیست",
+      "openReports": "گزارش کامل",
       "quickActions": "اقدامات سریع",
       "invitePlayer": "دعوت بازیکن",
       "viewPlayers": "مشاهده بازیکنان",

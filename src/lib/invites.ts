@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { normalizeEmail, normalizePhone } from "@/lib/contact";
 
 /**
  * Resolves the public base URL used to build shareable invite links.
@@ -53,4 +54,22 @@ export function inviteStatus(invite: InviteRow): InviteStatus {
   if (invite.revoked) return "revoked";
   if (invite.expiresAt <= new Date()) return "expired";
   return "pending";
+}
+
+export function normalizeInviteEmail(value?: string | null) {
+  if (!value) return null;
+  const email = normalizeEmail(value);
+  return email || null;
+}
+
+export function normalizeInvitePhone(value?: string | null) {
+  if (!value) return null;
+  const phone = normalizePhone(value);
+  return /^\+[1-9]\d{9,14}$/.test(phone) ? phone : null;
+}
+
+export function inviteRoleToTeamRole(role: string) {
+  if (role === "COACH") return "HEAD_COACH";
+  if (role === "ASSISTANT") return "ASSISTANT_COACH";
+  return "PLAYER";
 }

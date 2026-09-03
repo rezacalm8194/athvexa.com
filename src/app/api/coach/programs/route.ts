@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
-import { createManyNotifications, notifyOwnerOfAssistantAction } from "@/lib/notifications";
+import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
+import { notifyPlayerOfProgramAssignment } from "@/lib/playerInbox";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -149,16 +150,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  await createManyNotifications(
-    validPlayerIds.map((playerId) => ({
-      userId: playerId,
-      title: "New program assigned",
-      description: `${program.name} has been assigned to you.`,
-      type: "PROGRAM_ASSIGNED",
-      actionHref: "/dashboard/player/training",
-      relatedId: program.id,
-      dedupeKey: `program-assigned:${program.id}:${playerId}`,
-    }))
+  await Promise.all(
+    validPlayerIds.map((playerId) =>
+      notifyPlayerOfProgramAssignment({
+        playerId,
+        coachId: session.sub,
+        coachName: session.name,
+        programId: program.id,
+        programName: program.name,
+        isNew: true,
+      })
+    )
   );
 
   await notifyOwnerOfAssistantAction({

@@ -139,7 +139,7 @@ export default function RegisterForm({
       </button>
       <p className="text-center text-sm text-smoke-3">
         {t(locale, "auth.alreadyHaveAccount")}{" "}
-        <a href="/login" className="text-white hover:text-red-glow">
+        <a href={inviteToken ? `/login?next=/invite/${inviteToken}` : "/login"} className="text-white hover:text-red-glow">
           {t(locale, "auth.signIn")}
         </a>
       </p>

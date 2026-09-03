@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
 
 export default function LoginForm({ locale }: { locale: Locale }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next");
   const passwordRef = useRef<HTMLInputElement>(null);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +38,8 @@ export default function LoginForm({ locale }: { locale: Locale }) {
         }
         return;
       }
-      router.push(!data.user?.onboardingCompletedAt ? "/onboarding/preferences" : data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      const fallback = !data.user?.onboardingCompletedAt ? "/onboarding/preferences" : data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach";
+      router.push(nextPath?.startsWith("/") ? nextPath : fallback);
       router.refresh();
     } catch {
       setError(t(locale, "auth.loginFailed"));

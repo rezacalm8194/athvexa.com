@@ -3,6 +3,9 @@ import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { hashPassword, signSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { normalizeEmail, normalizePhone } from "@/lib/contact";
+import { consumeInvite } from "@/lib/inviteActions";
+import { inviteRoleToTeamRole } from "@/lib/invites";
+import { notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
 
 const schema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -45,9 +48,14 @@ export async function POST(req: NextRequest) {
     let inviteTeamId: string | null = null;
     let inviteLocale = "en";
     let inviteTimeZone: string | null = null;
+    let inviteCoachName = "";
+    let inviteTeamName = "";
 
     if (inviteToken) {
-      const invite = await db.invite.findUnique({ where: { token: inviteToken } });
+      const invite = await db.invite.findUnique({
+        where: { token: inviteToken },
+        include: { coach: { select: { name: true } } },
+      });
       const isValid = Boolean(invite && !invite.revoked && invite.useCount < invite.maxUses && invite.expiresAt > new Date());
       if (!invite || !isValid) {
         return NextResponse.json(
@@ -61,10 +69,17 @@ export async function POST(req: NextRequest) {
       coachId = invite.coachId;
       inviteIdToLink = invite.id;
       inviteTeamId = invite.teamId;
+      inviteCoachName = invite.coach.name;
       if (invite.teamId) {
-        const team = await db.team.findUnique({ where: { id: invite.teamId }, select: { defaultLanguage: true, timeZone: true } });
+        const team = await db.team.findUnique({
+          where: { id: invite.teamId },
+          select: { defaultLanguage: true, timeZone: true, name: true },
+        });
         inviteLocale = team?.defaultLanguage === "fa" ? "fa" : "en";
         inviteTimeZone = team?.timeZone ?? null;
+        inviteTeamName = team?.name ?? invite.coach.name;
+      } else {
+        inviteTeamName = invite.coach.name;
       }
     } else if (role === "ASSISTANT") {
       // Assistant accounts can only be created through a coach's invite link.
@@ -88,25 +103,24 @@ export async function POST(req: NextRequest) {
     });
 
     if (inviteIdToLink) {
-      const inviteToUse = await db.invite.findUniqueOrThrow({ where: { id: inviteIdToLink } });
-      const nextUseCount = inviteToUse.useCount + 1;
-      await db.invite.update({
-        where: { id: inviteIdToLink },
-        data: {
-          useCount: { increment: 1 },
-          usedAt: nextUseCount >= inviteToUse.maxUses ? new Date() : null,
-          acceptedUserId: user.id,
-        },
-      });
+      await consumeInvite(inviteIdToLink, user.id);
       if (inviteTeamId) {
         await db.teamMember.upsert({
           where: { teamId_userId: { teamId: inviteTeamId, userId: user.id } },
-          update: { role: role === "COACH" ? "HEAD_COACH" : role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER" },
+          update: { role: inviteRoleToTeamRole(role) },
           create: {
             teamId: inviteTeamId,
             userId: user.id,
-            role: role === "COACH" ? "HEAD_COACH" : role === "ASSISTANT" ? "ASSISTANT_COACH" : "PLAYER",
+            role: inviteRoleToTeamRole(role),
           },
+        });
+      }
+      if (role === "PLAYER" && coachId) {
+        await notifyPlayerOfTeamInvite({
+          playerId: user.id,
+          coachId,
+          coachName: inviteCoachName,
+          teamName: inviteTeamName || inviteCoachName,
         });
       }
     }

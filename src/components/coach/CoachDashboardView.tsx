@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import KpiCard from "@/components/coach/KpiCard";
 import EmptyRosterState from "@/components/coach/EmptyRosterState";
 import QuickActions from "@/components/coach/QuickActions";
@@ -14,6 +15,16 @@ import { t, type Locale } from "@/lib/i18n";
 type Overview = {
   kpis: { activePlayers: number; pendingInvitations: number; reportsToday: number; needsAttention: number };
   playersNeedingAttention: { id: string; name: string; loggedToday: boolean; score: number; label: string }[];
+  playerSummaries: {
+    id: string;
+    name: string;
+    loggedToday: boolean;
+    score: number;
+    label: string;
+    tone: "good" | "warn" | "bad";
+    activeProgram: { id: string; name: string } | null;
+    profileHref: string;
+  }[];
   recentActivity: {
     id: string;
     kind?: "CHECK_IN" | "ASSISTANT_ACTIVITY";
@@ -134,6 +145,40 @@ export default function CoachDashboardView({
           {hasPlayers && (
             <>
               <PlayersAttention players={overview?.playersNeedingAttention ?? null} loading={!overview} locale={locale} />
+              <div className="card p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.dashboard.performanceTitle")}</h2>
+                  <Link href="/dashboard/coach/reports" className="text-xs font-medium text-red hover:text-red-glow">
+                    {t(locale, "coach.dashboard.viewReports")}
+                  </Link>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-left text-sm">
+                    <thead className="text-xs uppercase tracking-wide text-smoke-4">
+                      <tr className="border-b border-line-1">
+                        <th className="px-2 py-2 font-bold">{t(locale, "coach.reports.colPlayer")}</th>
+                        <th className="px-2 py-2 font-bold">{t(locale, "coach.dashboard.colReadiness")}</th>
+                        <th className="px-2 py-2 font-bold">{t(locale, "coach.dashboard.colProgram")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(overview?.playerSummaries ?? []).map((player) => (
+                        <tr key={player.id} className="border-b border-line-1 last:border-b-0">
+                          <td className="px-2 py-3">
+                            <Link className="font-semibold text-white hover:text-red-glow" href={player.profileHref}>
+                              {player.name}
+                            </Link>
+                          </td>
+                          <td className="px-2 py-3 text-smoke-2">
+                            {player.loggedToday ? `${player.score} · ${player.label}` : t(locale, "coach.dashboard.hasntCheckedIn")}
+                          </td>
+                          <td className="px-2 py-3 text-smoke-2">{player.activeProgram?.name ?? t(locale, "coach.dashboard.noProgram")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
               <div className="card p-5">
                 <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.dashboard.teamRoster")}</h2>
                 <TeamRosterList

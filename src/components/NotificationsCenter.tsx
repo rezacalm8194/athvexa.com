@@ -44,6 +44,21 @@ function resolveNotificationText(item: Notification, locale: Locale): { title: s
         description: t(locale, "notifications.types.playerNoCheckIn.body", { name }),
       };
     }
+    case "TEAM_INVITE":
+      return {
+        title: t(locale, "notifications.types.teamInvite.title"),
+        description: item.description,
+      };
+    case "PROGRAM_ASSIGNED":
+      return {
+        title: t(locale, "notifications.types.programAssigned.title"),
+        description: item.description,
+      };
+    case "PROGRAM_UPDATED":
+      return {
+        title: t(locale, "notifications.types.programUpdated.title"),
+        description: item.description,
+      };
     default:
       return {
         title:

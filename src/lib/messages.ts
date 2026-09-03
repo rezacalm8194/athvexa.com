@@ -24,6 +24,10 @@ export const MESSAGE_CONTEXTS = {
     label: "Program",
     href: "/dashboard/player/training",
   },
+  TEAM_INVITE: {
+    label: "Team invitation",
+    href: "/dashboard/player",
+  },
 } as const;
 
 export function isCoachRole(role: string) {
