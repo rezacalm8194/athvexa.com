@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/Toast";
+import { t, type Locale } from "@/lib/i18n";
 
 export type ProgramSessionDraft = {
   key: string;
@@ -31,6 +32,28 @@ type PlayerOption = { id: string; name: string; email: string };
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const INTENSITIES: ProgramSessionDraft["intensity"][] = ["LOW", "MEDIUM", "HIGH"];
 
+const MONDAY_2024 = new Date("2024-01-01T12:00:00Z");
+
+function weekdayLabel(day: string, locale: Locale) {
+  const index = DAYS.indexOf(day);
+  if (index === -1) return day;
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { weekday: "long" }).format(
+    new Date(MONDAY_2024.getTime() + index * 86400000)
+  );
+}
+
+function intensityLabel(intensity: ProgramSessionDraft["intensity"], locale: Locale) {
+  if (intensity === "LOW") return t(locale, "coach.programs.intensityLow");
+  if (intensity === "MEDIUM") return t(locale, "coach.programs.intensityMedium");
+  return t(locale, "coach.programs.intensityHigh");
+}
+
+function programStatusLabel(status: ProgramFormValues["status"], locale: Locale) {
+  if (status === "ACTIVE") return t(locale, "coach.programs.statusActive");
+  if (status === "DRAFT") return t(locale, "coach.programs.statusDraft");
+  return t(locale, "coach.programs.statusArchived");
+}
+
 export function emptyProgramForm(): ProgramFormValues {
   return {
     name: "",
@@ -47,11 +70,13 @@ export function emptyProgramForm(): ProgramFormValues {
 }
 
 export default function ProgramFormModal({
+  locale,
   mode,
   initial,
   onClose,
   onSaved,
 }: {
+  locale: Locale;
   mode: "create" | "edit";
   initial: { id?: string; values: ProgramFormValues };
   onClose: () => void;
@@ -101,7 +126,7 @@ export default function ProgramFormModal({
 
   async function save() {
     if (!values.name.trim()) {
-      setError("Program name is required.");
+      setError(t(locale, "coach.programs.nameRequired"));
       return;
     }
     setSaving(true);
@@ -135,11 +160,11 @@ export default function ProgramFormModal({
     setSaving(false);
 
     if (res.ok) {
-      showToast(mode === "create" ? "Program created" : "Program updated", "success");
+      showToast(mode === "create" ? t(locale, "coach.programs.created") : t(locale, "coach.programs.updated"), "success");
       onSaved();
     } else {
-      setError(data.error ?? "Could not save the program.");
-      showToast("Could not save the program", "error");
+      setError(data.error ?? t(locale, "coach.programs.saveError"));
+      showToast(t(locale, "coach.programs.saveError"), "error");
     }
   }
 
@@ -150,16 +175,16 @@ export default function ProgramFormModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-display text-xl font-bold text-white">
-          {mode === "create" ? "Create program" : "Edit program"}
+          {mode === "create" ? t(locale, "coach.programs.formCreate") : t(locale, "coach.programs.formEdit")}
         </h2>
 
         <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <label className="col-span-2 text-xs font-medium text-smoke-3">
-            Program name
+            {t(locale, "coach.programs.name")}
             <input value={values.name} onChange={(e) => set("name", e.target.value)} className="input-field mt-1" />
           </label>
           <label className="col-span-2 text-xs font-medium text-smoke-3">
-            Description
+            {t(locale, "coach.programs.description")}
             <textarea
               value={values.description}
               onChange={(e) => set("description", e.target.value)}
@@ -168,46 +193,51 @@ export default function ProgramFormModal({
             />
           </label>
           <label className="text-xs font-medium text-smoke-3">
-            Goal
-            <input value={values.goal} onChange={(e) => set("goal", e.target.value)} className="input-field mt-1" placeholder="e.g. Pre-season fitness" />
+            {t(locale, "coach.programs.goal")}
+            <input
+              value={values.goal}
+              onChange={(e) => set("goal", e.target.value)}
+              className="input-field mt-1"
+              placeholder={t(locale, "coach.programs.goalPlaceholder")}
+            />
           </label>
           <label className="text-xs font-medium text-smoke-3">
-            Status
+            {t(locale, "coach.programs.status")}
             <select value={values.status} onChange={(e) => set("status", e.target.value as ProgramFormValues["status"])} className="input-field mt-1">
-              <option value="DRAFT">Draft</option>
-              <option value="ACTIVE">Active</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="DRAFT">{programStatusLabel("DRAFT", locale)}</option>
+              <option value="ACTIVE">{programStatusLabel("ACTIVE", locale)}</option>
+              <option value="ARCHIVED">{programStatusLabel("ARCHIVED", locale)}</option>
             </select>
           </label>
           <label className="text-xs font-medium text-smoke-3">
-            Duration (weeks)
+            {t(locale, "coach.programs.durationWeeks")}
             <input type="number" min={1} max={52} value={values.durationWeeks} onChange={(e) => set("durationWeeks", e.target.value)} className="input-field mt-1" />
           </label>
           <label className="text-xs font-medium text-smoke-3">
-            Sessions per week
+            {t(locale, "coach.programs.sessionsPerWeek")}
             <input type="number" min={1} max={14} value={values.sessionsPerWeek} onChange={(e) => set("sessionsPerWeek", e.target.value)} className="input-field mt-1" />
           </label>
           <label className="text-xs font-medium text-smoke-3">
-            Start date
+            {t(locale, "coach.programs.startDate")}
             <input type="date" value={values.startDate} onChange={(e) => set("startDate", e.target.value)} className="input-field mt-1" />
           </label>
           <label className="text-xs font-medium text-smoke-3">
-            End date
+            {t(locale, "coach.programs.endDate")}
             <input type="date" value={values.endDate} onChange={(e) => set("endDate", e.target.value)} className="input-field mt-1" />
           </label>
         </div>
 
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between">
-            <span className="eyebrow">Sessions</span>
+            <span className="eyebrow">{t(locale, "coach.programs.sessions")}</span>
             <button onClick={addSession} className="btn-ghost !px-2.5 !py-1.5 text-[11px]">
               <PlusIcon className="mr-1 h-3.5 w-3.5" />
-              Add session
+              {t(locale, "coach.programs.addSession")}
             </button>
           </div>
           {values.sessions.length === 0 && (
             <p className="rounded-md border border-dashed border-line-1 px-3 py-3 text-center text-xs text-smoke-3">
-              No sessions yet. Add simple session notes — no exercise library needed.
+              {t(locale, "coach.programs.sessionsEmpty")}
             </p>
           )}
           <div className="flex flex-col gap-2">
@@ -217,12 +247,14 @@ export default function ProgramFormModal({
                   <input
                     value={s.title}
                     onChange={(e) => updateSession(s.key, { title: e.target.value })}
-                    placeholder="Session title"
+                    placeholder={t(locale, "coach.programs.sessionTitle")}
                     className="input-field !py-2 flex-1 text-sm"
                   />
                   <select value={s.day} onChange={(e) => updateSession(s.key, { day: e.target.value })} className="input-field !py-2 !w-32 text-sm">
                     {DAYS.map((d) => (
-                      <option key={d} value={d}>{d}</option>
+                      <option key={d} value={d}>
+                        {weekdayLabel(d, locale)}
+                      </option>
                     ))}
                   </select>
                   <input
@@ -230,7 +262,7 @@ export default function ProgramFormModal({
                     min={0}
                     value={s.durationMinutes}
                     onChange={(e) => updateSession(s.key, { durationMinutes: e.target.value })}
-                    placeholder="Mins"
+                    placeholder={t(locale, "coach.programs.mins")}
                     className="input-field !py-2 !w-20 text-sm"
                   />
                   <select
@@ -239,7 +271,9 @@ export default function ProgramFormModal({
                     className="input-field !py-2 !w-28 text-sm"
                   >
                     {INTENSITIES.map((i) => (
-                      <option key={i} value={i}>{i}</option>
+                      <option key={i} value={i}>
+                        {intensityLabel(i, locale)}
+                      </option>
                     ))}
                   </select>
                   <button onClick={() => removeSession(s.key)} className="btn-ghost !px-2 !py-2 text-red-glow">
@@ -249,7 +283,7 @@ export default function ProgramFormModal({
                 <textarea
                   value={s.notes}
                   onChange={(e) => updateSession(s.key, { notes: e.target.value })}
-                  placeholder="Exercises or session notes"
+                  placeholder={t(locale, "coach.programs.sessionNotes")}
                   rows={2}
                   className="input-field !py-2 mt-2 resize-none text-sm"
                 />
@@ -259,10 +293,10 @@ export default function ProgramFormModal({
         </div>
 
         <div className="mt-5">
-          <span className="eyebrow">Assign players</span>
+          <span className="eyebrow">{t(locale, "coach.programs.assignPlayers")}</span>
           {players === null && <div className="mt-2 h-10 animate-pulse rounded-md bg-white/5" />}
           {players && players.length === 0 && (
-            <p className="mt-2 text-xs text-smoke-3">No players on your roster yet.</p>
+            <p className="mt-2 text-xs text-smoke-3">{t(locale, "coach.programs.noRoster")}</p>
           )}
           {players && players.length > 0 && (
             <div className="mt-2 flex max-h-40 flex-col gap-1 overflow-y-auto rounded-md border border-line-1 p-2">
@@ -281,10 +315,14 @@ export default function ProgramFormModal({
 
         <div className="mt-6 flex justify-end gap-2">
           <button onClick={onClose} className="btn-ghost !px-4 !py-2.5 text-sm" disabled={saving}>
-            Cancel
+            {t(locale, "common.cancel")}
           </button>
           <button onClick={save} className="btn-primary !px-4 !py-2.5 text-sm" disabled={saving}>
-            {saving ? "Saving…" : mode === "create" ? "Create program" : "Save changes"}
+            {saving
+              ? t(locale, "common.saving")
+              : mode === "create"
+                ? t(locale, "coach.programs.formCreate")
+                : t(locale, "coach.programs.saveChanges")}
           </button>
         </div>
       </div>

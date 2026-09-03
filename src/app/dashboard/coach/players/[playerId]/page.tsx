@@ -4,9 +4,10 @@ import ServerDashboardNav from "@/components/ServerDashboardNav";
 import CoachNav from "@/components/coach/CoachNav";
 import PlayerAssessmentsSection from "@/components/coach/assessments/PlayerAssessmentsSection";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
-import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon, UsersIcon } from "@/components/icons";
+import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon } from "@/components/icons";
 import { db, ensureDatabase } from "@/lib/db";
 import { formatScore } from "@/lib/formatScore";
+import { t, type Locale } from "@/lib/i18n";
 import { getSession } from "@/lib/session";
 import { ensureLegacyTeamMemberships, teamRoleLabel } from "@/lib/teamContext";
 import { getUserPreferences } from "@/lib/userPreferences";
@@ -15,12 +16,16 @@ type Tone = "good" | "warn" | "bad" | "neutral";
 
 const COACH_TEAM_ROLES = ["OWNER", "HEAD_COACH", "ASSISTANT_COACH", "ANALYST", "PHYSIO"];
 
-function formatDate(value?: string | Date | null) {
-  if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+function formatDate(value: string | Date | null | undefined, locale: Locale) {
+  if (!value) return t(locale, "common.notSet");
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
-function formatMetric(value: number | string | null | undefined, fallback = "No data") {
+function formatMetric(value: number | string | null | undefined, fallback: string) {
   return value == null || value === "" ? fallback : String(value);
 }
 
@@ -31,12 +36,12 @@ function readinessTone(score: number | null): Tone {
   return "bad";
 }
 
-function readinessLabel(score: number | null) {
-  if (score == null) return "No check-in";
-  if (score >= 80) return "Excellent";
-  if (score >= 60) return "Ready";
-  if (score >= 40) return "Fatigued";
-  return "Needs attention";
+function readinessLabel(score: number | null, locale: Locale) {
+  if (score == null) return t(locale, "coach.playerProfile.noCheckIn");
+  if (score >= 80) return t(locale, "coach.playerProfile.readinessExcellent");
+  if (score >= 60) return t(locale, "coach.playerProfile.readinessReady");
+  if (score >= 40) return t(locale, "coach.playerProfile.readinessFatigued");
+  return t(locale, "coach.playerProfile.readinessAttention");
 }
 
 function programProgress(program: {
@@ -48,9 +53,16 @@ function programProgress(program: {
   return { completed, total, percent: Math.round((completed / total) * 100) };
 }
 
-function statusForPlayer(role: string): { label: string; tone: Tone } {
-  if (role !== "PLAYER") return { label: "Inactive", tone: "neutral" };
-  return { label: "Active", tone: "good" };
+function statusForPlayer(role: string, locale: Locale): { label: string; tone: Tone } {
+  if (role !== "PLAYER") return { label: t(locale, "coach.playerProfile.statusInactive"), tone: "neutral" };
+  return { label: t(locale, "coach.playerProfile.statusActive"), tone: "good" };
+}
+
+function programStatusLabel(status: string, locale: Locale) {
+  if (status === "ACTIVE") return t(locale, "coach.playerProfile.programActive");
+  if (status === "DRAFT") return t(locale, "coach.playerProfile.programDraft");
+  if (status === "ARCHIVED") return t(locale, "coach.playerProfile.programArchived");
+  return status;
 }
 
 export default async function PlayerProfilePage({ params }: { params: Promise<{ playerId: string }> }) {
@@ -137,7 +149,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const activeAssignment = player.programAssignments.find((assignment) => assignment.program.status === "ACTIVE") ?? null;
   const previousAssignments = player.programAssignments.filter((assignment) => assignment.program.status !== "ACTIVE");
   const activeProgress = activeAssignment ? programProgress(activeAssignment.program) : null;
-  const status = statusForPlayer(player.role);
+  const status = statusForPlayer(player.role, locale);
   const initials = player.name
     .split(" ")
     .map((part) => part.charAt(0))
@@ -151,7 +163,17 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const upcomingSessions =
     activeAssignment?.program.sessions.filter((programSession) => !progressedSessionIds.has(programSession.id)) ?? [];
 
-  const tabs = ["Overview", "Assessments", "Programs", "Check-ins", "Sessions", "Notes"];
+  const noData = t(locale, "coach.playerProfile.noData");
+  const notSet = t(locale, "coach.playerProfile.notSet");
+
+  const tabs = [
+    { id: "overview", label: t(locale, "coach.playerProfile.tabOverview") },
+    { id: "assessments", label: t(locale, "coach.playerProfile.tabAssessments") },
+    { id: "programs", label: t(locale, "coach.playerProfile.tabPrograms") },
+    { id: "checkins", label: t(locale, "coach.playerProfile.tabCheckIns") },
+    { id: "sessions", label: t(locale, "coach.playerProfile.tabSessions") },
+    { id: "notes", label: t(locale, "coach.playerProfile.tabNotes") },
+  ];
 
   return (
     <main className="min-h-screen bg-ink">
@@ -160,7 +182,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       <section className="mx-auto max-w-[1280px] px-6 py-8">
         <div className="mb-5">
           <Link href="/dashboard/coach/players" className="text-xs font-semibold text-smoke-3 transition-colors hover:text-white">
-            Back to players
+            {t(locale, "coach.playerProfile.back")}
           </Link>
         </div>
 
@@ -174,10 +196,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 <div className="eyebrow">{membership.team.name}</div>
                 <h1 className="mt-1 font-display text-4xl font-extrabold tracking-wide text-white">{player.name}</h1>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-smoke-3">
-                  <InfoPill label="Age" value="Not set" />
-                  <InfoPill label="Position" value="Not set" />
-                  <InfoPill label="Jersey" value="Not set" />
-                  <InfoPill label="Team" value={membership.team.name} />
+                  <InfoPill label={t(locale, "coach.playerProfile.age")} value={notSet} />
+                  <InfoPill label={t(locale, "coach.playerProfile.position")} value={notSet} />
+                  <InfoPill label={t(locale, "coach.playerProfile.jersey")} value={notSet} />
+                  <InfoPill label={t(locale, "coach.playerProfile.team")} value={membership.team.name} />
                 </div>
               </div>
             </div>
@@ -191,52 +213,105 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         </header>
 
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard icon={CheckCircleIcon} label="Latest readiness" value={latestLog ? `${latestLog.score}/100` : "No data"} detail={readinessLabel(latestLog?.score ?? null)} />
-          <StatCard icon={ClipboardCheckIcon} label="Latest assessment" value={latestAssessment ? formatScore(latestAssessment.score) : "No data"} detail={latestAssessment ? latestAssessment.type : "No assessments"} />
-          <StatCard icon={ClipboardListIcon} label="Active program" value={activeAssignment?.program.name ?? "No active program"} detail={activeProgress ? `${activeProgress.percent}% complete` : "Not assigned"} />
-          <StatCard icon={CalendarIcon} label="Last check-in" value={latestLog ? formatDate(latestLog.date) : "No data"} detail={latestLog ? readinessLabel(latestLog.score) : "No check-ins"} />
+          <StatCard
+            icon={CheckCircleIcon}
+            label={t(locale, "coach.playerProfile.latestReadiness")}
+            value={latestLog ? `${latestLog.score}/100` : noData}
+            detail={readinessLabel(latestLog?.score ?? null, locale)}
+          />
+          <StatCard
+            icon={ClipboardCheckIcon}
+            label={t(locale, "coach.playerProfile.latestAssessment")}
+            value={latestAssessment ? formatScore(latestAssessment.score) : noData}
+            detail={latestAssessment ? latestAssessment.type : t(locale, "coach.playerProfile.noAssessments")}
+          />
+          <StatCard
+            icon={ClipboardListIcon}
+            label={t(locale, "coach.playerProfile.activeProgram")}
+            value={activeAssignment?.program.name ?? t(locale, "coach.playerProfile.noActiveProgram")}
+            detail={
+              activeProgress
+                ? t(locale, "coach.playerProfile.percentComplete", { percent: activeProgress.percent })
+                : t(locale, "coach.playerProfile.notAssigned")
+            }
+          />
+          <StatCard
+            icon={CalendarIcon}
+            label={t(locale, "coach.playerProfile.lastCheckIn")}
+            value={latestLog ? formatDate(latestLog.date, locale) : noData}
+            detail={latestLog ? readinessLabel(latestLog.score, locale) : t(locale, "coach.playerProfile.noCheckIns")}
+          />
         </div>
 
         <nav className="mt-5 flex gap-1 overflow-x-auto border-b border-white/5">
           {tabs.map((tab) => (
-            <a key={tab} href={`#${tab.toLowerCase().replace("-", "")}`} className="shrink-0 px-3.5 py-3 text-sm font-semibold text-smoke-3 transition-colors hover:text-white">
-              {tab}
+            <a key={tab.id} href={`#${tab.id}`} className="shrink-0 px-3.5 py-3 text-sm font-semibold text-smoke-3 transition-colors hover:text-white">
+              {tab.label}
             </a>
           ))}
         </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-6">
-          <Section id="overview" title="Overview">
+          <Section id="overview" title={t(locale, "coach.playerProfile.overview")}>
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-              <InfoCard title="Basic information" rows={[["Name", player.name], ["Age", "Not set"], ["Position", "Not set"], ["Jersey number", "Not set"], ["Status", status.label]]} />
-              <InfoCard title="Contact information" rows={[["Email", player.email ?? "Not set"], ["Phone", player.phone ?? "Not set"], ["Address", "Not set"]]} />
-              <InfoCard title="Emergency contact" rows={[["Name", "Not set"], ["Relationship", "Not set"], ["Phone", "Not set"]]} />
-              <InfoCard title="Join date" rows={[["Joined", formatDate(membership.createdAt)], ["Team", membership.team.name]]} />
+              <InfoCard
+                title={t(locale, "coach.playerProfile.basicInfo")}
+                rows={[
+                  [t(locale, "coach.playerProfile.name"), player.name],
+                  [t(locale, "coach.playerProfile.age"), notSet],
+                  [t(locale, "coach.playerProfile.position"), notSet],
+                  [t(locale, "coach.playerProfile.jerseyNumber"), notSet],
+                  [t(locale, "coach.playerProfile.status"), status.label],
+                ]}
+              />
+              <InfoCard
+                title={t(locale, "coach.playerProfile.contactInfo")}
+                rows={[
+                  [t(locale, "coach.playerProfile.email"), formatMetric(player.email, notSet)],
+                  [t(locale, "coach.playerProfile.phone"), formatMetric(player.phone, notSet)],
+                  [t(locale, "coach.playerProfile.address"), notSet],
+                ]}
+              />
+              <InfoCard
+                title={t(locale, "coach.playerProfile.emergencyContact")}
+                rows={[
+                  [t(locale, "coach.playerProfile.name"), notSet],
+                  [t(locale, "coach.playerProfile.relationship"), notSet],
+                  [t(locale, "coach.playerProfile.phone"), notSet],
+                ]}
+              />
+              <InfoCard
+                title={t(locale, "coach.playerProfile.joinDate")}
+                rows={[
+                  [t(locale, "coach.playerProfile.joined"), formatDate(membership.createdAt, locale)],
+                  [t(locale, "coach.playerProfile.team"), membership.team.name],
+                ]}
+              />
             </div>
           </Section>
 
-          <Section id="assessments" title="Assessments">
-            <PlayerAssessmentsSection player={{ id: player.id, name: player.name, email: player.email ?? "" }} />
+          <Section id="assessments" title={t(locale, "coach.playerProfile.assessments")}>
+            <PlayerAssessmentsSection player={{ id: player.id, name: player.name, email: player.email ?? "" }} locale={locale} />
           </Section>
 
-          <Section id="programs" title="Programs">
+          <Section id="programs" title={t(locale, "coach.playerProfile.programs")}>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="rounded-lg border border-white/5 bg-ink-2 p-4">
-                <h3 className="font-display text-lg font-bold text-white">Current program</h3>
+                <h3 className="font-display text-lg font-bold text-white">{t(locale, "coach.playerProfile.currentProgram")}</h3>
                 {activeAssignment ? (
-                  <ProgramBlock assignment={activeAssignment} />
+                  <ProgramBlock assignment={activeAssignment} locale={locale} />
                 ) : (
-                  <EmptyLine text="No active program assigned." />
+                  <EmptyLine text={t(locale, "coach.playerProfile.noActiveAssigned")} />
                 )}
               </div>
               <div className="rounded-lg border border-white/5 bg-ink-2 p-4">
-                <h3 className="font-display text-lg font-bold text-white">Previous programs</h3>
+                <h3 className="font-display text-lg font-bold text-white">{t(locale, "coach.playerProfile.previousPrograms")}</h3>
                 {previousAssignments.length === 0 ? (
-                  <EmptyLine text="No previous programs yet." />
+                  <EmptyLine text={t(locale, "coach.playerProfile.noPreviousPrograms")} />
                 ) : (
                   <div className="mt-3 space-y-3">
                     {previousAssignments.map((assignment) => (
-                      <ProgramBlock key={assignment.id} assignment={assignment} compact />
+                      <ProgramBlock key={assignment.id} assignment={assignment} locale={locale} compact />
                     ))}
                   </div>
                 )}
@@ -244,37 +319,37 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             </div>
           </Section>
 
-          <Section id="checkins" title="Check-ins">
+          <Section id="checkins" title={t(locale, "coach.playerProfile.checkIns")}>
             {player.dailyLogs.length === 0 ? (
-              <EmptyLine text="No daily check-ins yet." />
+              <EmptyLine text={t(locale, "coach.playerProfile.noDailyCheckIns")} />
             ) : (
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {player.dailyLogs.map((log) => (
                   <div key={log.id} className="rounded-lg border border-white/5 bg-ink-2 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-white">{formatDate(log.date)}</div>
-                      <StatusBadge label={readinessLabel(log.score)} tone={readinessTone(log.score)} />
+                      <div className="font-semibold text-white">{formatDate(log.date, locale)}</div>
+                      <StatusBadge label={readinessLabel(log.score, locale)} tone={readinessTone(log.score)} />
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      <MiniMetric label="Readiness" value={`${log.score}/100`} />
-                      <MiniMetric label="Sleep" value={log.sleepHours == null ? "No data" : `${log.sleepHours}h`} />
-                      <MiniMetric label="Water" value={log.waterLiters == null ? "No data" : `${log.waterLiters} L`} />
-                      <MiniMetric label="Energy" value={log.energy == null ? "No data" : `${log.energy}/5`} />
-                      <MiniMetric label="Fatigue" value={log.fatigue == null ? "No data" : `${log.fatigue}/5`} />
-                      <MiniMetric label="Soreness" value={log.soreness == null ? "No data" : `${log.soreness}/5`} />
-                      <MiniMetric label="Mood" value={log.mood == null ? "No data" : `${log.mood}/5`} />
-                      <MiniMetric label="Stress" value={log.stress == null ? "No data" : `${log.stress}/5`} />
-                      <MiniMetric label="Sleep quality" value={log.sleepQuality == null ? "No data" : `${log.sleepQuality}/5`} />
-                      <MiniMetric label="Body weight" value={log.bodyWeight == null ? "No data" : `${log.bodyWeight} kg`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.readiness")} value={`${log.score}/100`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.sleep")} value={log.sleepHours == null ? noData : `${log.sleepHours}h`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.water")} value={log.waterLiters == null ? noData : `${log.waterLiters} L`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.energy")} value={log.energy == null ? noData : `${log.energy}/5`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.fatigue")} value={log.fatigue == null ? noData : `${log.fatigue}/5`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.soreness")} value={log.soreness == null ? noData : `${log.soreness}/5`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.mood")} value={log.mood == null ? noData : `${log.mood}/5`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.stress")} value={log.stress == null ? noData : `${log.stress}/5`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.sleepQuality")} value={log.sleepQuality == null ? noData : `${log.sleepQuality}/5`} />
+                      <MiniMetric label={t(locale, "coach.playerProfile.bodyWeight")} value={log.bodyWeight == null ? noData : `${log.bodyWeight} kg`} />
                     </div>
                     <div className="mt-4 border-t border-white/5 pt-4">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-smoke-3">Notes</h3>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-smoke-2">{formatMetric(log.notes, "No notes")}</p>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-smoke-3">{t(locale, "coach.playerProfile.notes")}</h3>
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-smoke-2">{formatMetric(log.notes, t(locale, "coach.playerProfile.noNotes"))}</p>
                     </div>
                     <div className="mt-4 border-t border-white/5 pt-4">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-smoke-3">Tasks</h3>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-smoke-3">{t(locale, "coach.playerProfile.tasks")}</h3>
                       {log.tasks.length === 0 ? (
-                        <p className="mt-2 text-sm text-smoke-3">No tasks for this check-in.</p>
+                        <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.playerProfile.noTasks")}</p>
                       ) : (
                         <ul className="mt-2 space-y-2">
                           {log.tasks.map((task) => (
@@ -288,7 +363,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                                 ✓
                               </span>
                               <span className="min-w-0 flex-1 text-smoke-2">{task.label}</span>
-                              <span className="shrink-0 text-xs font-semibold text-smoke-4">{task.done ? "Done" : "Not done"}</span>
+                              <span className="shrink-0 text-xs font-semibold text-smoke-4">
+                                {task.done ? t(locale, "coach.playerProfile.done") : t(locale, "coach.playerProfile.notDone")}
+                              </span>
                             </li>
                           ))}
                         </ul>
@@ -300,22 +377,34 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             )}
           </Section>
 
-          <Section id="sessions" title="Sessions">
+          <Section id="sessions" title={t(locale, "coach.playerProfile.sessions")}>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <SessionColumn title="Completed" items={completedSessions.map((item) => `${item.session.title} - ${item.session.program.name}`)} />
-              <SessionColumn title="Skipped" items={skippedSessions.map((item) => `${item.session.title} - ${item.session.program.name}`)} />
-              <SessionColumn title="Upcoming" items={upcomingSessions.map((item) => `${item.title} - ${activeAssignment?.program.name}`)} />
+              <SessionColumn
+                title={t(locale, "coach.playerProfile.completed")}
+                emptyText={t(locale, "coach.playerProfile.noSessions")}
+                items={completedSessions.map((item) => `${item.session.title} - ${item.session.program.name}`)}
+              />
+              <SessionColumn
+                title={t(locale, "coach.playerProfile.skipped")}
+                emptyText={t(locale, "coach.playerProfile.noSessions")}
+                items={skippedSessions.map((item) => `${item.session.title} - ${item.session.program.name}`)}
+              />
+              <SessionColumn
+                title={t(locale, "coach.playerProfile.upcoming")}
+                emptyText={t(locale, "coach.playerProfile.noSessions")}
+                items={upcomingSessions.map((item) => `${item.title} - ${activeAssignment?.program.name}`)}
+              />
             </div>
           </Section>
 
-          <Section id="notes" title="Coach notes">
+          <Section id="notes" title={t(locale, "coach.playerProfile.coachNotes")}>
             {player.coachNotes.length === 0 ? (
-              <EmptyLine text="No private coach notes yet." />
+              <EmptyLine text={t(locale, "coach.playerProfile.noCoachNotes")} />
             ) : (
               <div className="space-y-3">
                 {player.coachNotes.map((note) => (
                   <article key={note.id} className="rounded-lg border border-white/5 bg-ink-2 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-smoke-3">{formatDate(note.date)}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-smoke-3">{formatDate(note.date, locale)}</div>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-smoke-2">{note.message}</p>
                   </article>
                 ))}
@@ -385,6 +474,7 @@ function EmptyLine({ text }: { text: string }) {
 
 function ProgramBlock({
   assignment,
+  locale,
   compact = false,
 }: {
   assignment: {
@@ -396,6 +486,7 @@ function ProgramBlock({
       sessions: { progress: { status: string }[] }[];
     };
   };
+  locale: Locale;
   compact?: boolean;
 }) {
   const progress = programProgress(assignment.program);
@@ -404,16 +495,19 @@ function ProgramBlock({
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="font-semibold text-white">{assignment.program.name}</div>
-          <div className="mt-1 text-xs text-smoke-3">{assignment.program.goal ?? "No goal set"}</div>
+          <div className="mt-1 text-xs text-smoke-3">{assignment.program.goal ?? t(locale, "coach.playerProfile.noGoal")}</div>
         </div>
-        <StatusBadge label={assignment.program.status} tone={assignment.program.status === "ACTIVE" ? "good" : "neutral"} />
+        <StatusBadge
+          label={programStatusLabel(assignment.program.status, locale)}
+          tone={assignment.program.status === "ACTIVE" ? "good" : "neutral"}
+        />
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full bg-red" style={{ width: `${progress.percent}%` }} />
       </div>
       <div className="mt-2 flex justify-between text-xs text-smoke-3">
-        <span>{progress.percent}% progress</span>
-        <span>Assigned {formatDate(assignment.assignedAt)}</span>
+        <span>{t(locale, "coach.playerProfile.progressPct", { percent: progress.percent })}</span>
+        <span>{t(locale, "coach.playerProfile.assignedOn", { date: formatDate(assignment.assignedAt, locale) })}</span>
       </div>
     </div>
   );
@@ -428,12 +522,12 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SessionColumn({ title, items }: { title: string; items: string[] }) {
+function SessionColumn({ title, emptyText, items }: { title: string; emptyText: string; items: string[] }) {
   return (
     <div className="rounded-lg border border-white/5 bg-ink-2 p-4">
       <h3 className="font-display text-lg font-bold text-white">{title}</h3>
       {items.length === 0 ? (
-        <p className="mt-3 text-sm text-smoke-3">No sessions.</p>
+        <p className="mt-3 text-sm text-smoke-3">{emptyText}</p>
       ) : (
         <ul className="mt-3 space-y-2">
           {items.map((item) => (

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function TeamSetupForm() {
+export default function TeamSetupForm({ locale }: { locale: Locale }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [sport, setSport] = useState("");
@@ -22,13 +23,13 @@ export default function TeamSetupForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Could not create your team. Try again.");
+        setError(data.error ?? t(locale, "coach.teams.setupError"));
         return;
       }
       router.push("/dashboard/coach");
       router.refresh();
     } catch {
-      setError("Could not create your team. Check your connection and try again.");
+      setError(t(locale, "coach.teams.setupConnError"));
     } finally {
       setLoading(false);
     }
@@ -37,23 +38,23 @@ export default function TeamSetupForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-smoke-4">Team name</span>
+        <span className="text-xs font-medium text-smoke-4">{t(locale, "coach.teams.fieldName")}</span>
         <input
           className="input-field"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Persepolis U19"
+          placeholder={t(locale, "coach.teams.setupPhName")}
           autoComplete="off"
           required
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-smoke-4">Sport (optional)</span>
+        <span className="text-xs font-medium text-smoke-4">{t(locale, "coach.teams.setupSportOptional")}</span>
         <input
           className="input-field"
           value={sport}
           onChange={(e) => setSport(e.target.value)}
-          placeholder="e.g. Football"
+          placeholder={t(locale, "coach.teams.setupPhSport")}
           autoComplete="off"
         />
       </label>
@@ -61,7 +62,7 @@ export default function TeamSetupForm() {
       {error && <p className="text-sm text-red-glow">{error}</p>}
 
       <button type="submit" className="btn-primary mt-1" disabled={loading}>
-        {loading ? "Creating team…" : "Create team"}
+        {loading ? t(locale, "coach.teams.setupCreating") : t(locale, "coach.teams.create")}
       </button>
     </form>
   );

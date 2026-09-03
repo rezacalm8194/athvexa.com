@@ -8,7 +8,7 @@ import StatusBadge from "@/components/coach/shared/StatusBadge";
 import StatusFilter from "@/components/coach/shared/StatusFilter";
 import { CopyIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
-import type { Locale } from "@/lib/i18n";
+import { t, type Locale } from "@/lib/i18n";
 
 type PlayerStatus = "all" | "ready" | "attention" | "not_checked_in";
 
@@ -34,32 +34,18 @@ type CreatedInvite = {
   expiresAt: string;
 };
 
-const STATUS_OPTIONS: { value: PlayerStatus; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "ready", label: "Ready" },
-  { value: "attention", label: "Needs attention" },
-  { value: "not_checked_in", label: "No check-in" },
-];
-
-const EXPIRATION_OPTIONS = [
-  { value: 1, label: "24 hours" },
-  { value: 7, label: "7 days" },
-  { value: 14, label: "14 days" },
-  { value: 30, label: "30 days" },
-];
-
-function formatDate(value: string | null) {
-  if (!value) return "No check-in";
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+function formatDate(value: string | null, locale: Locale, emptyLabel: string) {
+  if (!value) return emptyLabel;
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 function playerStatus(player: Player): PlayerStatus {
   if (!player.latestCheckIn) return "not_checked_in";
   return player.tone === "bad" || player.tone === "warn" ? "attention" : "ready";
-}
-
-function inviteMessage(invite: CreatedInvite) {
-  return `You're invited to join your team on Athvexa: ${invite.url}`;
 }
 
 export default function PlayersPageView({
@@ -84,23 +70,37 @@ export default function PlayersPageView({
   const [createdInvite, setCreatedInvite] = useState<CreatedInvite | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const statusOptions: { value: PlayerStatus; label: string }[] = [
+    { value: "all", label: t(locale, "coach.players.filterAll") },
+    { value: "ready", label: t(locale, "coach.players.filterReady") },
+    { value: "attention", label: t(locale, "coach.players.filterAttention") },
+    { value: "not_checked_in", label: t(locale, "coach.players.filterNoCheckIn") },
+  ];
+
+  const expirationOptions = [
+    { value: 1, label: t(locale, "coach.invite.exp24h") },
+    { value: 7, label: t(locale, "coach.invite.exp7d") },
+    { value: 14, label: t(locale, "coach.invite.exp14d") },
+    { value: 30, label: t(locale, "coach.invite.exp30d") },
+  ];
+
   function loadPlayers() {
     setError(null);
     fetch("/api/coach/players", { cache: "no-store" })
       .then((res) => res.json().then((payload) => ({ ok: res.ok, payload })))
       .then(({ ok, payload }) => {
-        if (!ok) throw new Error(payload.error || "Could not load players");
+        if (!ok) throw new Error(payload.error || t(locale, "coach.players.loadError"));
         setPlayers(payload.players ?? []);
       })
       .catch((err) => {
         setPlayers([]);
-        setError(err instanceof Error ? err.message : "Could not load players");
+        setError(err instanceof Error ? err.message : t(locale, "coach.players.loadError"));
       });
   }
 
   useEffect(() => {
     loadPlayers();
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     if (window.location.hash === "#invite-panel") {
@@ -144,7 +144,7 @@ export default function PlayersPageView({
     const data = await res.json().catch(() => ({}));
     setCreating(false);
     if (!res.ok) {
-      setInviteError(data.error || "Could not create invitation");
+      setInviteError(data.error || t(locale, "coach.invite.createError"));
       return;
     }
     setCreatedInvite({
@@ -167,13 +167,14 @@ export default function PlayersPageView({
   function shareWhatsApp() {
     if (!createdInvite) return;
     const recipient = createdInvite.phone?.replace(/\D/g, "") ?? "";
-    window.open(`https://wa.me/${recipient}?text=${encodeURIComponent(inviteMessage(createdInvite))}`, "_blank");
+    const message = t(locale, "coach.invite.inviteMessage", { url: createdInvite.url });
+    window.open(`https://wa.me/${recipient}?text=${encodeURIComponent(message)}`, "_blank");
   }
 
   function shareTelegram() {
     if (!createdInvite) return;
     window.open(
-      `https://t.me/share/url?url=${encodeURIComponent(createdInvite.url)}&text=${encodeURIComponent("Athvexa team invitation")}`,
+      `https://t.me/share/url?url=${encodeURIComponent(createdInvite.url)}&text=${encodeURIComponent(t(locale, "coach.invite.telegramCaption"))}`,
       "_blank"
     );
   }
@@ -220,15 +221,15 @@ export default function PlayersPageView({
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search players"
+                placeholder={t(locale, "coach.players.search")}
                 className="input-field sm:max-w-sm"
               />
-              <StatusFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} />
+              <StatusFilter value={status} onChange={setStatus} options={statusOptions} />
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-white">{players.length} players</span>
+              <span className="text-sm font-semibold text-white">{t(locale, "coach.players.count", { count: players.length })}</span>
               <button type="button" onClick={openInvite} className="btn-primary !px-4 !py-2.5 text-xs">
-                Invite player
+                {t(locale, "coach.players.invitePlayer")}
               </button>
             </div>
           </div>
@@ -236,8 +237,8 @@ export default function PlayersPageView({
           {filtered && filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line-1 px-6 py-12 text-center">
               <UsersIcon className="h-7 w-7 text-smoke-4" />
-              <p className="font-display text-base font-bold text-white">No players match your search.</p>
-              <p className="text-sm text-smoke-3">Try another name, email, or status filter.</p>
+              <p className="font-display text-base font-bold text-white">{t(locale, "coach.players.noMatchTitle")}</p>
+              <p className="text-sm text-smoke-3">{t(locale, "coach.players.noMatchBody")}</p>
             </div>
           ) : null}
 
@@ -258,21 +259,21 @@ export default function PlayersPageView({
                       </div>
                     </div>
                     <StatusBadge
-                      label={!player.latestCheckIn ? "No check-in" : player.label}
+                      label={!player.latestCheckIn ? t(locale, "coach.players.noCheckIn") : player.label}
                       tone={!player.latestCheckIn ? "neutral" : player.tone}
                     />
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <Metric label="Join date" value={formatDate(player.joinedAt)} />
-                    <Metric label="Latest readiness" value={player.latestReadiness == null ? "-" : `${player.latestReadiness}/100`} />
-                    <Metric label="Latest check-in" value={formatDate(player.latestCheckIn)} />
-                    <Metric label="Active program" value={player.activeProgram?.name ?? "None"} />
+                    <Metric label={t(locale, "coach.players.joinDate")} value={formatDate(player.joinedAt, locale, t(locale, "coach.players.noCheckIn"))} />
+                    <Metric label={t(locale, "coach.players.latestReadiness")} value={player.latestReadiness == null ? "-" : `${player.latestReadiness}/100`} />
+                    <Metric label={t(locale, "coach.players.latestCheckIn")} value={formatDate(player.latestCheckIn, locale, t(locale, "coach.players.noCheckIn"))} />
+                    <Metric label={t(locale, "coach.players.activeProgram")} value={player.activeProgram?.name ?? t(locale, "coach.players.none")} />
                   </div>
 
                   <div className="mt-4 flex justify-end">
                     <Link href={coachPlayerProfileHref(player.id)} className="btn-ghost !px-3 !py-2 text-xs">
-                      Open player profile
+                      {t(locale, "coach.players.openProfile")}
                     </Link>
                   </div>
                 </article>
@@ -287,30 +288,30 @@ export default function PlayersPageView({
           <div className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-xl shadow-black/50">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <div className="eyebrow">Invitation</div>
-                <h2 className="mt-1 font-display text-2xl font-bold text-white">Invite a team member</h2>
+                <div className="eyebrow">{t(locale, "coach.invite.eyebrow")}</div>
+                <h2 className="mt-1 font-display text-2xl font-bold text-white">{t(locale, "coach.invite.title")}</h2>
               </div>
               <button type="button" onClick={closeInvite} className="btn-ghost !px-3 !py-2 text-xs">
-                Close
+                {t(locale, "coach.invite.close")}
               </button>
             </div>
 
             {!createdInvite ? (
               <form onSubmit={createInvite} className="space-y-4">
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Role</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.role")}</span>
                   <select
                     className="input-field mt-1"
                     value={inviteRole}
                     onChange={(event) => setInviteRole(event.target.value as "PLAYER" | "ASSISTANT" | "COACH")}
                   >
-                    <option value="PLAYER">Player</option>
-                    {_canManageRoles ? <option value="ASSISTANT">Assistant coach</option> : null}
-                    {_canManageRoles ? <option value="COACH">Coach</option> : null}
+                    <option value="PLAYER">{t(locale, "coach.invite.player")}</option>
+                    {_canManageRoles ? <option value="ASSISTANT">{t(locale, "coach.invite.assistant")}</option> : null}
+                    {_canManageRoles ? <option value="COACH">{t(locale, "coach.invite.coach")}</option> : null}
                   </select>
                 </label>
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Mobile number optional</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.phoneOptional")}</span>
                   <input
                     className="input-field mt-1"
                     type="tel"
@@ -320,10 +321,10 @@ export default function PlayersPageView({
                     placeholder="+989121234567"
                     autoComplete="tel"
                   />
-                  <span className="mt-1 block text-xs text-smoke-4">Include the country code.</span>
+                  <span className="mt-1 block text-xs text-smoke-4">{t(locale, "coach.invite.phoneHint")}</span>
                 </label>
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Email optional</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.emailOptional")}</span>
                   <input
                     className="input-field mt-1"
                     type="email"
@@ -333,23 +334,23 @@ export default function PlayersPageView({
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Expiration time</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.expiration")}</span>
                   <select
                     className="input-field mt-1"
                     value={expiration}
                     onChange={(event) => setExpiration(event.target.value)}
                   >
-                    {EXPIRATION_OPTIONS.map((option) => (
+                    {expirationOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
                     ))}
-                    <option value="custom">Custom date and time</option>
+                    <option value="custom">{t(locale, "coach.invite.expCustom")}</option>
                   </select>
                 </label>
                 {expiration === "custom" ? (
                   <label className="block">
-                    <span className="text-xs font-semibold text-smoke-3">Custom expiration</span>
+                    <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.customExpiration")}</span>
                     <input
                       className="input-field mt-1"
                       type="datetime-local"
@@ -358,36 +359,40 @@ export default function PlayersPageView({
                       onChange={(event) => setCustomExpiresAt(event.target.value)}
                       required
                     />
-                    <span className="mt-1 block text-xs text-smoke-4">Uses your current device time zone.</span>
+                    <span className="mt-1 block text-xs text-smoke-4">{t(locale, "coach.invite.customExpirationHint")}</span>
                   </label>
                 ) : null}
                 {inviteError ? <p className="text-sm text-red-glow">{inviteError}</p> : null}
                 <button type="submit" className="btn-primary w-full !py-3 text-sm" disabled={creating}>
-                  {creating ? "Creating..." : "Create invitation"}
+                  {creating ? t(locale, "coach.invite.creating") : t(locale, "coach.invite.create")}
                 </button>
               </form>
             ) : (
               <div className="space-y-4">
                 <div className="rounded-md border border-line-1 bg-ink-2 p-3">
-                  <span className="text-xs font-semibold text-smoke-3">Full invitation link</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.fullLink")}</span>
                   <code className="mt-2 block break-all text-sm text-white">{createdInvite.url}</code>
-                  <p className="mt-2 text-xs text-smoke-4">Expires {formatDate(createdInvite.expiresAt)}</p>
+                  <p className="mt-2 text-xs text-smoke-4">
+                    {t(locale, "coach.invite.expires", {
+                      date: formatDate(createdInvite.expiresAt, locale, t(locale, "coach.players.noCheckIn")),
+                    })}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={copyInvite} className="btn-ghost !px-3 !py-2 text-xs">
                     <CopyIcon className="mr-1.5 h-4 w-4" />
-                    {copied ? "Copied" : "Copy link"}
+                    {copied ? t(locale, "coach.invite.copied") : t(locale, "coach.invite.copyLink")}
                   </button>
                   <button type="button" onClick={shareWhatsApp} className="btn-ghost !px-3 !py-2 text-xs">
                     <WhatsAppIcon className="mr-1.5 h-4 w-4" />
-                    WhatsApp
+                    {t(locale, "coach.invite.whatsapp")}
                   </button>
                   <button type="button" onClick={shareTelegram} className="btn-ghost !px-3 !py-2 text-xs">
                     <TelegramIcon className="mr-1.5 h-4 w-4" />
-                    Telegram
+                    {t(locale, "coach.invite.telegram")}
                   </button>
                   <button type="button" onClick={closeInvite} className="btn-primary !px-3 !py-2 text-xs">
-                    Close
+                    {t(locale, "coach.invite.close")}
                   </button>
                 </div>
               </div>

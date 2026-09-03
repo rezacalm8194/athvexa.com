@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ASSESSMENT_TYPES, AssessmentType } from "@/lib/assessmentTypes";
 import { formatScore } from "@/lib/formatScore";
+import { t, type Locale } from "@/lib/i18n";
 
 export type PlayerOption = {
   id: string;
@@ -40,8 +41,12 @@ export const emptyAssessmentForm = (playerId = ""): AssessmentFormState => ({
   notes: "",
 });
 
-export function formatAssessmentDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T00:00:00`));
+export function formatAssessmentDate(value: string, locale: Locale = "en") {
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
 export function AssessmentChangeBadge({ value }: { value: number | null }) {
@@ -68,6 +73,7 @@ export function AssessmentModal({
   initial,
   busy,
   lockPlayer = false,
+  locale,
   onClose,
   onSubmit,
 }: {
@@ -77,6 +83,7 @@ export function AssessmentModal({
   initial: AssessmentFormState;
   busy: boolean;
   lockPlayer?: boolean;
+  locale: Locale;
   onClose: () => void;
   onSubmit: (form: AssessmentFormState) => void;
 }) {
@@ -98,17 +105,19 @@ export function AssessmentModal({
       <form className="w-full max-w-xl rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl" onClick={(event) => event.stopPropagation()} onSubmit={submit}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-xl font-black text-white">{mode === "create" ? "New assessment" : "Edit assessment"}</h2>
-            <p className="mt-1 text-sm text-smoke-3">Track one performance checkpoint for this player.</p>
+            <h2 className="font-display text-xl font-black text-white">
+              {mode === "create" ? t(locale, "coach.assessmentUi.formCreateTitle") : t(locale, "coach.assessmentUi.formEditTitle")}
+            </h2>
+            <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.assessmentUi.formSubtitle")}</p>
           </div>
           <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={onClose} disabled={busy}>
-            Close
+            {t(locale, "coach.assessmentUi.close")}
           </button>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="space-y-2 text-sm font-semibold text-smoke-2">
-            Player
+            {t(locale, "coach.assessmentUi.player")}
             <select
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red disabled:cursor-not-allowed disabled:opacity-70"
               value={form.playerId}
@@ -117,7 +126,7 @@ export function AssessmentModal({
               required
             >
               <option value="" disabled>
-                Select player
+                {t(locale, "coach.assessmentUi.selectPlayer")}
               </option>
               {players.map((player) => (
                 <option key={player.id} value={player.id}>
@@ -128,7 +137,7 @@ export function AssessmentModal({
           </label>
 
           <label className="space-y-2 text-sm font-semibold text-smoke-2">
-            Type
+            {t(locale, "coach.assessmentUi.type")}
             <select
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
               value={form.type}
@@ -143,7 +152,7 @@ export function AssessmentModal({
           </label>
 
           <label className="space-y-2 text-sm font-semibold text-smoke-2">
-            Date
+            {t(locale, "coach.assessmentUi.date")}
             <input
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
               type="date"
@@ -154,13 +163,13 @@ export function AssessmentModal({
           </label>
 
           <label className="space-y-2 text-sm font-semibold text-smoke-2">
-            Score
+            {t(locale, "coach.assessmentUi.score")}
             <input
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
               type="number"
               inputMode="decimal"
               step="any"
-              placeholder="e.g. 3.20"
+              placeholder={t(locale, "coach.assessmentUi.scorePlaceholder")}
               value={form.score}
               onChange={(event) => setForm((current) => ({ ...current, score: event.target.value }))}
               required
@@ -169,21 +178,25 @@ export function AssessmentModal({
         </div>
 
         <label className="mt-4 block space-y-2 text-sm font-semibold text-smoke-2">
-          Notes
+          {t(locale, "coach.assessmentUi.notes")}
           <textarea
             className="min-h-28 w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
             value={form.notes}
             onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
-            placeholder="Optional coaching notes"
+            placeholder={t(locale, "coach.assessmentUi.notesPlaceholder")}
           />
         </label>
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" className="btn-ghost justify-center !px-4 !py-3 text-sm" onClick={onClose} disabled={busy}>
-            Cancel
+            {t(locale, "common.cancel")}
           </button>
           <button type="submit" className="btn-primary justify-center !px-5 !py-3 text-sm" disabled={busy || players.length === 0}>
-            {busy ? "Saving..." : mode === "create" ? "Create assessment" : "Save changes"}
+            {busy
+              ? t(locale, "common.saving")
+              : mode === "create"
+                ? t(locale, "coach.assessmentUi.create")
+                : t(locale, "coach.assessmentUi.saveChanges")}
           </button>
         </div>
       </form>
@@ -193,11 +206,13 @@ export function AssessmentModal({
 
 export function AssessmentDetailModal({
   assessment,
+  locale,
   onClose,
   onEdit,
   onDelete,
 }: {
   assessment: AssessmentItem | null;
+  locale: Locale;
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -210,20 +225,24 @@ export function AssessmentDetailModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-xl font-black text-white">{assessment.type}</h2>
-            <p className="mt-1 text-sm text-smoke-3">{formatAssessmentDate(assessment.date)}</p>
+            <p className="mt-1 text-sm text-smoke-3">{formatAssessmentDate(assessment.date, locale)}</p>
           </div>
           <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={onClose}>
-            Close
+            {t(locale, "coach.assessmentUi.close")}
           </button>
         </div>
 
         <div className="mt-4 flex items-end justify-between gap-4 border-b border-white/5 pb-4">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-smoke-4">Score</div>
+            <div className="text-[11px] uppercase tracking-wide text-smoke-4">{t(locale, "coach.assessmentUi.score")}</div>
             <div className="mt-1 font-display text-3xl font-black text-white">{formatScore(assessment.score)}</div>
           </div>
           <div className="text-right text-sm">
-            <div className="text-smoke-4">Previous {assessment.previousScore == null ? "—" : formatScore(assessment.previousScore)}</div>
+            <div className="text-smoke-4">
+              {t(locale, "coach.assessmentUi.previous", {
+                score: assessment.previousScore == null ? "—" : formatScore(assessment.previousScore),
+              })}
+            </div>
             <div className="mt-1">
               <AssessmentChangeBadge value={assessment.change} />
             </div>
@@ -238,12 +257,12 @@ export function AssessmentDetailModal({
           <div className="mt-5 flex justify-end gap-2">
             {onDelete ? (
               <button type="button" className="btn-ghost !px-3 !py-2 text-xs text-red-glow" onClick={onDelete}>
-                Delete
+                {t(locale, "coach.assessmentUi.delete")}
               </button>
             ) : null}
             {onEdit ? (
               <button type="button" className="btn-primary !px-4 !py-2 text-xs" onClick={onEdit}>
-                Edit
+                {t(locale, "coach.assessmentUi.edit")}
               </button>
             ) : null}
           </div>

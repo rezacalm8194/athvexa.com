@@ -152,6 +152,7 @@ export default function CoachDashboardView({
             <InvitePanel
               coachName={coachName}
               canManageRoles={canManageRoles}
+              locale={locale}
               limit={4}
               showViewAll
               onChange={loadOverview}

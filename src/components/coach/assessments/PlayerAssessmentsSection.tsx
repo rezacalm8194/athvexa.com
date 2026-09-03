@@ -19,12 +19,13 @@ import {
 import { ClipboardCheckIcon, PlusIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/Toast";
 import { formatScore } from "@/lib/formatScore";
+import { t, type Locale } from "@/lib/i18n";
 
 type AssessmentResponse = {
   assessments: AssessmentItem[];
 };
 
-export default function PlayerAssessmentsSection({ player }: { player: PlayerOption }) {
+export default function PlayerAssessmentsSection({ player, locale }: { player: PlayerOption; locale: Locale }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -45,10 +46,10 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
     try {
       const response = await fetch(`/api/coach/assessments?playerId=${encodeURIComponent(player.id)}`, { cache: "no-store" });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Could not load assessments");
+      if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.loadError"));
       setData(payload);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load assessments");
+      setError(loadError instanceof Error ? loadError.message : t(locale, "coach.assessmentUi.loadError"));
     } finally {
       setLoading(false);
     }
@@ -76,12 +77,12 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
     if (deepLinkedAssessmentId) {
       const assessment = data?.assessments.find((item) => item.id === deepLinkedAssessmentId);
       if (assessment) setViewing(assessment);
-      else showToast("Assessment not found for this player.", "error");
+      else showToast(t(locale, "coach.assessmentUi.notFound"), "error");
     } else if (shouldCreate) {
       setModal({ mode: "create" });
     }
     setHandledQuery(queryKey);
-  }, [data?.assessments, deepLinkedAssessmentId, handledQuery, loading, shouldCreate, showToast]);
+  }, [data?.assessments, deepLinkedAssessmentId, handledQuery, loading, locale, shouldCreate, showToast]);
 
   const assessments = data?.assessments ?? [];
   const initialForm = useMemo<AssessmentFormState>(() => {
@@ -110,7 +111,7 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
   const saveAssessment = async (form: AssessmentFormState) => {
     const score = Number(form.score);
     if (form.score.trim() === "" || !Number.isFinite(score)) {
-      showToast("Enter a valid score.", "error");
+      showToast(t(locale, "coach.assessmentUi.invalidScore"), "error");
       return;
     }
 
@@ -123,14 +124,14 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
         body: JSON.stringify({ ...form, playerId: player.id, score }),
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Could not save assessment");
-      showToast(isEditing ? "Assessment updated." : "Assessment created.");
+      if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));
+      showToast(isEditing ? t(locale, "coach.assessmentUi.updated") : t(locale, "coach.assessmentUi.created"));
       setModal(null);
       router.replace(`/dashboard/coach/players/${encodeURIComponent(player.id)}#assessments`, { scroll: false });
       await loadAssessments();
       router.refresh();
     } catch (saveError) {
-      showToast(saveError instanceof Error ? saveError.message : "Could not save assessment", "error");
+      showToast(saveError instanceof Error ? saveError.message : t(locale, "coach.assessmentUi.saveError"), "error");
     } finally {
       setBusy(false);
     }
@@ -142,13 +143,13 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
     try {
       const response = await fetch(`/api/coach/assessments/${deleting.id}`, { method: "DELETE" });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Could not delete assessment");
-      showToast("Assessment deleted.");
+      if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.deleteError"));
+      showToast(t(locale, "coach.assessmentUi.deleted"));
       setDeleting(null);
       await loadAssessments();
       router.refresh();
     } catch (deleteError) {
-      showToast(deleteError instanceof Error ? deleteError.message : "Could not delete assessment", "error");
+      showToast(deleteError instanceof Error ? deleteError.message : t(locale, "coach.assessmentUi.deleteError"), "error");
     } finally {
       setBusy(false);
     }
@@ -157,11 +158,15 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
   return (
     <>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-xs text-smoke-4">{assessments.length === 0 && !loading ? "No tests yet" : `${assessments.length} tests`}</p>
+        <p className="text-xs text-smoke-4">
+          {assessments.length === 0 && !loading
+            ? t(locale, "coach.assessmentUi.noTestsYet")
+            : t(locale, "coach.assessmentUi.testsCount", { count: assessments.length })}
+        </p>
         {!loading && assessments.length > 0 ? (
           <button className="btn-primary gap-1.5 !px-3 !py-1.5 text-xs" onClick={() => setModal({ mode: "create" })}>
             <PlusIcon className="h-3.5 w-3.5" />
-            New
+            {t(locale, "coach.assessmentUi.new")}
           </button>
         ) : null}
       </div>
@@ -171,11 +176,11 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
       {!loading && !error && assessments.length === 0 ? (
         <EmptyState
           icon={ClipboardCheckIcon}
-          title="No assessments yet"
-          description="Add the first test for this player."
+          title={t(locale, "coach.assessmentUi.emptyTitle")}
+          description={t(locale, "coach.assessmentUi.emptyBody")}
           action={
             <button className="btn-primary !px-4 !py-2 text-sm" onClick={() => setModal({ mode: "create" })}>
-              New assessment
+              {t(locale, "coach.assessmentUi.newAssessment")}
             </button>
           }
         />
@@ -185,10 +190,10 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="text-[11px] uppercase tracking-wide text-smoke-4">
               <tr className="border-b border-white/5">
-                <th className="py-2 pr-3 font-semibold">Type</th>
-                <th className="px-3 py-2 font-semibold">Date</th>
-                <th className="px-3 py-2 font-semibold">Score</th>
-                <th className="py-2 pl-3 text-right font-semibold">Change</th>
+                <th className="py-2 pr-3 font-semibold">{t(locale, "coach.assessmentUi.colType")}</th>
+                <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colDate")}</th>
+                <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colScore")}</th>
+                <th className="py-2 pl-3 text-right font-semibold">{t(locale, "coach.assessmentUi.colChange")}</th>
               </tr>
             </thead>
             <tbody>
@@ -206,7 +211,7 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
                   tabIndex={0}
                 >
                   <td className="py-2.5 pr-3 font-semibold text-white">{assessment.type}</td>
-                  <td className="px-3 py-2.5 text-smoke-3">{formatAssessmentDate(assessment.date)}</td>
+                  <td className="px-3 py-2.5 text-smoke-3">{formatAssessmentDate(assessment.date, locale)}</td>
                   <td className="px-3 py-2.5 font-semibold tabular-nums text-white">{formatScore(assessment.score)}</td>
                   <td className="py-2.5 pl-3 text-right"><AssessmentChangeBadge value={assessment.change} /></td>
                 </tr>
@@ -223,11 +228,13 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
         initial={initialForm}
         busy={busy}
         lockPlayer
+        locale={locale}
         onClose={closeEditor}
         onSubmit={saveAssessment}
       />
       <AssessmentDetailModal
         assessment={viewing}
+        locale={locale}
         onClose={deepLinkedAssessmentId ? closeQueryModal : () => setViewing(null)}
         onEdit={
           viewing
@@ -248,9 +255,9 @@ export default function PlayerAssessmentsSection({ player }: { player: PlayerOpt
       />
       <ConfirmModal
         open={Boolean(deleting)}
-        title="Delete assessment?"
-        description="This assessment will be permanently removed from the player record."
-        confirmLabel="Delete"
+        title={t(locale, "coach.assessmentUi.deleteTitle")}
+        description={t(locale, "coach.assessmentUi.deleteBody")}
+        confirmLabel={t(locale, "coach.assessmentUi.delete")}
         busy={busy}
         onCancel={() => setDeleting(null)}
         onConfirm={deleteAssessment}

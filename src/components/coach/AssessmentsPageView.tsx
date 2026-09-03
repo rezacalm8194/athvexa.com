@@ -68,10 +68,10 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
     try {
       const response = await fetch(`/api/coach/assessments${queryString ? `?${queryString}` : ""}`, { cache: "no-store" });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Could not load assessment coverage");
+      if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessments.loadError"));
       setData(payload);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load assessment coverage");
+      setError(loadError instanceof Error ? loadError.message : t(locale, "coach.assessments.loadError"));
     } finally {
       setLoading(false);
     }
@@ -88,16 +88,16 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
       .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
       .then(({ ok, payload }) => {
         if (!active) return;
-        if (!ok) throw new Error(payload.error || "Could not open assessment");
+        if (!ok) throw new Error(payload.error || t(locale, "coach.assessments.openError"));
         router.replace(`/dashboard/coach/players/${encodeURIComponent(payload.assessment.playerId)}?assessmentId=${encodeURIComponent(deepLinkedAssessmentId)}#assessments`);
       })
       .catch((redirectError) => {
-        if (active) showToast(redirectError instanceof Error ? redirectError.message : "Could not open assessment", "error");
+        if (active) showToast(redirectError instanceof Error ? redirectError.message : t(locale, "coach.assessments.openError"), "error");
       });
     return () => {
       active = false;
     };
-  }, [deepLinkedAssessmentId, router, showToast]);
+  }, [deepLinkedAssessmentId, locale, router, showToast]);
 
   const players = useMemo(() => {
     const list = data?.playersSummary ?? [];
@@ -118,57 +118,57 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
     <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-red">Coach tools</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-red">{t(locale, "coach.assessments.eyebrow")}</p>
           <h1 className="mt-1 font-display text-3xl font-black text-white">{t(locale, "coach.assessments.title")}</h1>
           <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.assessments.subtitle")}</p>
         </div>
         {!loading && kpis.totalPlayers > 0 ? (
           <p className="text-sm text-smoke-3">
-            <span className="font-semibold text-white">{kpis.playersNotAssessed}</span> due
+            <span className="font-semibold text-white">{kpis.playersNotAssessed}</span> {t(locale, "coach.assessments.due")}
             <span className="mx-2 text-white/20">·</span>
-            <span className="font-semibold text-white">{coverage}%</span> covered
+            <span className="font-semibold text-white">{coverage}%</span> {t(locale, "coach.assessments.covered")}
             <span className="mx-2 text-white/20">·</span>
-            <span className="font-semibold text-white">{kpis.assessmentsThisMonth}</span> this month
+            <span className="font-semibold text-white">{kpis.assessmentsThisMonth}</span> {t(locale, "coach.assessments.thisMonth")}
             <span className="mx-2 text-white/20">·</span>
-            <span className="font-semibold text-white">{kpis.totalAssessments}</span> total
+            <span className="font-semibold text-white">{kpis.totalAssessments}</span> {t(locale, "coach.assessments.total")}
           </p>
         ) : null}
       </div>
 
       {!loading && !error && kpis.totalPlayers === 0 ? (
         <div className="rounded-lg border border-line-1 bg-ink-3 p-6 sm:max-w-xl">
-          <h2 className="font-display text-lg font-black text-white">Add a player first</h2>
-          <p className="mt-1 text-sm leading-6 text-smoke-3">Assessments attach to players. Invite someone, then record their tests here.</p>
+          <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.assessments.addPlayerTitle")}</h2>
+          <p className="mt-1 text-sm leading-6 text-smoke-3">{t(locale, "coach.assessments.addPlayerBody")}</p>
           <Link href="/dashboard/coach/players#invite-panel" className="btn-primary mt-4 inline-flex gap-2 !px-4 !py-2.5 text-sm">
             <PlusIcon className="h-4 w-4" />
-            Invite a player
+            {t(locale, "coach.assessments.invitePlayer")}
           </Link>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_150px]">
             <div className="col-span-2 sm:col-span-1">
-              <SearchInput value={search} onChange={setSearch} placeholder="Search players" />
+              <SearchInput value={search} onChange={setSearch} placeholder={t(locale, "coach.assessments.search")} />
             </div>
-            <select className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" value={type} onChange={(event) => setType(event.target.value as AssessmentType | "all")} aria-label="Assessment type">
-              <option value="all">All types</option>
+            <select className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" value={type} onChange={(event) => setType(event.target.value as AssessmentType | "all")} aria-label={t(locale, "coach.assessments.typeAria")}>
+              <option value="all">{t(locale, "coach.assessments.allTypes")}</option>
               {ASSESSMENT_TYPES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
             </select>
-            <input className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" type="month" value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Assessment month" />
+            <input className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" type="month" value={month} onChange={(event) => setMonth(event.target.value)} aria-label={t(locale, "coach.assessments.monthAria")} />
           </div>
 
           <div className="mt-4 overflow-hidden rounded-lg border border-line-1 bg-ink-3">
             <div className="flex items-center justify-between border-b border-line-1 px-4 py-2.5">
-              <h2 className="text-sm font-semibold text-white">Squad</h2>
+              <h2 className="text-sm font-semibold text-white">{t(locale, "coach.assessments.squad")}</h2>
               <div className="flex items-center gap-3">
-                <p className="text-xs text-smoke-4">{loading ? "Loading…" : `${players.length} players`}</p>
+                <p className="text-xs text-smoke-4">{loading ? t(locale, "coach.assessments.loading") : t(locale, "coach.assessments.playersCount", { count: players.length })}</p>
                 {hasFilters ? (
                   <button className="text-xs font-semibold text-smoke-3 hover:text-white" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>
-                    Clear
+                    {t(locale, "coach.assessments.clear")}
                   </button>
                 ) : null}
               </div>
@@ -179,7 +179,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
               {!loading && error ? <div className="p-4"><ErrorState message={error} onRetry={loadPlayers} /></div> : null}
               {!loading && !error && players.length === 0 ? (
                 <div className="p-4">
-                  <EmptyState icon={UsersIcon} title="No matching players" description="Clear the search or filters to see the full squad." action={hasFilters ? <button className="btn-ghost !px-4 !py-2 text-sm" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>Clear filters</button> : undefined} />
+                  <EmptyState icon={UsersIcon} title={t(locale, "coach.assessments.emptyTitle")} description={t(locale, "coach.assessments.emptyBody")} action={hasFilters ? <button className="btn-ghost !px-4 !py-2 text-sm" onClick={() => { setSearch(""); setType("all"); setMonth(""); }}>{t(locale, "coach.assessments.clearFilters")}</button> : undefined} />
                 </div>
               ) : null}
               {!loading && !error && players.length > 0 ? (
@@ -187,11 +187,11 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                   <table className="w-full min-w-[520px] sm:min-w-0 text-left text-sm">
                     <thead className="text-[11px] uppercase tracking-wide text-smoke-4">
                       <tr className="border-b border-white/5">
-                        <th className="px-4 py-2 font-semibold">Player</th>
-                        <th className="px-4 py-2 font-semibold">Latest</th>
-                        <th className="px-4 py-2 font-semibold">Score</th>
-                        <th className="hidden px-4 py-2 font-semibold sm:table-cell">Date</th>
-                        <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">Tests</th>
+                        <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colPlayer")}</th>
+                        <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colLatest")}</th>
+                        <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colScore")}</th>
+                        <th className="hidden px-4 py-2 font-semibold sm:table-cell">{t(locale, "coach.assessments.colDate")}</th>
+                        <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">{t(locale, "coach.assessments.colTests")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -205,13 +205,13 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                           >
                             <td className="px-4 py-2.5">
                               <div className="flex items-center gap-2">
-                                <span className="truncate font-semibold text-white">{player.name || "Unnamed"}</span>
-                                {player.needsAssessment ? <span className="rounded bg-red/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-glow">Due</span> : null}
+                                <span className="truncate font-semibold text-white">{player.name || t(locale, "coach.assessments.unnamed")}</span>
+                                {player.needsAssessment ? <span className="rounded bg-red/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-glow">{t(locale, "coach.assessments.dueBadge")}</span> : null}
                               </div>
                             </td>
                             <td className="px-4 py-2.5 text-smoke-2">{player.latestAssessment?.type ?? "—"}</td>
                             <td className="px-4 py-2.5 font-semibold text-white">{player.latestAssessment ? formatScore(player.latestAssessment.score) : "—"}</td>
-                            <td className="hidden px-4 py-2.5 text-smoke-3 sm:table-cell">{player.latestAssessment ? formatAssessmentDate(player.latestAssessment.date) : "—"}</td>
+                            <td className="hidden px-4 py-2.5 text-smoke-3 sm:table-cell">{player.latestAssessment ? formatAssessmentDate(player.latestAssessment.date, locale) : "—"}</td>
                             <td className="hidden px-4 py-2.5 text-right tabular-nums text-smoke-3 sm:table-cell">{player.count}</td>
                           </tr>
                         );

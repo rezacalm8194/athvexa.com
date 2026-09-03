@@ -57,19 +57,6 @@ const STATUS_STYLE: Record<InviteStatusValue, string> = {
   expired: "bg-red/15 text-red-glow",
 };
 
-const STATUS_LABEL: Record<InviteStatusValue, string> = {
-  pending: "Pending",
-  accepted: "Accepted",
-  revoked: "Revoked",
-  expired: "Expired",
-};
-
-const ROLE_LABEL: Record<InviteRole, string> = {
-  PLAYER: "Player",
-  ASSISTANT: "Assistant coach",
-  COACH: "Coach",
-};
-
 const emptyKpis: Record<InviteStatusValue, number> = {
   pending: 0,
   accepted: 0,
@@ -77,8 +64,8 @@ const emptyKpis: Record<InviteStatusValue, number> = {
   revoked: 0,
 };
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatDateTime(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -87,13 +74,22 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function expiryLabel(value: string) {
+function expiryLabel(value: string, locale: Locale) {
   const now = new Date();
   const expires = new Date(value);
   const diffDays = Math.ceil((expires.getTime() - now.getTime()) / 86_400_000);
-  if (diffDays >= 0) return `Expires in ${diffDays === 0 ? "less than 1" : diffDays} ${diffDays === 1 ? "day" : "days"}`;
+  if (diffDays >= 0) {
+    if (diffDays === 0) return t(locale, "coach.invitations.expiresSoon");
+    return t(locale, "coach.invitations.expiresIn", {
+      count: diffDays,
+      unit: diffDays === 1 ? t(locale, "coach.invitations.day") : t(locale, "coach.invitations.days"),
+    });
+  }
   const daysAgo = Math.abs(diffDays);
-  return `Expired ${daysAgo} ${daysAgo === 1 ? "day" : "days"} ago`;
+  return t(locale, "coach.invitations.expiredAgo", {
+    count: daysAgo,
+    unit: daysAgo === 1 ? t(locale, "coach.invitations.day") : t(locale, "coach.invitations.days"),
+  });
 }
 
 export default function InvitationsPageView({
@@ -106,6 +102,17 @@ export default function InvitationsPageView({
   locale: Locale;
 }) {
   const { showToast } = useToast();
+  const statusLabel: Record<InviteStatusValue, string> = {
+    pending: t(locale, "coach.invitations.pending"),
+    accepted: t(locale, "coach.invitations.accepted"),
+    revoked: t(locale, "coach.invitations.revoked"),
+    expired: t(locale, "coach.invitations.expired"),
+  };
+  const roleLabelMap: Record<InviteRole, string> = {
+    PLAYER: t(locale, "coach.invite.player"),
+    ASSISTANT: t(locale, "coach.invite.assistant"),
+    COACH: t(locale, "coach.invite.coach"),
+  };
   const [data, setData] = useState<InviteResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,10 +149,10 @@ export default function InvitationsPageView({
     try {
       const res = await fetch(`/api/coach/invites?${queryString}`, { cache: "no-store" });
       const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error || "Could not load invitations");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.loadError"));
       setData(payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load invitations");
+      setError(err instanceof Error ? err.message : t(locale, "coach.invitations.loadError"));
     } finally {
       setLoading(false);
     }
@@ -176,14 +183,14 @@ export default function InvitationsPageView({
         }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not create invitation");
-      showToast("Invitation created.");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.invite.createError"));
+      showToast(t(locale, "coach.invitations.created"));
       setInviteOpen(false);
       setInviteEmail("");
       setInvitePhone("");
       await loadInvites();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not create invitation", "error");
+      showToast(err instanceof Error ? err.message : t(locale, "coach.invite.createError"), "error");
     } finally {
       setGenerating(false);
     }
@@ -202,7 +209,7 @@ export default function InvitationsPageView({
       .map((value) => value.trim())
       .filter(Boolean);
     if (contacts.length === 0) {
-      showToast("Add at least one email address or mobile number.", "error");
+      showToast(t(locale, "coach.invitations.bulkNeedContact"), "error");
       return;
     }
     setGenerating(true);
@@ -214,12 +221,12 @@ export default function InvitationsPageView({
         body: JSON.stringify({ contacts, ...expirationPayload() }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not create player invitations");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.bulkError"));
       setBulkSummary(payload.summary);
-      showToast(`${payload.summary.created} player invitation${payload.summary.created === 1 ? "" : "s"} created.`);
+      showToast(t(locale, "coach.invitations.bulkCreated", { count: payload.summary.created }));
       await loadInvites();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not create player invitations", "error");
+      showToast(err instanceof Error ? err.message : t(locale, "coach.invitations.bulkError"), "error");
     } finally {
       setGenerating(false);
     }
@@ -236,12 +243,12 @@ export default function InvitationsPageView({
         body: JSON.stringify({ role: "PLAYER", maxUses: Number(groupCapacity), ...expirationPayload() }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not create team link");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.linkError"));
       setCreatedGroupInvite({ url: payload.url, maxUses: payload.maxUses });
-      showToast("Team join link created.");
+      showToast(t(locale, "coach.invitations.linkCreated"));
       await loadInvites();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not create team link", "error");
+      showToast(err instanceof Error ? err.message : t(locale, "coach.invitations.linkError"), "error");
     } finally {
       setGenerating(false);
     }
@@ -250,14 +257,14 @@ export default function InvitationsPageView({
   async function copyInvite(invite: Invite) {
     await navigator.clipboard.writeText(invite.url);
     setCopiedId(invite.id);
-    showToast("Invite link copied.");
+    showToast(t(locale, "coach.invitations.linkCopied"));
     setTimeout(() => setCopiedId((cur) => (cur === invite.id ? null : cur)), 1800);
   }
 
   function shareMessage(invite: Invite) {
     return invite.role === "ASSISTANT" || invite.role === "COACH"
-      ? `${coachName} invited you to join their coaching staff on Athvexa: ${invite.url}`
-      : `${coachName} invited you to join their team on Athvexa: ${invite.url}`;
+      ? t(locale, "coach.invite.shareStaff", { name: coachName, url: invite.url })
+      : t(locale, "coach.invite.sharePlayer", { name: coachName, url: invite.url });
   }
 
   function sendViaWhatsApp(invite: Invite) {
@@ -268,8 +275,8 @@ export default function InvitationsPageView({
   function sendViaTelegram(invite: Invite) {
     const caption =
       invite.role === "ASSISTANT" || invite.role === "COACH"
-        ? `${coachName} invited you to join their coaching staff on Athvexa`
-        : `${coachName} invited you to join their team on Athvexa`;
+        ? t(locale, "coach.invite.shareCaptionStaff", { name: coachName })
+        : t(locale, "coach.invite.shareCaptionPlayer", { name: coachName });
     window.open(`https://t.me/share/url?url=${encodeURIComponent(invite.url)}&text=${encodeURIComponent(caption)}`, "_blank");
   }
 
@@ -282,11 +289,11 @@ export default function InvitationsPageView({
         body: JSON.stringify({ action: "regenerate" }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not regenerate invitation");
-      showToast("Invitation regenerated.");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.regenerateError"));
+      showToast(t(locale, "coach.invitations.regenerated"));
       await loadInvites();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not regenerate invitation", "error");
+      showToast(err instanceof Error ? err.message : t(locale, "coach.invitations.regenerateError"), "error");
     } finally {
       setBusyId(null);
     }
@@ -302,12 +309,12 @@ export default function InvitationsPageView({
         body: JSON.stringify({ action: "revoke" }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not revoke invitation");
-      showToast("Invitation revoked.");
+      if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.revokeError"));
+      showToast(t(locale, "coach.invitations.revoked"));
       setRevoking(null);
       await loadInvites();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not revoke invitation", "error");
+      showToast(err instanceof Error ? err.message : t(locale, "coach.invitations.revokeError"), "error");
     } finally {
       setBusyId(null);
     }
@@ -317,23 +324,23 @@ export default function InvitationsPageView({
     <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">Team access</p>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-red">{t(locale, "coach.invitations.teamAccess")}</p>
           <h1 className="mt-2 font-display text-3xl font-black text-white sm:text-4xl">{t(locale, "coach.invitations.title")}</h1>
           <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.invitations.subtitle")}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <button className="btn-primary justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setInviteOpen(true)}>
             <PlusIcon className="h-4 w-4" />
-            Add team members
+            {t(locale, "coach.invite.addMembers")}
           </button>
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Pending" value={kpis.pending} icon={MailIcon} loading={loading} />
-        <KpiCard label="Accepted" value={kpis.accepted} icon={CheckCircleIcon} loading={loading} />
-        <KpiCard label="Expired" value={kpis.expired} icon={AlertIcon} tone="warn" loading={loading} />
-        <KpiCard label="Revoked" value={kpis.revoked} icon={TrashIcon} loading={loading} />
+        <KpiCard label={t(locale, "coach.invitations.pending")} value={kpis.pending} icon={MailIcon} loading={loading} />
+        <KpiCard label={t(locale, "coach.invitations.accepted")} value={kpis.accepted} icon={CheckCircleIcon} loading={loading} />
+        <KpiCard label={t(locale, "coach.invitations.expired")} value={kpis.expired} icon={AlertIcon} tone="warn" loading={loading} />
+        <KpiCard label={t(locale, "coach.invitations.revoked")} value={kpis.revoked} icon={TrashIcon} loading={loading} />
       </div>
 
       <div className="mt-5 rounded-lg border border-line-1 bg-ink-3 p-4">
@@ -342,31 +349,31 @@ export default function InvitationsPageView({
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red"
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value as RoleFilter)}
-            aria-label="Role"
+            aria-label={t(locale, "coach.invite.role")}
           >
-            <option value="all">All roles</option>
-            <option value="PLAYER">Player</option>
-            <option value="ASSISTANT">Assistant coach</option>
-            <option value="COACH">Coach</option>
+            <option value="all">{t(locale, "coach.invitations.allRoles")}</option>
+            <option value="PLAYER">{t(locale, "coach.invite.player")}</option>
+            <option value="ASSISTANT">{t(locale, "coach.invite.assistant")}</option>
+            <option value="COACH">{t(locale, "coach.invite.coach")}</option>
           </select>
           <select
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red"
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            aria-label="Status"
+            aria-label={t(locale, "coach.invitations.colStatus")}
           >
-            <option value="all">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="expired">Expired</option>
-            <option value="revoked">Revoked</option>
+            <option value="all">{t(locale, "coach.invitations.allStatuses")}</option>
+            <option value="pending">{t(locale, "coach.invitations.pending")}</option>
+            <option value="accepted">{t(locale, "coach.invitations.accepted")}</option>
+            <option value="expired">{t(locale, "coach.invitations.expired")}</option>
+            <option value="revoked">{t(locale, "coach.invitations.revoked")}</option>
           </select>
           <input
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none placeholder:text-smoke-4 focus:border-red"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search name, email or mobile"
-            aria-label="Search invitations by name, email or mobile"
+            placeholder={t(locale, "coach.invitations.search")}
+            aria-label={t(locale, "coach.invitations.search")}
           />
         </div>
       </div>
@@ -375,7 +382,9 @@ export default function InvitationsPageView({
         <div className="flex items-center justify-between border-b border-line-1 px-4 py-4">
           <div>
             <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.invitations.listTitle")}</h2>
-            <p className="mt-1 text-xs text-smoke-4">{loading ? "Loading..." : `${invites.length} shown`}</p>
+            <p className="mt-1 text-xs text-smoke-4">
+              {loading ? t(locale, "coach.invitations.loading") : t(locale, "coach.invitations.shown", { count: invites.length })}
+            </p>
           </div>
           {hasFilters ? (
             <button
@@ -386,7 +395,7 @@ export default function InvitationsPageView({
                 setSearch("");
               }}
             >
-              Clear filters
+              {t(locale, "coach.invitations.clearFilters")}
             </button>
           ) : null}
         </div>
@@ -397,13 +406,13 @@ export default function InvitationsPageView({
           {!loading && !error && invites.length === 0 ? (
             <EmptyState
               icon={UsersIcon}
-              title={hasFilters ? "No matching invitations" : "No invitations yet"}
-              description={hasFilters ? "Try clearing filters or changing your search." : "Create an invitation to start adding players or assistant coaches."}
+              title={hasFilters ? t(locale, "coach.invitations.emptyFilteredTitle") : t(locale, "coach.invitations.emptyTitle")}
+              description={hasFilters ? t(locale, "coach.invitations.emptyFilteredBody") : t(locale, "coach.invitations.emptyBody")}
               action={
                 !hasFilters ? (
                   <button className="btn-primary mt-2 justify-center gap-2 !px-4 !py-3 text-sm" onClick={() => setInviteOpen(true)}>
                     <PlusIcon className="h-4 w-4" />
-                    Create invitation
+                    {t(locale, "coach.invite.create")}
                   </button>
                 ) : null
               }
@@ -415,13 +424,13 @@ export default function InvitationsPageView({
               <table className="w-full min-w-[1120px] text-left text-sm">
                 <thead className="text-xs uppercase tracking-wide text-smoke-4">
                   <tr className="border-b border-line-1">
-                    <th className="px-3 py-3 font-bold">Role</th>
-                    <th className="px-3 py-3 font-bold">Status</th>
-                    <th className="px-3 py-3 font-bold">Created time</th>
-                    <th className="px-3 py-3 font-bold">Expiration time</th>
-                    <th className="px-3 py-3 font-bold">Accepted user</th>
-                    <th className="px-3 py-3 font-bold">Invite URL</th>
-                    <th className="px-3 py-3 text-right font-bold">Actions</th>
+                    <th className="px-3 py-3 font-bold">{t(locale, "coach.invitations.colRole")}</th>
+                    <th className="px-3 py-3 font-bold">{t(locale, "coach.invitations.colStatus")}</th>
+                    <th className="px-3 py-3 font-bold">{t(locale, "coach.invitations.colCreated")}</th>
+                    <th className="px-3 py-3 font-bold">{t(locale, "coach.invitations.colExpiration")}</th>
+                    <th className="px-3 py-3 font-bold">{t(locale, "coach.invitations.colAccepted")}</th>
+                    <th className="px-3 py-3 font-bold">{t(locale, "coach.invitations.colUrl")}</th>
+                    <th className="px-3 py-3 text-right font-bold">{t(locale, "coach.invitations.colActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -430,16 +439,18 @@ export default function InvitationsPageView({
                     const canRegenerate = !accepted && (invite.role !== "ASSISTANT" || canManageRoles);
                     return (
                       <tr key={invite.id} className="border-b border-line-1 last:border-b-0">
-                        <td className="px-3 py-4 font-semibold text-white">{ROLE_LABEL[invite.role]}</td>
+                        <td className="px-3 py-4 font-semibold text-white">{roleLabelMap[invite.role]}</td>
                         <td className="px-3 py-4">
                           <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${STATUS_STYLE[invite.status]}`}>
-                            {STATUS_LABEL[invite.status]}
+                            {statusLabel[invite.status]}
                           </span>
                         </td>
-                        <td className="px-3 py-4 text-smoke-2">{formatDateTime(invite.createdAt)}</td>
+                        <td className="px-3 py-4 text-smoke-2">{formatDateTime(invite.createdAt, locale)}</td>
                         <td className="px-3 py-4">
-                          <div className="text-smoke-2">{formatDateTime(invite.expiresAt)}</div>
-                          <div className={invite.status === "expired" ? "text-xs text-red-glow" : "text-xs text-smoke-4"}>{expiryLabel(invite.expiresAt)}</div>
+                          <div className="text-smoke-2">{formatDateTime(invite.expiresAt, locale)}</div>
+                          <div className={invite.status === "expired" ? "text-xs text-red-glow" : "text-xs text-smoke-4"}>
+                            {expiryLabel(invite.expiresAt, locale)}
+                          </div>
                         </td>
                         <td className="px-3 py-4">
                           {invite.acceptedUser ? (
@@ -449,7 +460,11 @@ export default function InvitationsPageView({
                             </div>
                           ) : (
                             <div className="text-xs text-smoke-4">
-                              <div>{invite.maxUses > 1 ? `Team link · ${invite.useCount}/${invite.maxUses} joined` : invite.email ?? "-"}</div>
+                              <div>
+                                {invite.maxUses > 1
+                                  ? t(locale, "coach.invitations.teamLinkJoined", { used: invite.useCount, max: invite.maxUses })
+                                  : invite.email ?? "-"}
+                              </div>
                               {invite.phone ? <div className="mt-1">{invite.phone}</div> : null}
                             </div>
                           )}
@@ -463,19 +478,19 @@ export default function InvitationsPageView({
                           <div className="flex justify-end gap-2">
                             <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => copyInvite(invite)}>
                               <CopyIcon className="h-4 w-4" />
-                              {copiedId === invite.id ? "Copied" : "Copy link"}
+                              {copiedId === invite.id ? t(locale, "coach.invite.copied") : t(locale, "coach.invite.copyLink")}
                             </button>
                             <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => sendViaWhatsApp(invite)}>
                               <WhatsAppIcon className="h-4 w-4" />
-                              WhatsApp
+                              {t(locale, "coach.invite.whatsapp")}
                             </button>
                             <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => sendViaTelegram(invite)}>
                               <TelegramIcon className="h-4 w-4" />
-                              Telegram
+                              {t(locale, "coach.invite.telegram")}
                             </button>
                             <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => regenerate(invite)} disabled={!canRegenerate || busyId === invite.id}>
                               <RefreshIcon className="h-4 w-4" />
-                              Regenerate
+                              {t(locale, "coach.invite.regenerateShort")}
                             </button>
                             <button
                               className="btn-ghost !px-2.5 !py-2 text-xs text-red-glow"
@@ -483,7 +498,7 @@ export default function InvitationsPageView({
                               disabled={accepted || busyId === invite.id}
                             >
                               <TrashIcon className="h-4 w-4" />
-                              Revoke
+                              {t(locale, "coach.invite.revoke")}
                             </button>
                           </div>
                         </td>
@@ -499,9 +514,9 @@ export default function InvitationsPageView({
 
       <ConfirmModal
         open={revoking != null}
-        title="Revoke invitation?"
-        description="This invite link will stop working immediately."
-        confirmLabel="Revoke"
+        title={t(locale, "coach.invitations.revokeTitle")}
+        description={t(locale, "coach.invitations.revokeBody")}
+        confirmLabel={t(locale, "coach.invite.revoke")}
         busy={Boolean(revoking && busyId === revoking.id)}
         onCancel={() => setRevoking(null)}
         onConfirm={confirmRevoke}
@@ -511,17 +526,21 @@ export default function InvitationsPageView({
           <div className="card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 shadow-xl shadow-black/50">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <div className="eyebrow">Invitation</div>
-                <h2 id="invite-modal-title" className="mt-1 font-display text-2xl font-bold text-white">Add team members</h2>
+                <div className="eyebrow">{t(locale, "coach.invite.eyebrow")}</div>
+                <h2 id="invite-modal-title" className="mt-1 font-display text-2xl font-bold text-white">{t(locale, "coach.invite.addMembers")}</h2>
               </div>
-              <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setInviteOpen(false)} aria-label="Close invitation dialog">Close</button>
+              <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={() => setInviteOpen(false)} aria-label={t(locale, "coach.invite.close")}>
+                {t(locale, "coach.invite.close")}
+              </button>
             </div>
-            <div className="mb-5 grid grid-cols-3 gap-2 rounded-lg border border-line-1 bg-ink-2 p-1" role="tablist" aria-label="Invitation type">
-              {([
-                ["single", "One person"],
-                ["bulk", "Player list"],
-                ["link", "Team link"],
-              ] as const).map(([mode, label]) => (
+            <div className="mb-5 grid grid-cols-3 gap-2 rounded-lg border border-line-1 bg-ink-2 p-1" role="tablist" aria-label={t(locale, "coach.invitations.typeAria")}>
+              {(
+                [
+                  ["single", "coach.invitations.modeSingle"],
+                  ["bulk", "coach.invitations.modeBulk"],
+                  ["link", "coach.invitations.modeLink"],
+                ] as const
+              ).map(([mode, key]) => (
                 <button
                   key={mode}
                   type="button"
@@ -530,97 +549,133 @@ export default function InvitationsPageView({
                   className={`min-h-11 rounded-md px-3 py-2 text-sm font-semibold transition ${inviteMode === mode ? "bg-red text-white" : "text-smoke-3 hover:bg-white/5 hover:text-white"}`}
                   onClick={() => setInviteMode(mode)}
                 >
-                  {label}
+                  {t(locale, key)}
                 </button>
               ))}
             </div>
-            {inviteMode === "single" ? <form className="space-y-4" onSubmit={createInvite}>
-              <label className="block">
-                <span className="text-xs font-semibold text-smoke-3">Role</span>
-                <select className="input-field mt-1" value={inviteRole} onChange={(event) => setInviteRole(event.target.value as InviteRole)}>
-                  <option value="PLAYER">Player</option>
-                  {canManageRoles ? <option value="ASSISTANT">Assistant coach</option> : null}
-                  {canManageRoles ? <option value="COACH">Coach</option> : null}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-smoke-3">Email optional</span>
-                <input className="input-field mt-1" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="member@example.com" />
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-smoke-3">Mobile number optional</span>
-                <input className="input-field mt-1" type="tel" inputMode="tel" autoComplete="tel" value={invitePhone} onChange={(event) => setInvitePhone(event.target.value)} placeholder="+989121234567" />
-                <span className="mt-1 block text-xs text-smoke-4">Include the country code.</span>
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-smoke-3">Expiration time</span>
-                <select className="input-field mt-1" value={expiration} onChange={(event) => setExpiration(event.target.value)}>
-                  <option value="1">24 hours</option>
-                  <option value="7">7 days</option>
-                  <option value="14">14 days</option>
-                  <option value="30">30 days</option>
-                  <option value="custom">Custom date and time</option>
-                </select>
-              </label>
-              {expiration === "custom" ? (
+            {inviteMode === "single" ? (
+              <form className="space-y-4" onSubmit={createInvite}>
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Custom expiration</span>
-                  <input className="input-field mt-1" type="datetime-local" value={customExpiresAt} min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)} onChange={(event) => setCustomExpiresAt(event.target.value)} required />
-                  <span className="mt-1 block text-xs text-smoke-4">Uses your current device time zone.</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.role")}</span>
+                  <select className="input-field mt-1" value={inviteRole} onChange={(event) => setInviteRole(event.target.value as InviteRole)}>
+                    <option value="PLAYER">{t(locale, "coach.invite.player")}</option>
+                    {canManageRoles ? <option value="ASSISTANT">{t(locale, "coach.invite.assistant")}</option> : null}
+                    {canManageRoles ? <option value="COACH">{t(locale, "coach.invite.coach")}</option> : null}
+                  </select>
                 </label>
-              ) : null}
-              <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating..." : "Create invitation"}</button>
-            </form> : null}
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.emailOptional")}</span>
+                  <input className="input-field mt-1" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="member@example.com" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.phoneOptional")}</span>
+                  <input className="input-field mt-1" type="tel" inputMode="tel" autoComplete="tel" value={invitePhone} onChange={(event) => setInvitePhone(event.target.value)} placeholder="+989121234567" />
+                  <span className="mt-1 block text-xs text-smoke-4">{t(locale, "coach.invite.phoneHint")}</span>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.expiration")}</span>
+                  <select className="input-field mt-1" value={expiration} onChange={(event) => setExpiration(event.target.value)}>
+                    <option value="1">{t(locale, "coach.invite.exp24h")}</option>
+                    <option value="7">{t(locale, "coach.invite.exp7d")}</option>
+                    <option value="14">{t(locale, "coach.invite.exp14d")}</option>
+                    <option value="30">{t(locale, "coach.invite.exp30d")}</option>
+                    <option value="custom">{t(locale, "coach.invite.expCustom")}</option>
+                  </select>
+                </label>
+                {expiration === "custom" ? (
+                  <label className="block">
+                    <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.customExpiration")}</span>
+                    <input className="input-field mt-1" type="datetime-local" value={customExpiresAt} min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)} onChange={(event) => setCustomExpiresAt(event.target.value)} required />
+                    <span className="mt-1 block text-xs text-smoke-4">{t(locale, "coach.invite.customExpirationHint")}</span>
+                  </label>
+                ) : null}
+                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>
+                  {generating ? t(locale, "coach.invite.creating") : t(locale, "coach.invite.create")}
+                </button>
+              </form>
+            ) : null}
             {inviteMode === "bulk" ? (
               <form className="space-y-4" onSubmit={createBulkInvites}>
                 <div>
-                  <label htmlFor="bulk-player-contacts" className="text-xs font-semibold text-smoke-3">Player emails or mobile numbers</label>
+                  <label htmlFor="bulk-player-contacts" className="text-xs font-semibold text-smoke-3">
+                    {t(locale, "coach.invitations.bulkLabel")}
+                  </label>
                   <textarea
                     id="bulk-player-contacts"
                     className="input-field mt-1 min-h-40 resize-y font-mono text-sm leading-7"
                     value={bulkContacts}
-                    onChange={(event) => { setBulkContacts(event.target.value); setBulkSummary(null); }}
+                    onChange={(event) => {
+                      setBulkContacts(event.target.value);
+                      setBulkSummary(null);
+                    }}
                     placeholder={"player1@example.com\n+989121234567\nplayer3@example.com"}
                     aria-describedby="bulk-player-help"
                     autoFocus
                   />
-                  <p id="bulk-player-help" className="mt-2 text-xs text-smoke-4">Enter one contact per line, or paste a column from Excel. Up to 100 players.</p>
+                  <p id="bulk-player-help" className="mt-2 text-xs text-smoke-4">
+                    {t(locale, "coach.invitations.bulkHelp")}
+                  </p>
                 </div>
                 {bulkSummary ? (
                   <div className="grid grid-cols-3 gap-2 rounded-lg border border-line-1 bg-ink-2 p-3 text-center" aria-live="polite">
-                    <div><div className="text-lg font-bold text-white">{bulkSummary.created}</div><div className="text-xs text-smoke-4">Created</div></div>
-                    <div><div className="text-lg font-bold text-[#FFC107]">{bulkSummary.duplicate}</div><div className="text-xs text-smoke-4">Already invited</div></div>
-                    <div><div className="text-lg font-bold text-red-glow">{bulkSummary.invalid}</div><div className="text-xs text-smoke-4">Invalid</div></div>
+                    <div>
+                      <div className="text-lg font-bold text-white">{bulkSummary.created}</div>
+                      <div className="text-xs text-smoke-4">{t(locale, "coach.invitations.bulkCreated")}</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-[#FFC107]">{bulkSummary.duplicate}</div>
+                      <div className="text-xs text-smoke-4">{t(locale, "coach.invitations.bulkDuplicate")}</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-red-glow">{bulkSummary.invalid}</div>
+                      <div className="text-xs text-smoke-4">{t(locale, "coach.invitations.bulkInvalid")}</div>
+                    </div>
                   </div>
                 ) : null}
-                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating invitations..." : "Create player invitations"}</button>
+                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>
+                  {generating ? t(locale, "coach.invitations.bulkCreating") : t(locale, "coach.invitations.bulkSubmit")}
+                </button>
               </form>
             ) : null}
             {inviteMode === "link" ? (
               <form className="space-y-4" onSubmit={createGroupInvite}>
                 <div className="rounded-lg border border-line-1 bg-ink-2 p-4">
-                  <h3 className="font-semibold text-white">One link for the whole team</h3>
-                  <p className="mt-1 text-sm text-smoke-3">Share it in WhatsApp or Telegram. Each player can use it once until the capacity or expiration is reached.</p>
+                  <h3 className="font-semibold text-white">{t(locale, "coach.invitations.linkTitle")}</h3>
+                  <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.invitations.linkBody")}</p>
                 </div>
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Maximum players</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invitations.maxPlayers")}</span>
                   <input className="input-field mt-1" type="number" min="2" max="100" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} required />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-semibold text-smoke-3">Expiration time</span>
+                  <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.expiration")}</span>
                   <select className="input-field mt-1" value={expiration} onChange={(event) => setExpiration(event.target.value)}>
-                    <option value="1">24 hours</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="custom">Custom date and time</option>
+                    <option value="1">{t(locale, "coach.invite.exp24h")}</option>
+                    <option value="7">{t(locale, "coach.invite.exp7d")}</option>
+                    <option value="14">{t(locale, "coach.invite.exp14d")}</option>
+                    <option value="30">{t(locale, "coach.invite.exp30d")}</option>
+                    <option value="custom">{t(locale, "coach.invite.expCustom")}</option>
                   </select>
                 </label>
-                {expiration === "custom" ? <input className="input-field" type="datetime-local" value={customExpiresAt} min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)} onChange={(event) => setCustomExpiresAt(event.target.value)} required /> : null}
+                {expiration === "custom" ? (
+                  <input className="input-field" type="datetime-local" value={customExpiresAt} min={new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 16)} onChange={(event) => setCustomExpiresAt(event.target.value)} required />
+                ) : null}
                 {createdGroupInvite ? (
                   <div className="rounded-lg border border-[#4CAF50]/40 bg-[#4CAF50]/10 p-4" aria-live="polite">
-                    <p className="text-sm font-semibold text-white">Ready for up to {createdGroupInvite.maxUses} players</p>
+                    <p className="text-sm font-semibold text-white">{t(locale, "coach.invitations.linkReady", { count: createdGroupInvite.maxUses })}</p>
                     <code className="mt-2 block break-all text-xs text-smoke-2">{createdGroupInvite.url}</code>
-                    <button type="button" className="btn-ghost mt-3 !px-3 !py-2 text-xs" onClick={() => navigator.clipboard.writeText(createdGroupInvite.url).then(() => showToast("Team link copied."))}><CopyIcon className="h-4 w-4" /> Copy team link</button>
+                    <button
+                      type="button"
+                      className="btn-ghost mt-3 !px-3 !py-2 text-xs"
+                      onClick={() => navigator.clipboard.writeText(createdGroupInvite.url).then(() => showToast(t(locale, "coach.invite.copied")))}
+                    >
+                      <CopyIcon className="h-4 w-4" /> {t(locale, "coach.invitations.copyTeamLink")}
+                    </button>
                   </div>
                 ) : null}
-                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>{generating ? "Creating link..." : "Create team link"}</button>
+                <button className="btn-primary w-full !py-3 text-sm" type="submit" disabled={generating}>
+                  {generating ? t(locale, "coach.invitations.creatingLink") : t(locale, "coach.invitations.createLink")}
+                </button>
               </form>
             ) : null}
           </div>

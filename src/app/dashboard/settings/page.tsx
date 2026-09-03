@@ -20,7 +20,11 @@ export default async function PreferencesSettingsPage() {
         <h1 className="font-display text-3xl font-bold text-white">{t(preferences.locale, "settings.title")}</h1>
         <p className="mt-2 text-sm text-smoke-3">{t(preferences.locale, "settings.description")}</p>
         <section className="mt-6 rounded-xl border border-line-1 bg-ink-3 p-6">
-          <PreferencesForm settings />
+          <PreferencesForm
+            settings
+            initialLocale={preferences.locale}
+            initialTimeZone={preferences.timeZone}
+          />
         </section>
       </div>
     </main>
