@@ -183,6 +183,9 @@
       "programUpdated": {
         "title": "برنامه به‌روز شد",
         "body": "{coach} برنامه {program} را به‌روز کرد."
+      },
+      "coachMessage": {
+        "title": "پیام مربی"
       }
     }
   },

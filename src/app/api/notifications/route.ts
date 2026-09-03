@@ -14,6 +14,10 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
   await ensureDatabase();
+  const { ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
+  await ensureRezaDemoRoster().catch((error) => {
+    console.error("[notifications] demo roster seed skipped", error);
+  });
   if (session.role === "PLAYER") {
     await ensurePlayerReminderNotifications(session.sub);
   } else {

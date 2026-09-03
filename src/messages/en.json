@@ -183,6 +183,9 @@
       "programUpdated": {
         "title": "Program updated",
         "body": "{coach} updated {program}."
+      },
+      "coachMessage": {
+        "title": "Message from your coach"
       }
     }
   },

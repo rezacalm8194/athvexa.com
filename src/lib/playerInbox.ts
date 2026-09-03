@@ -65,13 +65,20 @@ export async function notifyPlayerOfTeamInvite({
   const locale = await playerLocale(playerId);
   const title = t(locale, "notifications.types.teamInvite.title");
   const description = t(locale, "notifications.types.teamInvite.body", { coach: coachName, team: teamName });
-  const { conversation } = await sendCoachToPlayerMessage({
-    coachId,
-    playerId,
-    senderId: senderId ?? coachId,
-    body: description,
-    contextType: "TEAM_INVITE",
+  const existingConversation = await db.messageConversation.findUnique({
+    where: { coachId_playerId: { coachId, playerId } },
+    select: { id: true, messages: { where: { contextType: "TEAM_INVITE" }, take: 1, select: { id: true } } },
   });
+  const conversation =
+    existingConversation && existingConversation.messages.length > 0
+      ? existingConversation
+      : (await sendCoachToPlayerMessage({
+          coachId,
+          playerId,
+          senderId: senderId ?? coachId,
+          body: description,
+          contextType: "TEAM_INVITE",
+        })).conversation;
 
   await createNotification({
     userId: playerId,
@@ -109,21 +116,27 @@ export async function notifyPlayerOfProgramAssignment({
   );
 
   if (isNew) {
-    const { conversation } = await sendCoachToPlayerMessage({
-      coachId,
-      playerId,
-      senderId: coachId,
-      body: description,
-      contextType: "PROGRAM",
-    });
+    const dedupeKey = `program-assigned:${programId}:${playerId}`;
+    const alreadyNotified = await db.notification.findUnique({ where: { dedupeKey }, select: { id: true } });
+    let conversationId: string | null = null;
+    if (!alreadyNotified) {
+      const { conversation } = await sendCoachToPlayerMessage({
+        coachId,
+        playerId,
+        senderId: coachId,
+        body: description,
+        contextType: "PROGRAM",
+      });
+      conversationId = conversation.id;
+    }
     await createNotification({
       userId: playerId,
       title,
       description,
       type,
-      actionHref: `/dashboard/messages?conversationId=${conversation.id}`,
+      actionHref: conversationId ? `/dashboard/messages?conversationId=${conversationId}` : "/dashboard/player/training",
       relatedId: programId,
-      dedupeKey: `program-assigned:${programId}:${playerId}`,
+      dedupeKey,
     });
     return;
   }
@@ -169,12 +182,11 @@ export async function deliverInviteToExistingUser({
       )
     : existing.coachId === invite.coachId;
 
-  if (alreadyMember) {
-    return { notified: false, joined: false, userId: existing.id };
+  if (!alreadyMember) {
+    await addUserToInvitedTeam(existing.id, invite);
+    await consumeInvite(invite.id, existing.id);
   }
 
-  await addUserToInvitedTeam(existing.id, invite);
-  await consumeInvite(invite.id, existing.id);
   await notifyPlayerOfTeamInvite({
     playerId: existing.id,
     coachId: invite.coachId,
@@ -183,5 +195,5 @@ export async function deliverInviteToExistingUser({
     teamName,
   });
 
-  return { notified: true, joined: true, userId: existing.id };
+  return { notified: true, joined: !alreadyMember, userId: existing.id };
 }

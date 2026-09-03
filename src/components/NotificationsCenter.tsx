@@ -59,6 +59,11 @@ function resolveNotificationText(item: Notification, locale: Locale): { title: s
         title: t(locale, "notifications.types.programUpdated.title"),
         description: item.description,
       };
+    case "COACH_MESSAGE":
+      return {
+        title: t(locale, "notifications.types.coachMessage.title"),
+        description: item.description,
+      };
     default:
       return {
         title:

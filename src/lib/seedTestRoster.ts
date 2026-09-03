@@ -1,41 +1,49 @@
-import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { notifyPlayerOfProgramAssignment, notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
+import { weekDates } from "@/lib/week";
 
-export const DEMO_COACH_EMAIL = "rezacalm993@gmail.com";
-export const DEMO_ROSTER_PASSWORD = "TestAthvexa123!";
+export const DEMO_COACH_EMAIL = "rezasafrarinet1@gmail.com";
+export const DEMO_PLAYER_EMAIL = "rezacalm993@gmail.com";
 
-const ROSTER = [
-  { name: "Sara Karimi", email: "sara.assistant@test.athvexa.local", role: "ASSISTANT" as const, teamRole: "ASSISTANT_COACH" },
-  { name: "Nima Ahmadi", email: "nima.assistant@test.athvexa.local", role: "ASSISTANT" as const, teamRole: "ASSISTANT_COACH" },
-  { name: "Ali Hassan", email: "ali.player@test.athvexa.local", role: "PLAYER" as const, teamRole: "PLAYER" },
-  { name: "Omar Khalid", email: "omar.player@test.athvexa.local", role: "PLAYER" as const, teamRole: "PLAYER" },
-];
+const DEMO_PROGRAM_NAME = "برنامه هفتگی آمادگی";
 
-function today() {
+function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function isDemoCoachEmail(email: string | null | undefined) {
-  return (email ?? "").trim().toLowerCase() === DEMO_COACH_EMAIL;
+function dateOffset(daysFromToday: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekdayName(date = new Date()) {
+  return new Intl.DateTimeFormat("en", { weekday: "long" }).format(date);
+}
+
+function isEmail(value: string | null | undefined, expected: string) {
+  return (value ?? "").trim().toLowerCase() === expected;
 }
 
 export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?: string }) {
-  const coach = options?.coachId
-    ? await db.user.findUnique({ where: { id: options.coachId }, select: { id: true, role: true, email: true } })
-    : await db.user.findFirst({ where: { email: DEMO_COACH_EMAIL }, select: { id: true, role: true, email: true } });
-
-  if (!coach || !isDemoCoachEmail(coach.email)) return;
+  const coach = await db.user.findFirst({
+    where: { email: { contains: "rezasafrarinet1@" } },
+    select: { id: true, role: true, email: true, name: true },
+  });
+  if (!coach || !isEmail(coach.email, DEMO_COACH_EMAIL)) return;
+  if (options?.coachId && options.coachId !== coach.id) return;
 
   if (coach.role !== "COACH") {
     await db.user.update({ where: { id: coach.id }, data: { role: "COACH" } });
   }
 
-  const teams = await db.team.findMany({ where: { coachId: coach.id }, orderBy: { createdAt: "asc" } });
-  const teamIds = new Set(teams.map((team) => team.id));
-  if (options?.teamId) teamIds.add(options.teamId);
+  let team =
+    (options?.teamId
+      ? await db.team.findFirst({ where: { id: options.teamId, coachId: coach.id } })
+      : null) ?? (await db.team.findFirst({ where: { coachId: coach.id }, orderBy: { createdAt: "asc" } }));
 
-  if (teamIds.size === 0) {
-    const created = await db.team.create({
+  if (!team) {
+    team = await db.team.create({
       data: {
         name: "Athvexa Test Team",
         sport: "Football",
@@ -48,148 +56,216 @@ export async function ensureRezaDemoRoster(options?: { coachId?: string; teamId?
         coachId: coach.id,
       },
     });
-    teamIds.add(created.id);
   }
 
-  const passwordHash = await bcrypt.hash(DEMO_ROSTER_PASSWORD, 10);
-  const date = today();
-  const memberIds: { id: string; teamRole: string; role: "ASSISTANT" | "PLAYER"; email: string }[] = [];
+  await db.teamMember.upsert({
+    where: { teamId_userId: { teamId: team.id, userId: coach.id } },
+    update: { role: "OWNER" },
+    create: { teamId: team.id, userId: coach.id, role: "OWNER" },
+  });
 
-  for (const row of ROSTER) {
-    let user = await db.user.findFirst({ where: { email: row.email } });
-    if (!user) {
-      user = await db.user.create({
-        data: {
-          name: row.name,
-          email: row.email,
-          passwordHash,
-          role: row.role,
-          coachId: coach.id,
-        },
-      });
-    } else {
-      user = await db.user.update({
-        where: { id: user.id },
-        data: { name: row.name, role: row.role, coachId: coach.id },
-      });
-    }
-    memberIds.push({ id: user.id, teamRole: row.teamRole, role: row.role, email: row.email });
+  const player = await db.user.findFirst({
+    where: { email: { contains: "rezacalm993@" } },
+    select: { id: true, name: true, email: true, role: true, coachId: true },
+  });
+  if (!player || !isEmail(player.email, DEMO_PLAYER_EMAIL)) return;
 
-    if (row.role === "PLAYER") {
-      const score = row.email.startsWith("ali.") ? 84 : 46;
-      await db.dailyLog.upsert({
-        where: { playerId_date: { playerId: user.id, date } },
-        update: { score },
-        create: {
-          playerId: user.id,
-          date,
-          score,
-          sleepHours: score >= 80 ? 7.5 : 5,
-          waterLiters: score >= 80 ? 2.1 : 0.9,
-          energy: score >= 80 ? 4 : 2,
-          fatigue: score >= 80 ? 2 : 4,
-          soreness: score >= 80 ? 2 : 4,
-          mood: score >= 80 ? 4 : 2,
-          stress: score >= 80 ? 2 : 4,
-          sleepQuality: score >= 80 ? 4 : 2,
-        },
-      });
-    }
-  }
+  const hadMembership = Boolean(
+    await db.teamMember.findUnique({
+      where: { teamId_userId: { teamId: team.id, userId: player.id } },
+    })
+  );
 
-  for (const teamId of teamIds) {
-    const team = await db.team.findFirst({ where: { id: teamId, coachId: coach.id }, select: { id: true } });
-    if (!team) continue;
+  await db.user.update({
+    where: { id: player.id },
+    data: { role: "PLAYER", coachId: coach.id, locale: "fa" },
+  });
 
-    await db.teamMember.upsert({
-      where: { teamId_userId: { teamId, userId: coach.id } },
-      update: { role: "OWNER" },
-      create: { teamId, userId: coach.id, role: "OWNER" },
+  await db.teamMember.upsert({
+    where: { teamId_userId: { teamId: team.id, userId: player.id } },
+    update: { role: "PLAYER" },
+    create: { teamId: team.id, userId: player.id, role: "PLAYER" },
+  });
+
+  const existingProgram = await db.program.findFirst({
+    where: { coachId: coach.id, name: DEMO_PROGRAM_NAME },
+    select: { id: true, name: true },
+  });
+  const hadAssignment = existingProgram
+    ? Boolean(
+        await db.programAssignment.findUnique({
+          where: { programId_playerId: { programId: existingProgram.id, playerId: player.id } },
+        })
+      )
+    : false;
+
+  const program = await ensurePlayerProgram(coach.id, player.id);
+  await ensurePlayerChecklist(player.id);
+  await ensurePlayerPlanner(player.id);
+  await ensureCoachNote(player.id, coach.name);
+
+  const hasInviteNotice = await db.notification.findFirst({
+    where: { userId: player.id, type: { in: ["TEAM_INVITE", "PROGRAM_ASSIGNED"] } },
+    select: { id: true },
+  });
+
+  if (!hadMembership || !hasInviteNotice) {
+    await notifyPlayerOfTeamInvite({
+      playerId: player.id,
+      coachId: coach.id,
+      senderId: coach.id,
+      coachName: coach.name,
+      teamName: team.name,
     });
-
-    for (const member of memberIds) {
-      await db.teamMember.upsert({
-        where: { teamId_userId: { teamId, userId: member.id } },
-        update: { role: member.teamRole },
-        create: { teamId, userId: member.id, role: member.teamRole },
-      });
-    }
   }
 
-  const playerIds = memberIds.filter((member) => member.role === "PLAYER").map((member) => member.id);
-  await ensureDemoPrograms(coach.id, playerIds);
+  if (!hadAssignment || !hasInviteNotice) {
+    await notifyPlayerOfProgramAssignment({
+      playerId: player.id,
+      coachId: coach.id,
+      coachName: coach.name,
+      programId: program.id,
+      programName: program.name,
+      isNew: true,
+    });
+  }
 }
 
-function dateOffset(daysFromToday: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromToday);
-  return date.toISOString().slice(0, 10);
-}
+async function ensurePlayerProgram(coachId: string, playerId: string) {
+  let program = await db.program.findFirst({
+    where: { coachId, name: DEMO_PROGRAM_NAME },
+    select: { id: true, name: true },
+  });
 
-const DEMO_PROGRAMS = [
-  {
-    name: "Pre-season fitness",
-    description: "Speed, strength and recovery work to build match fitness.",
-    goal: "Match fitness",
-    durationWeeks: 6,
-    sessionsPerWeek: 4,
-    startDate: dateOffset(-10),
-    endDate: dateOffset(32),
-    status: "ACTIVE" as const,
-    sessions: [
-      { title: "Speed + SAQ", day: "Monday", durationMinutes: 75, intensity: "HIGH", order: 0 },
-      { title: "Strength", day: "Tuesday", durationMinutes: 60, intensity: "MEDIUM", order: 1 },
-      { title: "Tactical shape", day: "Thursday", durationMinutes: 90, intensity: "MEDIUM", order: 2 },
-      { title: "Recovery", day: "Saturday", durationMinutes: 40, intensity: "LOW", order: 3 },
-    ],
-    assignAllPlayers: true,
-  },
-  {
-    name: "Match-week recovery",
-    description: "Lighter load for the days around a fixture.",
-    goal: "Stay fresh for match day",
-    durationWeeks: 2,
-    sessionsPerWeek: 3,
-    startDate: dateOffset(-2),
-    endDate: dateOffset(12),
-    status: "DRAFT" as const,
-    sessions: [
-      { title: "Activation", day: "Monday", durationMinutes: 30, intensity: "LOW", order: 0 },
-      { title: "Video + walkthrough", day: "Wednesday", durationMinutes: 45, intensity: "MEDIUM", order: 1 },
-      { title: "Set pieces", day: "Friday", durationMinutes: 60, intensity: "MEDIUM", order: 2 },
-    ],
-    assignAllPlayers: false,
-  },
-];
-
-async function ensureDemoPrograms(coachId: string, playerIds: string[]) {
-  for (const def of DEMO_PROGRAMS) {
-    let program = await db.program.findFirst({ where: { coachId, name: def.name }, select: { id: true } });
-    if (!program) {
-      program = await db.program.create({
-        data: {
-          coachId,
-          name: def.name,
-          description: def.description,
-          goal: def.goal,
-          durationWeeks: def.durationWeeks,
-          sessionsPerWeek: def.sessionsPerWeek,
-          startDate: def.startDate,
-          endDate: def.endDate,
-          status: def.status,
-          sessions: { create: def.sessions },
+  if (!program) {
+    program = await db.program.create({
+      data: {
+        coachId,
+        name: DEMO_PROGRAM_NAME,
+        description: "برنامه تستی مربی برای دیدن تمرین، چک‌لیست و پیام در حساب شاگرد.",
+        goal: "آمادگی هفتگی",
+        durationWeeks: 4,
+        sessionsPerWeek: 4,
+        startDate: dateOffset(-3),
+        endDate: dateOffset(25),
+        status: "ACTIVE",
+        sessions: {
+          create: [
+            {
+              title: "سرعت و چابکی",
+              day: "Monday",
+              durationMinutes: 70,
+              intensity: "HIGH",
+              notes: "گرم کردن ۱۰ دقیقه، SAQ، ۴ تکرار سرعت، سرد کردن.",
+              order: 0,
+            },
+            {
+              title: "قدرت و قدرتمندی",
+              day: "Wednesday",
+              durationMinutes: 60,
+              intensity: "MEDIUM",
+              notes: "اسکات، پرس، حرکت اصلی پایین‌تنه، حرکات کمکی.",
+              order: 1,
+            },
+            {
+              title: "تاکتیک و شکل تیمی",
+              day: "Thursday",
+              durationMinutes: 80,
+              intensity: "MEDIUM",
+              notes: "مالکیت، انتقال، ضربات ایستگاهی.",
+              order: 2,
+            },
+            {
+              title: "ریکاوری فعال",
+              day: "Saturday",
+              durationMinutes: 40,
+              intensity: "LOW",
+              notes: "دویدن سبک، کشش، تنفس و موبیلیتی.",
+              order: 3,
+            },
+          ],
         },
-        select: { id: true },
-      });
-    }
-
-    const assigned = def.assignAllPlayers ? playerIds : playerIds.slice(0, 1);
-    for (const playerId of assigned) {
-      await db.programAssignment.upsert({
-        where: { programId_playerId: { programId: program.id, playerId } },
-        update: {},
-        create: { programId: program.id, playerId },
-      });
-    }
+      },
+      select: { id: true, name: true },
+    });
   }
+
+  await db.programAssignment.upsert({
+    where: { programId_playerId: { programId: program.id, playerId } },
+    update: {},
+    create: { programId: program.id, playerId },
+  });
+
+  return program;
+}
+
+async function ensurePlayerChecklist(playerId: string) {
+  const date = todayKey();
+  const sessionTitle = weekdayName() === "Thursday" ? "تاکتیک و شکل تیمی" : "جلسه تمرین امروز";
+  const labels = [
+    "وزن‌کشی صبح",
+    "صبحانه و مکمل",
+    sessionTitle,
+    "آب و ریکاوری",
+    "کشش و خواب کافی",
+  ];
+
+  let log = await db.dailyLog.findUnique({
+    where: { playerId_date: { playerId, date } },
+    include: { tasks: true },
+  });
+
+  if (!log) {
+    log = await db.dailyLog.create({
+      data: {
+        playerId,
+        date,
+        score: 0,
+        tasks: { create: labels.map((label, order) => ({ label, order })) },
+      },
+      include: { tasks: true },
+    });
+    return;
+  }
+
+  if (log.tasks.length === 0) {
+    await db.task.createMany({
+      data: labels.map((label, order) => ({ dailyLogId: log.id, label, order })),
+    });
+  }
+}
+
+async function ensurePlayerPlanner(playerId: string) {
+  const dates = weekDates();
+  const plan = [
+    { index: 0, label: "سرعت و چابکی", category: "Training" },
+    { index: 2, label: "قدرت در باشگاه", category: "Gym" },
+    { index: 3, label: "تاکتیک تیمی", category: "Training" },
+    { index: 5, label: "ریکاوری فعال", category: "Recovery" },
+    { index: 6, label: "استراحت", category: "Rest" },
+  ];
+
+  for (const item of plan) {
+    const date = dates[item.index];
+    if (!date) continue;
+    const existing = await db.planItem.findFirst({ where: { playerId, date, label: item.label } });
+    if (existing) continue;
+    const count = await db.planItem.count({ where: { playerId, date } });
+    await db.planItem.create({
+      data: { playerId, date, label: item.label, category: item.category, order: count },
+    });
+  }
+}
+
+async function ensureCoachNote(playerId: string, coachName: string) {
+  const date = todayKey();
+  await db.coachNote.upsert({
+    where: { playerId_date: { playerId, date } },
+    update: {},
+    create: {
+      playerId,
+      date,
+      message: `${coachName}: برنامه این هفته فعال است. چک‌لیست امروز را کامل کن و بعد از تمرین وضعیتت را ثبت کن.`,
+    },
+  });
 }
