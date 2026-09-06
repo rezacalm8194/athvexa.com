@@ -1012,7 +1012,7 @@
   /* FOOTER */
   footer {
     border-top: 1px solid rgba(255,255,255,0.06);
-    padding: 48px 5vw;
+    padding: 28px 5vw;
     background: var(--black);
   }
   .footer-inner {
@@ -1021,22 +1021,15 @@
     flex-wrap: wrap; gap: 20px;
   }
 
-  .footer-logo {
-    font-family: var(--font-display);
-    font-size: 22px; font-weight: 900;
-    color: var(--white);
-  }
-  .footer-logo span { color: var(--red); }
-
   .footer-copy { font-size: 13px; color: var(--gray-3); }
   .footer-credit {
-    max-width: 1200px; margin: 24px auto 0; padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+    display: flex; align-items: center;
     gap: 6px; font-size: 13px; line-height: 1.8; text-align: center;
     color: var(--gray-4);
   }
-  .footer-credit strong { color: var(--white); font-weight: 700; }
+  .footer-credit a { color: var(--white); font-weight: 700; text-decoration: none; }
+  .footer-credit a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .footer-credit a:focus-visible { outline: 2px solid var(--red-glow); outline-offset: 4px; }
   .footer-credit-heart { width: 14px; height: 14px; flex-shrink: 0; color: var(--red-glow); }
   .footer-links { display: flex; gap: 24px; }
   .footer-links a { font-size: 13px; color: var(--gray-3); text-decoration: none; }
@@ -1925,18 +1918,18 @@
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo">ATH<span>VEXA</span></div>
     <div class="footer-copy" data-i18n="footer.copy">© 2026 Athvexa. Football Performance Platform.</div>
     <div class="footer-links">
       <a href="#" data-i18n="footer.privacy">Privacy</a>
       <a href="#" data-i18n="footer.terms">Terms</a>
       <a href="#" data-i18n="footer.contact">Contact</a>
     </div>
-  </div>
-  <div class="footer-credit">
-    <span data-i18n="footer.credit">Designed and developed with love by</span>
+    <div class="footer-credit">
+    <span data-i18n="footer.credit">Designed and developed with</span>
     <svg class="footer-credit-heart" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 21s-9-5.5-9-12a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6.5-9 12-9 12Z"/></svg>
-    <strong data-i18n="footer.designer">Reza Safari Coaching Group</strong>
+    <span data-i18n="footer.creditBy">by</span>
+    <a href="https://rezasafari.net" data-i18n="footer.designer">Reza Safari Coaching Group</a>
+    </div>
   </div>
 </footer>
 
