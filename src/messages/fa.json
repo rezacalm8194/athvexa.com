@@ -938,6 +938,7 @@
       "emptyBody": "اولین تست این بازیکن را اضافه کنید.",
       "newAssessment": "ارزیابی جدید",
       "colType": "نوع",
+      "colDescription": "توضیحات",
       "colDate": "تاریخ",
       "colScore": "امتیاز",
       "colChange": "تغییر",

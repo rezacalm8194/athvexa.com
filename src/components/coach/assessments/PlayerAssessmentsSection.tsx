@@ -191,6 +191,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
             <thead className="text-[11px] uppercase tracking-wide text-smoke-4">
               <tr className="border-b border-white/5">
                 <th className="py-2 pr-3 font-semibold">{t(locale, "coach.assessmentUi.colType")}</th>
+                <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colDescription")}</th>
                 <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colDate")}</th>
                 <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colScore")}</th>
                 <th className="py-2 pl-3 text-right font-semibold">{t(locale, "coach.assessmentUi.colChange")}</th>
@@ -211,6 +212,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
                   tabIndex={0}
                 >
                   <td className="py-2.5 pr-3 font-semibold text-white">{assessment.type}</td>
+                  <td className="min-w-[160px] max-w-xs whitespace-pre-wrap break-words px-3 py-2.5 text-smoke-3 [overflow-wrap:anywhere]">{assessment.notes?.trim() || "—"}</td>
                   <td className="px-3 py-2.5 text-smoke-3">{formatAssessmentDate(assessment.date, locale)}</td>
                   <td className="px-3 py-2.5 font-semibold tabular-nums text-white">{formatScore(assessment.score)}</td>
                   <td className="py-2.5 pl-3 text-right"><AssessmentChangeBadge value={assessment.change} /></td>

@@ -938,6 +938,7 @@
       "emptyBody": "Add the first test for this player.",
       "newAssessment": "New assessment",
       "colType": "Type",
+      "colDescription": "Description",
       "colDate": "Date",
       "colScore": "Score",
       "colChange": "Change",
