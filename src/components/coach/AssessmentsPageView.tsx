@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { formatAssessmentDate } from "@/components/coach/assessments/AssessmentUi";
+import { AssessmentModal, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
@@ -32,6 +32,7 @@ type PlayerSummary = {
 };
 
 type AssessmentResponse = {
+  players: PlayerOption[];
   playersSummary: PlayerSummary[];
   kpis: {
     totalPlayers: number;
@@ -53,6 +54,35 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<AssessmentType | "all">("all");
   const [month, setMonth] = useState("");
+  const [createForm, setCreateForm] = useState<AssessmentFormState | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const saveAssessment = async (form: AssessmentFormState) => {
+    if (saving) return;
+    const score = Number(form.score);
+    if (form.score.trim() === "" || !Number.isFinite(score)) {
+      showToast(t(locale, "coach.assessmentUi.invalidScore"), "error");
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch("/api/coach/assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, score }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));
+      showToast(t(locale, "coach.assessmentUi.created"));
+      setCreateForm(null);
+      await loadPlayers();
+      router.refresh();
+    } catch (saveError) {
+      showToast(saveError instanceof Error ? saveError.message : t(locale, "coach.assessmentUi.saveError"), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -122,6 +152,16 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
           <h1 className="mt-1 font-display text-3xl font-black text-white">{t(locale, "coach.assessments.title")}</h1>
           <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.assessments.subtitle")}</p>
         </div>
+        <div className="flex flex-col gap-3 sm:items-end">
+          <button
+            type="button"
+            className="btn-primary inline-flex items-center justify-center gap-2 !px-4 !py-2.5 text-sm disabled:opacity-50"
+            disabled={loading || Boolean(error) || !data?.players.length}
+            onClick={() => setCreateForm(emptyAssessmentForm(data?.players.length === 1 ? data.players[0].id : ""))}
+          >
+            <PlusIcon className="h-4 w-4" />
+            {t(locale, "coach.assessmentUi.newAssessment")}
+          </button>
         {!loading && kpis.totalPlayers > 0 ? (
           <p className="text-sm text-smoke-3">
             <span className="font-semibold text-white">{kpis.playersNotAssessed}</span> {t(locale, "coach.assessments.due")}
@@ -133,6 +173,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
             <span className="font-semibold text-white">{kpis.totalAssessments}</span> {t(locale, "coach.assessments.total")}
           </p>
         ) : null}
+        </div>
       </div>
 
       {!loading && !error && kpis.totalPlayers === 0 ? (
@@ -224,6 +265,18 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
           </div>
         </>
       )}
+      {createForm ? (
+        <AssessmentModal
+          open
+          mode="create"
+          players={data?.players ?? []}
+          initial={createForm}
+          busy={saving}
+          locale={locale}
+          onClose={() => { if (!saving) setCreateForm(null); }}
+          onSubmit={saveAssessment}
+        />
+      ) : null}
     </section>
   );
 }
