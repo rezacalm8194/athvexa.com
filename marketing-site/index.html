@@ -1482,12 +1482,45 @@
   }
   .mobile-menu .lang-btn { font-size: 16px; padding: 8px 16px; }
 
+  @font-face {
+    font-family: IRANSans;
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: local("IRANSans"), local("IRANSans Bold"), local("IRANSansWeb Bold"), local("IRANSansX Bold");
+  }
+  @font-face {
+    font-family: IRANSans;
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: local("IRANSans"), local("IRANSans Black"), local("IRANSansWeb Black"), local("IRANSansX ExtraBold");
+  }
+  @font-face {
+    font-family: IRANSans;
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: local("IRANSans Black"), local("IRANSans ExtraBold"), local("IRANSansWeb Black"), local("IRANSansX Black");
+  }
+
   /* RTL */
   html[dir="rtl"] {
     --font-body: 'Vazirmatn', 'Inter', sans-serif;
+    --font-display: 'IRANSans', 'IRANSansX', 'IRANSansWeb', 'Vazirmatn', sans-serif;
   }
   html[dir="rtl"] body {
     font-family: var(--font-body);
+  }
+  html[dir="rtl"] .nav-logo {
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  html[dir="rtl"] .section-title,
+  html[dir="rtl"] .hero h1 {
+    font-family: 'IRANSans', 'IRANSansX', 'IRANSansWeb', 'Vazirmatn', sans-serif;
+    letter-spacing: 0;
+    line-height: 1.35;
+    font-weight: 800;
   }
   html[dir="rtl"] .product-tab {
     text-align: right;
