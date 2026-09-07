@@ -157,7 +157,7 @@ function withAppAuthLinks(html: string) {
     .replace(
       /function goToApp\(\) \{[\s\S]*?\n\}/,
       `function goToApp() {
-  window.location.href = '${APP_ORIGIN}/dashboard';
+  window.location.href = '${APP_ORIGIN}/login';
 }`
     );
 }

@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
 
 export default function LoginForm({ locale }: { locale: Locale }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next");
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -22,6 +21,7 @@ export default function LoginForm({ locale }: { locale: Locale }) {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password, remember }),
       });
@@ -39,8 +39,10 @@ export default function LoginForm({ locale }: { locale: Locale }) {
         return;
       }
       const fallback = !data.user?.onboardingCompletedAt ? "/onboarding/preferences" : data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach";
-      router.push(nextPath?.startsWith("/") ? nextPath : fallback);
-      router.refresh();
+      // Full navigation so the session cookie is sent on the next request.
+      // router.push can race Set-Cookie and bounce the user back to /login.
+      window.location.assign(nextPath?.startsWith("/") ? nextPath : fallback);
+      return;
     } catch {
       setError(t(locale, "auth.loginFailed"));
     } finally {

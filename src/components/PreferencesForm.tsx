@@ -68,7 +68,7 @@ export default function PreferencesForm({
       if (!res.ok) throw new Error(data.error || t(locale, "preferences.saveError"));
       document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; samesite=lax`;
       if (settings) router.refresh();
-      else router.push(data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
+      else window.location.assign(data.user?.role === "PLAYER" ? "/dashboard/player" : "/dashboard/coach");
     } catch (err) {
       setError(err instanceof Error ? err.message : t(locale, "preferences.saveError"));
     } finally {

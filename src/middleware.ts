@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { expiredSessionCookieOptions, SESSION_COOKIE, verifySession } from "@/lib/jwt";
 
-function redirectToLogin(req: NextRequest, pathname: string) {
+function redirectToLogin(req: NextRequest, pathname: string, clearInvalidCookie = false) {
   const url = req.nextUrl.clone();
   url.pathname = "/login";
   url.searchParams.set("next", pathname);
   const res = NextResponse.redirect(url);
-  res.cookies.set(SESSION_COOKIE, "", expiredSessionCookieOptions());
+  // Only expire a cookie that is present and invalid. Clearing on every
+  // unauthenticated dashboard hit overwrites a session that was just set by
+  // /api/auth/login when the following client navigation races the cookie.
+  if (clearInvalidCookie) {
+    res.cookies.set(SESSION_COOKIE, "", expiredSessionCookieOptions());
+  }
   return res;
 }
 
@@ -48,7 +53,7 @@ export async function middleware(req: NextRequest) {
   const isDashboard = pathname.startsWith("/dashboard");
 
   if (isDashboard && !session) {
-    return redirectToLogin(req, pathname);
+    return redirectToLogin(req, pathname, Boolean(token));
   }
 
   const res = NextResponse.next();

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { roleLabel, t, type Locale } from "@/lib/i18n";
 
 type Role = "PLAYER" | "COACH" | "ASSISTANT";
@@ -16,7 +15,6 @@ export default function RegisterForm({
   inviteToken?: string;
   inviteRole?: "PLAYER" | "ASSISTANT" | "COACH";
 }) {
-  const router = useRouter();
   const [role, setRole] = useState<Role | null>(inviteToken ? inviteRole ?? "PLAYER" : null);
   const [name, setName] = useState("");
   const [contactType, setContactType] = useState<ContactType>("email");
@@ -33,6 +31,7 @@ export default function RegisterForm({
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, contactType, contact, password, role, inviteToken }),
       });
@@ -41,8 +40,8 @@ export default function RegisterForm({
         setError(data.error ?? t(locale, "auth.genericError"));
         return;
       }
-      router.push("/onboarding/preferences");
-      router.refresh();
+      window.location.assign("/onboarding/preferences");
+      return;
     } catch {
       setError(t(locale, "auth.registerFailed"));
     } finally {

@@ -13,13 +13,6 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     await ensureDatabase();
-    // This runs only after the database bootstrap has completed. Running it
-    // inside ensureDatabase causes a circular await because notifications read
-    // user preferences through ensureDatabase as well.
-    const { ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
-    await ensureRezaDemoRoster().catch((error) => {
-      console.error("[login] demo roster seed skipped", error);
-    });
     const body = await req.json().catch(() => null);
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -43,6 +36,16 @@ export async function POST(req: NextRequest) {
     }
 
     const token = await signSession({ sub: user.id, role, name: user.name }, remember);
+
+    // Demo roster is for a specific test account — never block sign-in on it.
+    if (contact.type === "email") {
+      const { DEMO_COACH_EMAIL, DEMO_PLAYER_EMAIL, ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
+      if (contact.value === DEMO_COACH_EMAIL || contact.value === DEMO_PLAYER_EMAIL) {
+        void ensureRezaDemoRoster().catch((error) => {
+          console.error("[login] demo roster seed skipped", error);
+        });
+      }
+    }
 
     const res = NextResponse.json({
       user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, locale: user.locale, timeZone: user.timeZone, onboardingCompletedAt: user.onboardingCompletedAt },
