@@ -141,23 +141,25 @@ function injectLocaleAssets(html: string, locale: MarketingLocale, messages: Mes
 }
 
 function withAppAuthLinks(html: string) {
+  const splitDeploy = process.env.ATHVEXA_SITE_MODE?.trim().toLowerCase() === "marketing";
+  const loginHref = splitDeploy ? `${APP_ORIGIN}/login` : "/login";
+  const registerHref = splitDeploy ? `${APP_ORIGIN}/register` : "/register";
+
   return html
-    .replace(/href="\/login"/g, `href="${APP_ORIGIN}/login"`)
-    .replace(/href="\/register"/g, `href="${APP_ORIGIN}/register"`)
-    .replace(/href="#" onclick="openAuth\('login'\)"/g, `href="${APP_ORIGIN}/login"`)
-    .replace(/href="#" onclick="openAuth\('register'\)"/g, `href="${APP_ORIGIN}/register"`)
-    .replace(/href="#" onclick="toggleMobile\(\); openAuth\('login'\)"/g, `href="${APP_ORIGIN}/login"`)
-    .replace(/href="#" onclick="toggleMobile\(\); openAuth\('register'\)"/g, `href="${APP_ORIGIN}/register"`)
+    .replace(/href="https:\/\/app\.athvexa\.com\/login"/g, `href="${loginHref}"`)
+    .replace(/href="https:\/\/app\.athvexa\.com\/register"/g, `href="${registerHref}"`)
+    .replace(/href="\/login"/g, `href="${loginHref}"`)
+    .replace(/href="\/register"/g, `href="${registerHref}"`)
     .replace(
       /function openAuth\(tab\) \{[\s\S]*?\n\}/,
       `function openAuth(tab) {
-  window.location.href = tab === 'register' ? '${APP_ORIGIN}/register' : '${APP_ORIGIN}/login';
+  window.location.href = tab === 'register' ? '${registerHref}' : '${loginHref}';
 }`
     )
     .replace(
       /function goToApp\(\) \{[\s\S]*?\n\}/,
       `function goToApp() {
-  window.location.href = '${APP_ORIGIN}/login';
+  window.location.href = '${loginHref}';
 }`
     );
 }

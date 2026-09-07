@@ -36,8 +36,9 @@ function stripQuotes(value: string) {
 }
 
 function readJwtSecret() {
-  // Middleware runs on the Edge runtime — do not import node:fs / node:path here.
-  const value = stripQuotes(process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "");
+  // Dynamic lookup so Edge middleware is not stuck with a build-time empty secret.
+  const env = process.env as Record<string, string | undefined>;
+  const value = stripQuotes(env["JWT_SECRET"] ?? env["AUTH_SECRET"] ?? "");
   if (!value || PLACEHOLDER_SECRETS.has(value) || value.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
       "JWT_SECRET is missing or too short. Set a random secret of at least 32 characters (see .env.example)."
@@ -50,17 +51,33 @@ export function getJwtSecretKey() {
   return new TextEncoder().encode(readJwtSecret());
 }
 
+function cookieDomain() {
+  const explicit = process.env.AUTH_COOKIE_DOMAIN?.trim();
+  if (explicit) return explicit;
+  if (process.env.NODE_ENV !== "production") return undefined;
+  try {
+    const host = new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://app.athvexa.com").hostname.toLowerCase();
+    if (host === "athvexa.com" || host.endsWith(".athvexa.com")) return ".athvexa.com";
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
 export function sessionCookieOptions(maxAgeSeconds: number) {
+  const domain = cookieDomain();
   return {
     httpOnly: true as const,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
     maxAge: maxAgeSeconds,
+    ...(domain ? { domain } : {}),
   };
 }
 
 export function expiredSessionCookieOptions() {
+  const domain = cookieDomain();
   return {
     httpOnly: true as const,
     secure: process.env.NODE_ENV === "production",
@@ -68,6 +85,7 @@ export function expiredSessionCookieOptions() {
     path: "/",
     maxAge: 0,
     expires: new Date(0),
+    ...(domain ? { domain } : {}),
   };
 }
 

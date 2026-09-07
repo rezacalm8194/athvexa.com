@@ -1560,8 +1560,8 @@
       <span class="lang-sep">|</span>
       <button type="button" class="lang-btn" data-set-locale="fa">FA</button>
     </div>
-    <a class="btn-ghost" href="https://app.athvexa.com/login" data-i18n="nav.signIn">Sign in</a>
-    <a class="btn-red" href="https://app.athvexa.com/register" data-i18n="nav.getStarted">Get started free</a>
+    <a class="btn-ghost" href="/login" data-i18n="nav.signIn">Sign in</a>
+    <a class="btn-red" href="/register" data-i18n="nav.getStarted">Get started free</a>
   </div>
   <button class="hamburger" onclick="toggleMobile()" data-i18n-aria-label="nav.menu" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -1579,8 +1579,8 @@
     <span class="lang-sep">|</span>
     <button type="button" class="lang-btn" data-set-locale="fa">فارسی</button>
   </div>
-  <a class="btn-ghost" href="https://app.athvexa.com/login" data-i18n="nav.signIn">Sign in</a>
-  <a class="btn-red" href="https://app.athvexa.com/register" data-i18n="nav.getStarted">Get started free</a>
+  <a class="btn-ghost" href="/login" data-i18n="nav.signIn">Sign in</a>
+  <a class="btn-red" href="/register" data-i18n="nav.getStarted">Get started free</a>
 </div>
 
 <!-- HERO -->
@@ -1594,7 +1594,7 @@
       <h1 data-i18n-html="hero.title">TRAIN SMARTER.<br><em>WIN HARDER.</em></h1>
       <p class="hero-sub" data-i18n="hero.sub">Athvexa gives football strength coaches full visibility into every player's daily performance — training, recovery, wellness, habits, and goals — in one powerful dashboard.</p>
       <div class="hero-actions">
-        <a class="btn-hero" href="https://app.athvexa.com/register">
+        <a class="btn-hero" href="/register">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 7l5 5-5 5M6 12h12"/></svg>
           <span data-i18n="hero.cta.start">Start for free</span>
         </a>
@@ -1969,8 +1969,8 @@
 <script>
 function openAuth(tab) {
   window.location.href = tab === 'register'
-    ? 'https://app.athvexa.com/register'
-    : 'https://app.athvexa.com/login';
+    ? '/register'
+    : '/login';
 }
 function closeAuth() {
   document.getElementById('authModal').classList.remove('open');
@@ -1984,7 +1984,7 @@ function switchTab(tab) {
   document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
 }
 function goToApp() {
-  window.location.href = 'https://app.athvexa.com/login';
+  window.location.href = '/login';
 }
 document.getElementById('authModal').addEventListener('click', function(e) {
   if (e.target === this) closeAuth();

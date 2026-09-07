@@ -89,7 +89,7 @@ export function ensureDatabase() {
     await ensureUserPreferenceColumns();
     await ensureChecklistReportScheduleTable();
     await ensureTeamWorkspaceColumns();
-    await ensureAssessmentScoreIsReal();
+    // Assessment table rebuild can lock SQLite for a long time — never block requests on it.
   })().catch((error) => {
     sqliteReady = null;
     if (isIgnorableSchemaError(error)) {
