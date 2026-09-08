@@ -5,7 +5,6 @@ export const ASSESSMENT_TYPES = [
   "Agility",
   "Mobility",
   "Body composition",
-  "Technical",
   "General",
 ] as const;
 

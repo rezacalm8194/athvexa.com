@@ -351,7 +351,7 @@ model Assessment {
   coach     User     @relation("CoachAssessments", fields: [coachId], references: [id])
   playerId  String
   player    User     @relation("PlayerAssessments", fields: [playerId], references: [id])
-  type      String   // Speed | Strength | Endurance | Agility | Mobility | Body composition | Technical | General
+  type      String   // Speed | Strength | Endurance | Agility | Mobility | Body composition | General
   date      String   // "YYYY-MM-DD"
   score     Float    // any numeric value, decimals allowed
   notes     String?
