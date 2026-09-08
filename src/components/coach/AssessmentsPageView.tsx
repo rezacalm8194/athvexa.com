@@ -19,6 +19,7 @@ type LatestAssessment = {
   type: AssessmentType;
   date: string;
   score: number;
+  notes: string | null;
 };
 
 type PlayerSummary = {
@@ -225,11 +226,12 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
               ) : null}
               {!loading && !error && players.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[520px] sm:min-w-0 text-left text-sm">
+                  <table className="w-full min-w-[640px] sm:min-w-0 text-left text-sm">
                     <thead className="text-[11px] uppercase tracking-wide text-smoke-4">
                       <tr className="border-b border-white/5">
                         <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colPlayer")}</th>
                         <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colLatest")}</th>
+                        <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colNotes")}</th>
                         <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colScore")}</th>
                         <th className="hidden px-4 py-2 font-semibold sm:table-cell">{t(locale, "coach.assessments.colDate")}</th>
                         <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">{t(locale, "coach.assessments.colTests")}</th>
@@ -251,6 +253,9 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                               </div>
                             </td>
                             <td className="px-4 py-2.5 text-smoke-2">{player.latestAssessment?.type ?? "—"}</td>
+                            <td className="max-w-[220px] truncate px-4 py-2.5 text-smoke-3" title={player.latestAssessment?.notes?.trim() || undefined}>
+                              {player.latestAssessment?.notes?.trim() || "—"}
+                            </td>
                             <td className="px-4 py-2.5 font-semibold text-white">{player.latestAssessment ? formatScore(player.latestAssessment.score) : "—"}</td>
                             <td className="hidden px-4 py-2.5 text-smoke-3 sm:table-cell">{player.latestAssessment ? formatAssessmentDate(player.latestAssessment.date, locale) : "—"}</td>
                             <td className="hidden px-4 py-2.5 text-right tabular-nums text-smoke-3 sm:table-cell">{player.count}</td>

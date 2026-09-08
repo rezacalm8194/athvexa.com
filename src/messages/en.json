@@ -510,6 +510,7 @@
       "emptyBody": "Clear the search or filters to see the full squad.",
       "colPlayer": "Player",
       "colLatest": "Latest",
+      "colNotes": "Notes",
       "colScore": "Score",
       "colDate": "Date",
       "colTests": "Tests",

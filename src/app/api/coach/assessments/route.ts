@@ -96,6 +96,7 @@ export async function GET(req: NextRequest) {
     date: true,
     createdAt: true,
     score: true,
+    notes: true,
   } as const;
 
   const [assessments, history] = await Promise.all([
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
   const matchingAssessmentPlayerIds = new Set(assessments.map((row) => row.playerId));
   const hasAssessmentFilters = type !== "all" || Boolean(range);
   const countByPlayer = new Map<string, number>();
-  const latestByPlayer = new Map<string, { id: string; type: string; date: string; score: number }>();
+  const latestByPlayer = new Map<string, { id: string; type: string; date: string; score: number; notes: string | null }>();
   if (hasAssessmentFilters) {
     for (const assessment of assessments) {
       countByPlayer.set(assessment.playerId, (countByPlayer.get(assessment.playerId) ?? 0) + 1);
@@ -143,7 +144,7 @@ export async function GET(req: NextRequest) {
         name: player.name,
         email: player.email ?? "",
         latestAssessment: latest
-          ? { id: latest.id, type: latest.type, date: latest.date, score: latest.score }
+          ? { id: latest.id, type: latest.type, date: latest.date, score: latest.score, notes: latest.notes }
           : null,
         count: countByPlayer.get(player.id) ?? 0,
         neverAssessed,
