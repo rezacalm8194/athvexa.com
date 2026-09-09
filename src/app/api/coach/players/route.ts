@@ -2,13 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { getCurrentTeamMembership } from "@/lib/teamContext";
-
-function statusFor(score: number) {
-  if (score >= 80) return { label: "Excellent", tone: "good" as const };
-  if (score >= 60) return { label: "Ready", tone: "good" as const };
-  if (score >= 40) return { label: "Fatigued", tone: "warn" as const };
-  return { label: "Needs attention", tone: "bad" as const };
-}
+import { readinessStatus } from "@/lib/readiness";
 
 export async function GET() {
   const session = await getSession();
@@ -17,15 +11,10 @@ export async function GET() {
   }
 
   await ensureDatabase();
-  const { ensureRezaDemoRoster } = await import("@/lib/seedTestRoster");
-  await ensureRezaDemoRoster({ coachId: session.sub }).catch((error) => {
-    console.error("[players] demo roster seed skipped", error);
-  });
-
   const date = new Date().toISOString().slice(0, 10);
   const membership = await getCurrentTeamMembership(session.sub);
   if (!membership) {
-    return NextResponse.json({ error: "Select or create a team before viewing players" }, { status: 400 });
+    return NextResponse.json({ players: [], canManageRoles: session.role === "COACH" });
   }
 
   const members = await db.teamMember.findMany({
@@ -74,7 +63,7 @@ export async function GET() {
         : null,
       score,
       loggedToday: today?.date === date,
-      ...statusFor(score),
+      ...readinessStatus(score),
     };
   });
 

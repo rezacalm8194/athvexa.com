@@ -9,30 +9,45 @@ export type MessageSession = {
 
 export const MESSAGE_CONTEXTS = {
   TRAINING_SESSION: {
-    label: "Training session",
-    href: "/dashboard/player/training",
+    labelKey: "messages.contextTraining",
+    playerHref: "/dashboard/player/training",
+    coachHref: "/dashboard/player/training",
   },
   ASSESSMENT: {
-    label: "Assessment",
-    href: "/dashboard/coach/assessments",
+    labelKey: "messages.contextAssessment",
+    playerHref: "/dashboard/player",
+    coachHref: "/dashboard/coach/assessments",
   },
   DAILY_CHECK_IN: {
-    label: "Daily check-in",
-    href: "/dashboard/player/check-in",
+    labelKey: "messages.contextDailyCheckIn",
+    playerHref: "/dashboard/player/check-in",
+    coachHref: "/dashboard/coach/reports",
   },
   PROGRAM: {
-    label: "Program",
-    href: "/dashboard/player/training",
+    labelKey: "messages.contextProgram",
+    playerHref: "/dashboard/player/training",
+    coachHref: "/dashboard/coach/programs",
   },
   REPORT: {
-    label: "Progress report",
-    href: "/dashboard/player",
+    labelKey: "messages.contextReport",
+    playerHref: "/dashboard/player",
+    coachHref: "/dashboard/coach/reports",
   },
   TEAM_INVITE: {
-    label: "Team invitation",
-    href: "/dashboard/player",
+    labelKey: "messages.contextTeamInvite",
+    playerHref: "/dashboard/player",
+    coachHref: "/dashboard/coach/players",
   },
 } as const;
+
+export function messageContextForRole(type: keyof typeof MESSAGE_CONTEXTS, role: string) {
+  const context = MESSAGE_CONTEXTS[type];
+  return {
+    type,
+    labelKey: context.labelKey,
+    href: role === "PLAYER" ? context.playerHref : context.coachHref,
+  };
+}
 
 export function isCoachRole(role: string) {
   return role === "COACH" || role === "ASSISTANT";
@@ -74,7 +89,6 @@ export async function getMessageContacts(session: MessageSession) {
       id: coach.id,
       name: coach.name,
       role: coach.role as "COACH" | "ASSISTANT",
-      roleLabel: coach.role === "ASSISTANT" ? "Assistant coach" : "Coach",
     }));
   }
 
@@ -91,7 +105,6 @@ export async function getMessageContacts(session: MessageSession) {
     id: player.id,
     name: player.name,
     role: "PLAYER" as const,
-    roleLabel: "Player",
   }));
 }
 
@@ -137,9 +150,8 @@ export async function resolveConversationPair(session: MessageSession, recipient
   return { coachId: session.sub, playerId: recipient.id };
 }
 
-export function normalizeMessageContext(type?: unknown) {
+export function normalizeMessageContext(type: unknown, role: string) {
   if (typeof type !== "string") return null;
   if (!Object.prototype.hasOwnProperty.call(MESSAGE_CONTEXTS, type)) return null;
-  const context = MESSAGE_CONTEXTS[type as keyof typeof MESSAGE_CONTEXTS];
-  return { type, ...context };
+  return messageContextForRole(type as keyof typeof MESSAGE_CONTEXTS, role);
 }

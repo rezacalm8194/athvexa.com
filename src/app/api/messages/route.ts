@@ -109,14 +109,14 @@ export async function POST(request: Request) {
   });
   conversationId = conversation.id;
 
-  const context = normalizeMessageContext(parsed.data.contextType);
+  const context = normalizeMessageContext(parsed.data.contextType, session.role);
   const message = await db.message.create({
     data: {
       conversationId,
       senderId: session.sub,
       body: parsed.data.body,
       contextType: context?.type ?? null,
-      contextLabel: context?.label ?? null,
+      contextLabel: context?.labelKey ?? null,
       contextHref: context?.href ?? null,
     },
   });

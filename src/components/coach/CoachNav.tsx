@@ -32,7 +32,10 @@ export default function CoachNav({ locale }: { locale: Locale }) {
     <nav className="sticky top-[57px] z-20 border-b border-white/5 bg-ink-2/70 backdrop-blur">
       <div className="mx-auto flex max-w-[1280px] gap-1 overflow-x-auto px-4">
         {TABS.map((tab) => {
-          const active = tab.href === "/dashboard/coach" ? pathname === tab.href : pathname.startsWith(tab.href);
+          const active =
+            tab.href === "/dashboard/coach"
+              ? pathname === tab.href
+              : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const Icon = tab.icon;
           return (
             <Link

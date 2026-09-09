@@ -11,7 +11,8 @@ export type Member = {
   role: MemberRole;
   score: number;
   loggedToday: boolean;
-  label: string;
+  label?: string;
+  labelKey?: string;
   tone: "good" | "warn" | "bad";
 };
 
@@ -51,7 +52,7 @@ export default function TeamRosterList({
               )}
             </div>
             <div className="truncate text-[11px]" style={{ color: m.role === "ASSISTANT" ? "#8a8f98" : toneColor[m.tone] }}>
-              {m.role === "ASSISTANT" ? m.email : m.loggedToday ? m.label : t(locale, "coach.roster.notLoggedToday")}
+              {m.role === "ASSISTANT" ? m.email : m.loggedToday ? t(locale, m.labelKey ?? m.label ?? "coach.dashboard.readinessAttention") : t(locale, "coach.roster.notLoggedToday")}
             </div>
           </div>
           {m.role === "PLAYER" && (

@@ -24,6 +24,7 @@ type Message = {
   id: string;
   senderId: string;
   body: string;
+  contextType: string | null;
   contextLabel: string | null;
   contextHref: string | null;
   readAt: string | null;
@@ -47,6 +48,34 @@ const CONTEXT_KEYS: Record<(typeof CONTEXT_TYPES)[number], string> = {
   PROGRAM: "messages.contextProgram",
   REPORT: "messages.contextReport",
 };
+
+const PLAYER_CONTEXT_HREF: Record<string, string> = {
+  TRAINING_SESSION: "/dashboard/player/training",
+  ASSESSMENT: "/dashboard/player",
+  DAILY_CHECK_IN: "/dashboard/player/check-in",
+  PROGRAM: "/dashboard/player/training",
+  REPORT: "/dashboard/player",
+  TEAM_INVITE: "/dashboard/player",
+};
+
+function contextHref(role: string, message: { contextType: string | null; contextHref: string | null }) {
+  if (role === "PLAYER") {
+    if (message.contextType && PLAYER_CONTEXT_HREF[message.contextType]) {
+      return PLAYER_CONTEXT_HREF[message.contextType];
+    }
+    if (message.contextHref?.startsWith("/dashboard/coach")) return "/dashboard/player";
+  }
+  return message.contextHref || "#";
+}
+
+function contextLabel(locale: Locale, message: { contextType: string | null; contextLabel: string | null }) {
+  if (message.contextType === "TEAM_INVITE") return t(locale, "messages.contextTeamInvite");
+  if (message.contextType && CONTEXT_KEYS[message.contextType as (typeof CONTEXT_TYPES)[number]]) {
+    return t(locale, CONTEXT_KEYS[message.contextType as (typeof CONTEXT_TYPES)[number]]);
+  }
+  if (message.contextLabel?.startsWith("messages.")) return t(locale, message.contextLabel);
+  return message.contextLabel;
+}
 
 function formatTime(value: string, locale: Locale) {
   const intlLocale = locale === "fa" ? "fa-IR" : "en-US";
@@ -307,15 +336,15 @@ export default function MessagesPageView({ role, locale }: { role: "COACH" | "AS
                 {detail.messages.map((message) => (
                   <div key={message.id} className={`flex ${message.isMine ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[82%] rounded-lg px-4 py-3 ${message.isMine ? "bg-red text-white" : "bg-ink-2 text-paper"}`}>
-                      {message.contextLabel ? (
+                      {message.contextType || message.contextLabel ? (
                         <a
-                          href={message.contextHref ?? "#"}
+                          href={contextHref(role, message)}
                           className={`mb-2 inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-semibold ${
                             message.isMine ? "border-white/25 text-white" : "border-line-2 text-smoke-3"
                           }`}
                         >
                           <LinkIcon className="h-3.5 w-3.5" />
-                          {message.contextLabel}
+                          {contextLabel(locale, message)}
                         </a>
                       ) : null}
                       <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.body}</p>

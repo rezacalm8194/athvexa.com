@@ -344,6 +344,7 @@
       "teamStatus": "Team status",
       "welcome": "Welcome back, {name}",
       "summaryLoading": "Loading today's summary…",
+      "summaryError": "Today's summary could not be loaded. Refresh to try again.",
       "summary": "{checked} of {active} player(s) checked in today",
       "summaryAttention": " · {count} need attention",
       "kpiActivePlayers": "Active players",

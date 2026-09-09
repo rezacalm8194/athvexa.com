@@ -344,6 +344,7 @@
       "teamStatus": "وضعیت تیم",
       "welcome": "خوش آمدید، {name}",
       "summaryLoading": "در حال بارگذاری خلاصه امروز…",
+      "summaryError": "خلاصه امروز بارگذاری نشد. صفحه را تازه کنید و دوباره تلاش کنید.",
       "summary": "{checked} از {active} بازیکن امروز ثبت وضعیت کرده‌اند",
       "summaryAttention": " · {count} نیازمند توجه",
       "kpiActivePlayers": "بازیکنان فعال",

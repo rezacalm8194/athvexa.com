@@ -8,7 +8,8 @@ type AttentionPlayer = {
   name: string;
   loggedToday: boolean;
   score: number;
-  label: string;
+  label?: string;
+  labelKey?: string;
 };
 
 export default function PlayersAttention({
@@ -58,7 +59,7 @@ export default function PlayersAttention({
               <div className="text-sm font-semibold text-white">{p.name}</div>
               <div className="flex items-center gap-1 text-[11px] text-red-glow">
                 <AlertIcon className="h-3 w-3" />
-                {p.loggedToday ? p.label : t(locale, "coach.dashboard.hasntCheckedIn")}
+                {p.loggedToday ? t(locale, p.labelKey ?? p.label ?? "coach.dashboard.readinessAttention") : t(locale, "coach.dashboard.hasntCheckedIn")}
               </div>
             </div>
             {p.loggedToday && <div className="font-display text-xl font-black text-white">{p.score}</div>}

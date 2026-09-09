@@ -16,5 +16,13 @@ export default async function ServerDashboardNav({ locale: localeProp, roleLabel
   const session = await getSession();
   const locale = localeProp ?? (session ? (await getUserPreferences(session.sub)).locale : "en");
   const label = roleLabelProp ?? (session ? roleLabel(session.role, locale) : name);
-  return <DashboardNav name={name} roleLabel={label} locale={locale} {...rest} />;
+  return (
+    <DashboardNav
+      name={name}
+      roleLabel={label}
+      locale={locale}
+      {...rest}
+      showTeams={session?.role === "COACH" || session?.role === "ASSISTANT"}
+    />
+  );
 }

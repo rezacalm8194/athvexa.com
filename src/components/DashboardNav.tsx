@@ -21,6 +21,7 @@ export default function DashboardNav({
   subtitle,
   notificationCount = 0,
   settingsHref,
+  showTeams = false,
 }: {
   name: string;
   roleLabel: string;
@@ -29,6 +30,7 @@ export default function DashboardNav({
   subtitle?: string;
   notificationCount?: number;
   settingsHref?: string;
+  showTeams?: boolean;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,6 +70,7 @@ export default function DashboardNav({
   }, []);
 
   useEffect(() => {
+    if (!showTeams) return;
     fetch("/api/coach/teams", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -76,7 +79,7 @@ export default function DashboardNav({
         setCurrentTeamId(data.currentTeamId ?? data.teams[0]?.id ?? null);
       })
       .catch(() => {});
-  }, []);
+  }, [showTeams]);
 
   async function switchTeam(teamId: string) {
     setTeamOpen(false);
@@ -99,7 +102,7 @@ export default function DashboardNav({
     <header className="sticky top-0 z-30 border-b border-white/5 bg-ink-2/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-6 py-3.5">
         <div className="flex items-center gap-3">
-          <Link href="/" className="font-display text-xl font-black tracking-wide text-white">
+          <Link href="/dashboard" className="font-display text-xl font-black tracking-wide text-white">
             ATH<span className="text-red">VEXA</span>
           </Link>
           {subtitle && (
@@ -111,7 +114,7 @@ export default function DashboardNav({
         </div>
 
         <div className="flex items-center gap-2">
-          {currentTeam && (
+          {showTeams && currentTeam && (
             <div className="relative hidden sm:block" ref={teamRef}>
               <button
                 type="button"

@@ -14,13 +14,14 @@ import { t, type Locale } from "@/lib/i18n";
 
 type Overview = {
   kpis: { activePlayers: number; pendingInvitations: number; reportsToday: number; needsAttention: number };
-  playersNeedingAttention: { id: string; name: string; loggedToday: boolean; score: number; label: string }[];
+  playersNeedingAttention: { id: string; name: string; loggedToday: boolean; score: number; labelKey?: string; label?: string }[];
   playerSummaries: {
     id: string;
     name: string;
     loggedToday: boolean;
     score: number;
-    label: string;
+    labelKey?: string;
+    label?: string;
     tone: "good" | "warn" | "bad";
     activeProgram: { id: string; name: string } | null;
     profileHref: string;
@@ -52,18 +53,34 @@ export default function CoachDashboardView({
 }) {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [overviewFailed, setOverviewFailed] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   function loadRoster() {
     fetch("/api/coach/players")
-      .then((r) => r.json())
-      .then((data) => setMembers(data.players ?? []));
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        setMembers(Array.isArray(data.players) ? data.players : []);
+      })
+      .catch(() => setMembers([]));
   }
 
   function loadOverview() {
+    setOverviewFailed(false);
     fetch("/api/coach/overview")
-      .then((r) => r.json())
-      .then((data) => setOverview(data));
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data?.kpis) {
+          setOverview(null);
+          setOverviewFailed(true);
+          return;
+        }
+        setOverview(data);
+      })
+      .catch(() => {
+        setOverview(null);
+        setOverviewFailed(true);
+      });
   }
 
   useEffect(() => {
@@ -92,16 +109,18 @@ export default function CoachDashboardView({
   const hasPlayers = (players?.length ?? 0) > 0;
   const firstName = coachName.split(" ")[0];
 
-  const summaryLine = overview
-    ? `${t(locale, "coach.dashboard.summary", {
-        checked: overview.kpis.reportsToday,
-        active: overview.kpis.activePlayers,
-      })}${
-        overview.kpis.needsAttention > 0
-          ? t(locale, "coach.dashboard.summaryAttention", { count: overview.kpis.needsAttention })
-          : ""
-      }`
-    : t(locale, "coach.dashboard.summaryLoading");
+  const summaryLine = overviewFailed
+    ? t(locale, "coach.dashboard.summaryError")
+    : overview
+      ? `${t(locale, "coach.dashboard.summary", {
+          checked: overview.kpis.reportsToday,
+          active: overview.kpis.activePlayers,
+        })}${
+          overview.kpis.needsAttention > 0
+            ? t(locale, "coach.dashboard.summaryAttention", { count: overview.kpis.needsAttention })
+            : ""
+        }`
+      : t(locale, "coach.dashboard.summaryLoading");
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-8">
@@ -116,15 +135,15 @@ export default function CoachDashboardView({
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label={t(locale, "coach.dashboard.kpiActivePlayers")} value={overview?.kpis.activePlayers ?? 0} icon={UsersIcon} loading={!overview} />
-        <KpiCard label={t(locale, "coach.dashboard.kpiPendingInvites")} value={overview?.kpis.pendingInvitations ?? 0} icon={MailIcon} loading={!overview} />
-        <KpiCard label={t(locale, "coach.dashboard.kpiReportsToday")} value={overview?.kpis.reportsToday ?? 0} icon={ClipboardCheckIcon} loading={!overview} />
+        <KpiCard label={t(locale, "coach.dashboard.kpiActivePlayers")} value={overview?.kpis.activePlayers ?? 0} icon={UsersIcon} loading={!overview && !overviewFailed} />
+        <KpiCard label={t(locale, "coach.dashboard.kpiPendingInvites")} value={overview?.kpis.pendingInvitations ?? 0} icon={MailIcon} loading={!overview && !overviewFailed} />
+        <KpiCard label={t(locale, "coach.dashboard.kpiReportsToday")} value={overview?.kpis.reportsToday ?? 0} icon={ClipboardCheckIcon} loading={!overview && !overviewFailed} />
         <KpiCard
           label={t(locale, "coach.dashboard.kpiNeedsAttention")}
           value={overview?.kpis.needsAttention ?? 0}
           icon={AlertIcon}
           tone={overview && overview.kpis.needsAttention > 0 ? "warn" : "neutral"}
-          loading={!overview}
+          loading={!overview && !overviewFailed}
         />
       </div>
 
@@ -144,7 +163,7 @@ export default function CoachDashboardView({
 
           {hasPlayers && (
             <>
-              <PlayersAttention players={overview?.playersNeedingAttention ?? null} loading={!overview} locale={locale} />
+              <PlayersAttention players={overview?.playersNeedingAttention ?? null} loading={!overview && !overviewFailed} locale={locale} />
               <div className="card p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 className="font-display text-lg font-bold tracking-wide text-white">{t(locale, "coach.dashboard.performanceTitle")}</h2>
@@ -170,7 +189,9 @@ export default function CoachDashboardView({
                             </Link>
                           </td>
                           <td className="px-2 py-3 text-smoke-2">
-                            {player.loggedToday ? `${player.score} · ${player.label}` : t(locale, "coach.dashboard.hasntCheckedIn")}
+                            {player.loggedToday
+                              ? `${player.score} · ${t(locale, player.labelKey ?? player.label ?? "coach.dashboard.readinessAttention")}`
+                              : t(locale, "coach.dashboard.hasntCheckedIn")}
                           </td>
                           <td className="px-2 py-3 text-smoke-2">{player.activeProgram?.name ?? t(locale, "coach.dashboard.noProgram")}</td>
                         </tr>
@@ -204,7 +225,7 @@ export default function CoachDashboardView({
               onChange={loadOverview}
             />
           </div>
-          <RecentActivity items={overview?.recentActivity ?? null} loading={!overview} locale={locale} />
+          <RecentActivity items={overview?.recentActivity ?? null} loading={!overview && !overviewFailed} locale={locale} />
         </div>
       </div>
     </div>

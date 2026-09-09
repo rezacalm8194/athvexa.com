@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { t, type Locale } from "@/lib/i18n";
 import { addUserToInvitedTeam, consumeInvite, findUserByInviteContact } from "@/lib/inviteActions";
-import { MESSAGE_CONTEXTS } from "@/lib/messages";
+import { MESSAGE_CONTEXTS, messageContextForRole } from "@/lib/messages";
 import { createNotification } from "@/lib/notifications";
 import { getUserPreferences } from "@/lib/userPreferences";
 
@@ -29,14 +29,14 @@ export async function sendCoachToPlayerMessage({
     create: { coachId, playerId },
   });
 
-  const context = contextType ? MESSAGE_CONTEXTS[contextType] : null;
+  const context = contextType ? messageContextForRole(contextType, "PLAYER") : null;
   const message = await db.message.create({
     data: {
       conversationId: conversation.id,
       senderId,
       body,
       contextType: contextType ?? null,
-      contextLabel: context?.label ?? null,
+      contextLabel: context?.labelKey ?? null,
       contextHref: context?.href ?? null,
     },
   });
