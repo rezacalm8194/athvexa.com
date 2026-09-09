@@ -24,73 +24,82 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Coaches only" }, { status: 403 });
   }
 
-  await ensureDatabase();
+  try {
+    await ensureDatabase();
 
-  const teamOwnerId = await getTeamOwnerId(session.sub);
+    const teamOwnerId = await getTeamOwnerId(session.sub);
 
-  const roleFilter = readRoleFilter(req.nextUrl.searchParams.get("role"));
-  const statusFilter = readStatusFilter(req.nextUrl.searchParams.get("status"));
-  const search = req.nextUrl.searchParams.get("search")?.trim().toLowerCase() ?? "";
+    const roleFilter = readRoleFilter(req.nextUrl.searchParams.get("role"));
+    const statusFilter = readStatusFilter(req.nextUrl.searchParams.get("status"));
+    const search = req.nextUrl.searchParams.get("search")?.trim().toLowerCase() ?? "";
 
-  const [allInvites, invites] = await Promise.all([
-    db.invite.findMany({
-      where: { coachId: teamOwnerId },
-      select: { usedAt: true, revoked: true, expiresAt: true },
-    }),
-    db.invite.findMany({
-      where: {
-        coachId: teamOwnerId,
-        ...(roleFilter !== "all" ? { role: roleFilter } : {}),
+    const [allInvites, invites] = await Promise.all([
+      db.invite.findMany({
+        where: { coachId: teamOwnerId },
+        select: { usedAt: true, revoked: true, expiresAt: true },
+      }),
+      db.invite.findMany({
+        where: {
+          coachId: teamOwnerId,
+          ...(roleFilter !== "all" ? { role: roleFilter } : {}),
+        },
+        include: {
+          acceptedUser: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const kpis = allInvites.reduce<Record<InviteStatus, number>>(
+      (counts, invite) => {
+        counts[inviteStatus(invite)] += 1;
+        return counts;
       },
-      include: {
-        acceptedUser: { select: { id: true, name: true, email: true } },
+      { pending: 0, accepted: 0, expired: 0, revoked: 0 }
+    );
+
+    const filteredInvites = invites.filter((invite) => {
+      const status = inviteStatus(invite);
+      const matchesStatus = statusFilter === "all" || status === statusFilter;
+      const acceptedUserText = `${invite.acceptedUser?.name ?? ""} ${invite.acceptedUser?.email ?? ""} ${invite.email ?? ""} ${invite.phone ?? ""}`.toLowerCase();
+      const matchesSearch = !search || acceptedUserText.includes(search);
+      return matchesStatus && matchesSearch;
+    });
+
+    return NextResponse.json({
+      invites: filteredInvites.map((invite) => ({
+        id: invite.id,
+        role: invite.role,
+        url: buildInviteUrl(invite.token, req),
+        status: inviteStatus(invite),
+        createdAt: invite.createdAt,
+        expiresAt: invite.expiresAt,
+        usedAt: invite.usedAt,
+        maxUses: invite.maxUses,
+        useCount: invite.useCount,
+        email: invite.email,
+        phone: invite.phone,
+        acceptedUser: invite.acceptedUser
+          ? {
+              id: invite.acceptedUser.id,
+              name: invite.acceptedUser.name,
+              email: invite.acceptedUser.email,
+            }
+          : null,
+      })),
+      kpis,
+      filters: {
+        role: roleFilter,
+        status: statusFilter,
+        search,
       },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
-
-  const kpis = allInvites.reduce<Record<InviteStatus, number>>(
-    (counts, invite) => {
-      counts[inviteStatus(invite)] += 1;
-      return counts;
-    },
-    { pending: 0, accepted: 0, expired: 0, revoked: 0 }
-  );
-
-  const filteredInvites = invites.filter((invite) => {
-    const status = inviteStatus(invite);
-    const matchesStatus = statusFilter === "all" || status === statusFilter;
-    const acceptedUserText = `${invite.acceptedUser?.name ?? ""} ${invite.acceptedUser?.email ?? ""} ${invite.email ?? ""} ${invite.phone ?? ""}`.toLowerCase();
-    const matchesSearch = !search || acceptedUserText.includes(search);
-    return matchesStatus && matchesSearch;
-  });
-
-  return NextResponse.json({
-    invites: filteredInvites.map((invite) => ({
-      id: invite.id,
-      role: invite.role,
-      url: buildInviteUrl(invite.token, req),
-      status: inviteStatus(invite),
-      createdAt: invite.createdAt,
-      expiresAt: invite.expiresAt,
-      usedAt: invite.usedAt,
-      maxUses: invite.maxUses,
-      useCount: invite.useCount,
-      email: invite.email,
-      phone: invite.phone,
-      acceptedUser: invite.acceptedUser
-        ? {
-            id: invite.acceptedUser.id,
-            name: invite.acceptedUser.name,
-            email: invite.acceptedUser.email,
-          }
-        : null,
-    })),
-    kpis,
-    filters: {
-      role: roleFilter,
-      status: statusFilter,
-      search,
-    },
-  });
+    });
+  } catch (error) {
+    console.error("[invites] failed", error);
+    const detail = error instanceof Error ? error.message : "Unknown database error";
+    return NextResponse.json(
+      { error: `Could not load invitations. ${detail}`, invites: [], kpis: { pending: 0, accepted: 0, expired: 0, revoked: 0 } },
+      { status: 500 }
+    );
+  }
 }

@@ -148,7 +148,7 @@ export default function InvitationsPageView({
     setError(null);
     try {
       const res = await fetch(`/api/coach/invites?${queryString}`, { cache: "no-store" });
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.loadError"));
       setData(payload);
     } catch (err) {

@@ -59,8 +59,11 @@ export default function InvitePanel({
 
   function loadInvites() {
     fetch("/api/coach/invites")
-      .then((r) => r.json())
-      .then((data) => setInvites(data.invites ?? []));
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        setInvites(Array.isArray(data.invites) ? data.invites : []);
+      })
+      .catch(() => setInvites([]));
   }
 
   useEffect(() => {

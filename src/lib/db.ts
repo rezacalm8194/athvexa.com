@@ -91,6 +91,8 @@ export function ensureDatabase() {
       await ensureExistingUserColumns();
     }
     await ensureUserPreferenceColumns();
+    await ensureInviteSchema();
+    await ensureProgramSchema();
     await ensureChecklistReportScheduleTable();
     await ensureTeamWorkspaceColumns();
     // Assessment table rebuild can lock SQLite for a long time — never block requests on it.
@@ -120,6 +122,103 @@ async function ensureExistingUserColumns() {
   if (!userColumns.some((column) => column.name === "phone")) {
     await sqliteExec(`ALTER TABLE "User" ADD COLUMN "phone" TEXT;`);
   }
+}
+
+async function ensureInviteSchema() {
+  await sqliteExec(`
+    CREATE TABLE IF NOT EXISTS "Invite" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "token" TEXT NOT NULL,
+      "coachId" TEXT NOT NULL,
+      "teamId" TEXT,
+      "role" TEXT NOT NULL DEFAULT 'PLAYER',
+      "email" TEXT,
+      "phone" TEXT,
+      "usedAt" DATETIME,
+      "maxUses" INTEGER NOT NULL DEFAULT 1,
+      "useCount" INTEGER NOT NULL DEFAULT 0,
+      "revoked" BOOLEAN NOT NULL DEFAULT false,
+      "acceptedUserId" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "expiresAt" DATETIME NOT NULL,
+      CONSTRAINT "Invite_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "Invite_token_key" ON "Invite"("token");`);
+  const inviteColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Invite");`);
+  for (const [name, type] of [
+    ["revoked", "BOOLEAN NOT NULL DEFAULT false"],
+    ["acceptedUserId", "TEXT"],
+    ["teamId", "TEXT"],
+    ["email", "TEXT"],
+    ["phone", "TEXT"],
+    ["maxUses", "INTEGER NOT NULL DEFAULT 1"],
+    ["useCount", "INTEGER NOT NULL DEFAULT 0"],
+  ] as const) {
+    if (!inviteColumns.some((column) => column.name === name)) {
+      await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "${name}" ${type};`);
+    }
+  }
+  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
+}
+
+async function ensureProgramSchema() {
+  await sqliteExec(`
+    CREATE TABLE IF NOT EXISTS "Program" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "coachId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "description" TEXT,
+      "goal" TEXT,
+      "durationWeeks" INTEGER NOT NULL DEFAULT 4,
+      "sessionsPerWeek" INTEGER NOT NULL DEFAULT 3,
+      "startDate" TEXT,
+      "endDate" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'DRAFT',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Program_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await sqliteExec(`
+    CREATE TABLE IF NOT EXISTS "ProgramSession" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "programId" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "day" TEXT NOT NULL DEFAULT 'Monday',
+      "durationMinutes" INTEGER,
+      "intensity" TEXT NOT NULL DEFAULT 'MEDIUM',
+      "notes" TEXT,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT "ProgramSession_programId_fkey" FOREIGN KEY ("programId") REFERENCES "Program" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `);
+  await sqliteExec(`
+    CREATE TABLE IF NOT EXISTS "ProgramSessionProgress" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "playerId" TEXT NOT NULL,
+      "programSessionId" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'NOT_STARTED',
+      "completedAt" DATETIME,
+      "notes" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "ProgramSessionProgress_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+      CONSTRAINT "ProgramSessionProgress_programSessionId_fkey" FOREIGN KEY ("programSessionId") REFERENCES "ProgramSession" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    );
+  `);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramSessionProgress_playerId_programSessionId_key" ON "ProgramSessionProgress"("playerId", "programSessionId");`);
+  await sqliteExec(`
+    CREATE TABLE IF NOT EXISTS "ProgramAssignment" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "programId" TEXT NOT NULL,
+      "playerId" TEXT NOT NULL,
+      "assignedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "ProgramAssignment_programId_fkey" FOREIGN KEY ("programId") REFERENCES "Program" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "ProgramAssignment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    );
+  `);
+  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramAssignment_programId_playerId_key" ON "ProgramAssignment"("programId", "playerId");`);
 }
 
 async function ensureUserPreferenceColumns() {
@@ -402,108 +501,8 @@ async function ensureSqliteSchema() {
     );
   `);
 
-  await sqliteExec(`
-    CREATE TABLE IF NOT EXISTS "Invite" (
-      "id" TEXT NOT NULL PRIMARY KEY,
-      "token" TEXT NOT NULL,
-      "coachId" TEXT NOT NULL,
-      "teamId" TEXT,
-      "role" TEXT NOT NULL DEFAULT 'PLAYER',
-      "email" TEXT,
-      "phone" TEXT,
-      "usedAt" DATETIME,
-      "maxUses" INTEGER NOT NULL DEFAULT 1,
-      "useCount" INTEGER NOT NULL DEFAULT 0,
-      "revoked" BOOLEAN NOT NULL DEFAULT false,
-      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "expiresAt" DATETIME NOT NULL,
-      CONSTRAINT "Invite_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-    );
-  `);
-  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "Invite_token_key" ON "Invite"("token");`);
-  const inviteColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Invite");`);
-  if (!inviteColumns.some((c) => c.name === "revoked")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "revoked" BOOLEAN NOT NULL DEFAULT false;`);
-  }
-  if (!inviteColumns.some((c) => c.name === "acceptedUserId")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "acceptedUserId" TEXT;`);
-  }
-  if (!inviteColumns.some((c) => c.name === "teamId")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "teamId" TEXT;`);
-  }
-  if (!inviteColumns.some((c) => c.name === "email")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "email" TEXT;`);
-  }
-  if (!inviteColumns.some((c) => c.name === "phone")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "phone" TEXT;`);
-  }
-  if (!inviteColumns.some((c) => c.name === "maxUses")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "maxUses" INTEGER NOT NULL DEFAULT 1;`);
-  }
-  if (!inviteColumns.some((c) => c.name === "useCount")) {
-    await sqliteExec(`ALTER TABLE "Invite" ADD COLUMN "useCount" INTEGER NOT NULL DEFAULT 0;`);
-  }
-  await sqliteExec(`CREATE INDEX IF NOT EXISTS "Invite_teamId_idx" ON "Invite"("teamId");`);
-
-  await sqliteExec(`
-    CREATE TABLE IF NOT EXISTS "Program" (
-      "id" TEXT NOT NULL PRIMARY KEY,
-      "coachId" TEXT NOT NULL,
-      "name" TEXT NOT NULL,
-      "description" TEXT,
-      "goal" TEXT,
-      "durationWeeks" INTEGER NOT NULL DEFAULT 4,
-      "sessionsPerWeek" INTEGER NOT NULL DEFAULT 3,
-      "startDate" TEXT,
-      "endDate" TEXT,
-      "status" TEXT NOT NULL DEFAULT 'DRAFT',
-      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT "Program_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-    );
-  `);
-
-  await sqliteExec(`
-    CREATE TABLE IF NOT EXISTS "ProgramSession" (
-      "id" TEXT NOT NULL PRIMARY KEY,
-      "programId" TEXT NOT NULL,
-      "title" TEXT NOT NULL,
-      "day" TEXT NOT NULL DEFAULT 'Monday',
-      "durationMinutes" INTEGER,
-      "intensity" TEXT NOT NULL DEFAULT 'MEDIUM',
-      "notes" TEXT,
-      "order" INTEGER NOT NULL DEFAULT 0,
-      CONSTRAINT "ProgramSession_programId_fkey" FOREIGN KEY ("programId") REFERENCES "Program" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-    );
-  `);
-
-  await sqliteExec(`
-    CREATE TABLE IF NOT EXISTS "ProgramSessionProgress" (
-      "id" TEXT NOT NULL PRIMARY KEY,
-      "playerId" TEXT NOT NULL,
-      "programSessionId" TEXT NOT NULL,
-      "status" TEXT NOT NULL DEFAULT 'NOT_STARTED',
-      "completedAt" DATETIME,
-      "notes" TEXT,
-      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT "ProgramSessionProgress_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-      CONSTRAINT "ProgramSessionProgress_programSessionId_fkey" FOREIGN KEY ("programSessionId") REFERENCES "ProgramSession" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-    );
-  `);
-  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramSessionProgress_playerId_programSessionId_key" ON "ProgramSessionProgress"("playerId", "programSessionId");`);
-
-  await sqliteExec(`
-    CREATE TABLE IF NOT EXISTS "ProgramAssignment" (
-      "id" TEXT NOT NULL PRIMARY KEY,
-      "programId" TEXT NOT NULL,
-      "playerId" TEXT NOT NULL,
-      "assignedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT "ProgramAssignment_programId_fkey" FOREIGN KEY ("programId") REFERENCES "Program" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-      CONSTRAINT "ProgramAssignment_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-    );
-  `);
-  await sqliteExec(`CREATE UNIQUE INDEX IF NOT EXISTS "ProgramAssignment_programId_playerId_key" ON "ProgramAssignment"("programId", "playerId");`);
+  await ensureInviteSchema();
+  await ensureProgramSchema();
 
   await sqliteExec(`
     CREATE TABLE IF NOT EXISTS "Assessment" (
