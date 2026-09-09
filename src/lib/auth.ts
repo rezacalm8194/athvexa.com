@@ -6,9 +6,8 @@ export {
   parseRole,
   SESSION_COOKIE,
   sessionCookieOptions,
-  signSession,
-  verifySession,
 } from "./jwt";
+export { signSession, verifySession } from "./jwt.node";
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);

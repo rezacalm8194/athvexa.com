@@ -35,11 +35,19 @@ function stripQuotes(value: string) {
   return trimmed;
 }
 
-function readJwtSecret() {
+export function jwtSecretFromEnv() {
   // Dynamic lookup so Edge middleware is not stuck with a build-time empty secret.
   const env = process.env as Record<string, string | undefined>;
   const value = stripQuotes(env["JWT_SECRET"] ?? env["AUTH_SECRET"] ?? "");
   if (!value || PLACEHOLDER_SECRETS.has(value) || value.length < MIN_JWT_SECRET_LENGTH) {
+    return null;
+  }
+  return value;
+}
+
+function readJwtSecret() {
+  const value = jwtSecretFromEnv();
+  if (!value) {
     throw new Error(
       "JWT_SECRET is missing or too short. Set a random secret of at least 32 characters (see .env.example)."
     );

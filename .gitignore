@@ -4,5 +4,7 @@ out/
 dev.db
 dev.db-journal
 .env
+prisma/.jwt-secret
+.jwt-secret
 *.log
 .DS_Store
