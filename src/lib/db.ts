@@ -76,7 +76,7 @@ async function sqliteExec(sql: string) {
 
 /**
  * SQLite table bootstrap. Runs at most once per process — not on every query.
- * If the User table already exists (production), skip DDL so login cannot 500.
+ * If the User table already exists, skip full DDL and only add missing columns.
  */
 export function ensureDatabase() {
   sqliteReady ??= (async () => {
@@ -85,6 +85,10 @@ export function ensureDatabase() {
     );
     if (tables.length === 0) {
       await ensureSqliteSchema();
+    } else {
+      // Older production DBs were created before phone-only accounts.
+      // Skipping this when User already exists left login selecting a missing column.
+      await ensureExistingUserColumns();
     }
     await ensureUserPreferenceColumns();
     await ensureChecklistReportScheduleTable();
@@ -109,6 +113,13 @@ async function ensureChecklistReportScheduleTable() {
     "lastSentAt" DATETIME,
     "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );`);
+}
+
+async function ensureExistingUserColumns() {
+  const userColumns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("User");`);
+  if (!userColumns.some((column) => column.name === "phone")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "phone" TEXT;`);
+  }
 }
 
 async function ensureUserPreferenceColumns() {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { db, ensureDatabase } from "@/lib/db";
 import { verifyPassword, signSession, SESSION_COOKIE, parseRole, sessionCookieOptions } from "@/lib/auth";
 import { parseContact } from "@/lib/contact";
 
@@ -41,20 +41,23 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await withTimeout(
-      db.user.findFirst({
-        where: contact.type === "email" ? { email: contact.value } : { phone: contact.value },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          passwordHash: true,
-          role: true,
-          locale: true,
-          timeZone: true,
-          onboardingCompletedAt: true,
-        },
-      }),
+      (async () => {
+        await ensureDatabase();
+        return db.user.findFirst({
+          where: contact.type === "email" ? { email: contact.value } : { phone: contact.value },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            passwordHash: true,
+            role: true,
+            locale: true,
+            timeZone: true,
+            onboardingCompletedAt: true,
+          },
+        });
+      })(),
       8000,
       "Database timed out while signing in"
     );
