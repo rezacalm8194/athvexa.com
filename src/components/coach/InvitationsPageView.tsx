@@ -43,7 +43,7 @@ type Invite = {
 };
 
 type InviteMode = "single" | "bulk" | "link";
-type BulkSummary = { created: number; duplicate: number; invalid: number };
+type BulkSummary = { created: number; duplicate: number; invalid: number; joined: number };
 
 type InviteResponse = {
   invites: Invite[];
@@ -184,7 +184,11 @@ export default function InvitationsPageView({
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || t(locale, "coach.invite.createError"));
-      showToast(t(locale, "coach.invitations.created"));
+      showToast(
+        payload.joinedExistingPlayer
+          ? t(locale, "coach.invite.joinedDirectlyToast")
+          : t(locale, "coach.invitations.created")
+      );
       setInviteOpen(false);
       setInviteEmail("");
       setInvitePhone("");
@@ -223,7 +227,11 @@ export default function InvitationsPageView({
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || t(locale, "coach.invitations.bulkError"));
       setBulkSummary(payload.summary);
-      showToast(t(locale, "coach.invitations.bulkCreated", { count: payload.summary.created }));
+      showToast(
+        payload.summary.created > 0
+          ? t(locale, "coach.invitations.bulkCreated", { count: payload.summary.created })
+          : t(locale, "coach.invite.joinedDirectlyToast")
+      );
       await loadInvites();
     } catch (err) {
       showToast(err instanceof Error ? err.message : t(locale, "coach.invitations.bulkError"), "error");
@@ -617,10 +625,14 @@ export default function InvitationsPageView({
                   </p>
                 </div>
                 {bulkSummary ? (
-                  <div className="grid grid-cols-3 gap-2 rounded-lg border border-line-1 bg-ink-2 p-3 text-center" aria-live="polite">
+                  <div className="grid grid-cols-2 gap-2 rounded-lg border border-line-1 bg-ink-2 p-3 text-center sm:grid-cols-4" aria-live="polite">
                     <div>
                       <div className="text-lg font-bold text-white">{bulkSummary.created}</div>
                       <div className="text-xs text-smoke-4">{t(locale, "coach.invitations.bulkCreated")}</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-[#4CAF50]">{bulkSummary.joined ?? 0}</div>
+                      <div className="text-xs text-smoke-4">{t(locale, "coach.invitations.bulkJoined")}</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-[#FFC107]">{bulkSummary.duplicate}</div>

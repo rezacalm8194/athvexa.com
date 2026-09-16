@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const [allInvites, invites] = await Promise.all([
       db.invite.findMany({
         where: { coachId: teamOwnerId },
-        select: { usedAt: true, revoked: true, expiresAt: true },
+        select: { usedAt: true, revoked: true, expiresAt: true, useCount: true, maxUses: true },
       }),
       db.invite.findMany({
         where: {

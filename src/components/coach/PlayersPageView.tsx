@@ -68,6 +68,7 @@ export default function PlayersPageView({
   const [creating, setCreating] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [createdInvite, setCreatedInvite] = useState<CreatedInvite | null>(null);
+  const [joinedDirectly, setJoinedDirectly] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const statusOptions: { value: PlayerStatus; label: string }[] = [
@@ -112,6 +113,7 @@ export default function PlayersPageView({
     setInviteOpen(true);
     setInviteError(null);
     setCreatedInvite(null);
+    setJoinedDirectly(false);
     setCopied(false);
   }
 
@@ -119,6 +121,7 @@ export default function PlayersPageView({
     setInviteOpen(false);
     setInviteError(null);
     setCreatedInvite(null);
+    setJoinedDirectly(false);
     setCopied(false);
     if (window.location.hash === "#invite-panel") {
       history.replaceState(null, "", window.location.pathname + window.location.search);
@@ -145,6 +148,12 @@ export default function PlayersPageView({
     setCreating(false);
     if (!res.ok) {
       setInviteError(data.error || t(locale, "coach.invite.createError"));
+      return;
+    }
+    if (data.joinedExistingPlayer) {
+      // The contact already had an account and was added to the team right
+      // away — the invite was consumed by that, so there is no link to share.
+      setJoinedDirectly(true);
       return;
     }
     setCreatedInvite({
@@ -296,7 +305,17 @@ export default function PlayersPageView({
               </button>
             </div>
 
-            {!createdInvite ? (
+            {joinedDirectly ? (
+              <div className="space-y-4">
+                <div className="rounded-md border border-[#4CAF50]/40 bg-[#4CAF50]/10 p-4">
+                  <p className="text-sm font-semibold text-white">{t(locale, "coach.invite.joinedDirectlyTitle")}</p>
+                  <p className="mt-1 text-sm text-smoke-3">{t(locale, "coach.invite.joinedDirectlyBody")}</p>
+                </div>
+                <button type="button" onClick={closeInvite} className="btn-primary w-full !py-3 text-sm">
+                  {t(locale, "coach.invite.close")}
+                </button>
+              </div>
+            ) : !createdInvite ? (
               <form onSubmit={createInvite} className="space-y-4">
                 <label className="block">
                   <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.invite.role")}</span>

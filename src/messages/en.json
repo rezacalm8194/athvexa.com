@@ -658,7 +658,10 @@
       "shareCaptionPlayer": "{name} invited you to join their team on Athvexa",
       "shareCaptionStaff": "{name} invited you to join their coaching staff on Athvexa",
       "inviteMessage": "You're invited to join your team on Athvexa: {url}",
-      "telegramCaption": "Athvexa team invitation"
+      "telegramCaption": "Athvexa team invitation",
+      "joinedDirectlyTitle": "Player added to the team",
+      "joinedDirectlyBody": "This email or number already had an account and was added to your team directly — no need to send a link.",
+      "joinedDirectlyToast": "Player joined your team directly — no link needed."
     },
     "invitations": {
       "title": "Invitations",
@@ -702,6 +705,7 @@
       "bulkCreated": "{count} player invitation(s) created.",
       "bulkDuplicate": "Already invited",
       "bulkInvalid": "Invalid",
+      "bulkJoined": "Joined directly",
       "bulkSubmit": "Create player invitations",
       "bulkCreating": "Creating invitations…",
       "linkTitle": "One link for the whole team",

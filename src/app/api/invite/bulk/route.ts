@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
 import { buildInviteUrl, normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
+import { findUserByInviteContact } from "@/lib/inviteActions";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 import { deliverInviteToExistingUser } from "@/lib/playerInbox";
 import { rosterUsage } from "@/lib/teamWorkspace";
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   let remaining = roster.remaining;
 
   const seen = new Set<string>();
-  const results: Array<{ contact: string; status: "created" | "duplicate" | "invalid"; url?: string }> = [];
+  const results: Array<{ contact: string; status: "created" | "duplicate" | "invalid" | "joined"; url?: string }> = [];
   const expiresAt = parsed.data.expiresAt
     ? new Date(parsed.data.expiresAt)
     : new Date(Date.now() + (parsed.data.expiresInDays ?? 14) * 86_400_000);
@@ -64,6 +65,19 @@ export async function POST(req: NextRequest) {
       continue;
     }
     seen.add(key);
+    // A contact that already belongs to this team needs no new invite —
+    // handing out another link for them only creates confusion.
+    const existingUser = await findUserByInviteContact(contact.email, contact.phone);
+    if (existingUser?.role === "PLAYER") {
+      const alreadyMember = await db.teamMember.findUnique({
+        where: { teamId_userId: { teamId: membership.teamId, userId: existingUser.id } },
+        select: { id: true },
+      });
+      if (alreadyMember) {
+        results.push({ contact: raw, status: "duplicate" });
+        continue;
+      }
+    }
     const existing = await db.invite.findFirst({
       where: {
         coachId: teamOwnerId,
@@ -95,13 +109,20 @@ export async function POST(req: NextRequest) {
       },
     });
     remaining -= 1;
-    results.push({ contact: raw, status: "created", url: buildInviteUrl(invite.token, req) });
-    await deliverInviteToExistingUser({
+    const delivery = await deliverInviteToExistingUser({
       invite,
       actorId: session.sub,
       actorName: session.name,
       teamName: membership.team.name,
     });
+    if (delivery.joined) {
+      // The player was added to the team straight away, which consumes this
+      // single-use invite — its URL is already spent, so report it as joined
+      // instead of handing out a dead link.
+      results.push({ contact: raw, status: "joined" });
+      continue;
+    }
+    results.push({ contact: raw, status: "created", url: buildInviteUrl(invite.token, req) });
   }
 
   return NextResponse.json({
@@ -110,6 +131,7 @@ export async function POST(req: NextRequest) {
       created: results.filter((item) => item.status === "created").length,
       duplicate: results.filter((item) => item.status === "duplicate").length,
       invalid: results.filter((item) => item.status === "invalid").length,
+      joined: results.filter((item) => item.status === "joined").length,
     },
   });
 }

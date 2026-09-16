@@ -658,7 +658,10 @@
       "shareCaptionPlayer": "{name} شما را به تیم خود در اَت‌وِکسا دعوت کرده است",
       "shareCaptionStaff": "{name} شما را به کادر مربیگری در اَت‌وِکسا دعوت کرده است",
       "inviteMessage": "به تیم خود در اَت‌وِکسا دعوت شده‌اید: {url}",
-      "telegramCaption": "دعوت تیم اَت‌وِکسا"
+      "telegramCaption": "دعوت تیم اَت‌وِکسا",
+      "joinedDirectlyTitle": "بازیکن به تیم اضافه شد",
+      "joinedDirectlyBody": "این ایمیل یا شماره حساب فعال داشت و مستقیم به تیم اضافه شد؛ نیازی به ارسال لینک نیست.",
+      "joinedDirectlyToast": "بازیکن مستقیم به تیم اضافه شد؛ نیازی به لینک نیست."
     },
     "invitations": {
       "title": "دعوت‌نامه‌ها",
@@ -702,6 +705,7 @@
       "bulkCreated": "{count} دعوت بازیکن ایجاد شد.",
       "bulkDuplicate": "قبلاً دعوت شده",
       "bulkInvalid": "نامعتبر",
+      "bulkJoined": "مستقیم عضو شدند",
       "bulkSubmit": "ایجاد دعوت بازیکنان",
       "bulkCreating": "در حال ایجاد دعوت‌ها…",
       "linkTitle": "یک لینک برای کل تیم",
