@@ -30,7 +30,7 @@ export default function EmptyRosterState({
           {t(locale, "coach.dashboard.inviteFirstPlayer")}
         </button>
       ) : (
-        <a href="/dashboard/coach/players" className="btn-primary !px-5 !py-3 text-sm">
+        <a href="/dashboard/coach/players#invite-panel" className="btn-primary !px-5 !py-3 text-sm">
           {t(locale, "coach.dashboard.inviteFirstPlayer")}
         </a>
       )}

@@ -4,7 +4,10 @@ import { t, type Locale } from "@/lib/i18n";
 
 export default function QuickActions({ canManageRoles, locale }: { canManageRoles: boolean; locale: Locale }) {
   const actions = [
-    { href: "#invite-panel", label: t(locale, "coach.dashboard.invitePlayer"), icon: MailIcon },
+    // Opens the full invite dialog on the players page (it auto-opens its
+    // invite modal when the #invite-panel hash is present). A bare "#"
+    // anchor would only scroll within the dashboard and open nothing.
+    { href: "/dashboard/coach/players#invite-panel", label: t(locale, "coach.dashboard.invitePlayer"), icon: MailIcon },
     { href: "/dashboard/coach/players", label: t(locale, "coach.dashboard.viewPlayers"), icon: UsersIcon },
     { href: "/dashboard/coach/programs", label: t(locale, "coach.dashboard.buildProgram"), icon: ClipboardListIcon },
     { href: "/dashboard/coach/reports", label: t(locale, "coach.dashboard.viewReports"), icon: BarChartIcon },
