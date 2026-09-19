@@ -349,8 +349,12 @@ model Assessment {
   id        String   @id @default(cuid())
   coachId   String
   coach     User     @relation("CoachAssessments", fields: [coachId], references: [id])
-  playerId  String
-  player    User     @relation("PlayerAssessments", fields: [playerId], references: [id])
+  // An assessment can also be recorded by a coach for a player who has not
+  // created an Athvexa account yet.  In that case playerName is used instead
+  // of playerId; no placeholder User account is created.
+  playerId  String?
+  player    User?    @relation("PlayerAssessments", fields: [playerId], references: [id])
+  playerName String?
   type      String   // Speed | Strength | Endurance | Agility | Mobility | Body composition | General
   date      String   // "YYYY-MM-DD"
   score     Float    // any numeric value, decimals allowed

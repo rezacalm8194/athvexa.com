@@ -30,6 +30,7 @@ type PlayerSummary = {
   count: number;
   neverAssessed: boolean;
   needsAssessment: boolean;
+  manual?: boolean;
 };
 
 type AssessmentResponse = {
@@ -157,7 +158,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
           <button
             type="button"
             className="btn-primary inline-flex items-center justify-center gap-2 !px-4 !py-2.5 text-sm disabled:opacity-50"
-            disabled={loading || Boolean(error) || !data?.players.length}
+            disabled={loading || Boolean(error)}
             onClick={() => setCreateForm(emptyAssessmentForm(data?.players.length === 1 ? data.players[0].id : ""))}
           >
             <PlusIcon className="h-4 w-4" />
@@ -177,17 +178,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      {!loading && !error && kpis.totalPlayers === 0 ? (
-        <div className="rounded-lg border border-line-1 bg-ink-3 p-6 sm:max-w-xl">
-          <h2 className="font-display text-lg font-black text-white">{t(locale, "coach.assessments.addPlayerTitle")}</h2>
-          <p className="mt-1 text-sm leading-6 text-smoke-3">{t(locale, "coach.assessments.addPlayerBody")}</p>
-          <Link href="/dashboard/coach/players#invite-panel" className="btn-primary mt-4 inline-flex gap-2 !px-4 !py-2.5 text-sm">
-            <PlusIcon className="h-4 w-4" />
-            {t(locale, "coach.assessments.invitePlayer")}
-          </Link>
-        </div>
-      ) : (
-        <>
+      <>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_150px]">
             <div className="col-span-2 sm:col-span-1">
               <SearchInput value={search} onChange={setSearch} placeholder={t(locale, "coach.assessments.search")} />
@@ -243,8 +234,8 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                         return (
                           <tr
                             key={player.id}
-                            className="cursor-pointer border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] [content-visibility:auto]"
-                            onClick={() => router.push(href)}
+                            className={`${player.manual ? "" : "cursor-pointer hover:bg-white/[0.03]"} border-b border-white/5 last:border-b-0 [content-visibility:auto]`}
+                            onClick={() => { if (!player.manual) router.push(href); }}
                           >
                             <td className="px-4 py-2.5">
                               <div className="flex items-center gap-2">
@@ -268,8 +259,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
               ) : null}
             </div>
           </div>
-        </>
-      )}
+      </>
       {createForm ? (
         <AssessmentModal
           open

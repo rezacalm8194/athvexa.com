@@ -18,7 +18,7 @@ async function loadOwnedAssessment(id: string, teamOwnerId: string) {
     where: { id },
     include: { player: { select: { id: true, name: true, email: true, coachId: true, role: true } } },
   });
-  if (!assessment || assessment.coachId !== teamOwnerId || assessment.player.coachId !== teamOwnerId) return null;
+  if (!assessment || assessment.coachId !== teamOwnerId || (assessment.playerId && assessment.player?.coachId !== teamOwnerId)) return null;
   return assessment;
 }
 
@@ -58,7 +58,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     assessment: {
       id: assessment.id,
       playerId: assessment.playerId,
-      player: { id: assessment.player.id, name: assessment.player.name, email: assessment.player.email },
+      player: assessment.player ? { id: assessment.player.id, name: assessment.player.name, email: assessment.player.email } : null,
+      playerName: assessment.player?.name ?? assessment.playerName,
       type: assessment.type,
       date: assessment.date,
       score: assessment.score,
@@ -99,7 +100,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
-  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant updated an assessment", description: `updated ${existing.player.name}’s ${parsed.data.type} assessment.`, actionHref: `/dashboard/coach/assessments?assessmentId=${encodeURIComponent(existing.id)}`, relatedId: existing.id });
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant updated an assessment", description: `updated ${(existing.player?.name ?? existing.playerName ?? "a player")}’s ${parsed.data.type} assessment.`, actionHref: `/dashboard/coach/assessments?assessmentId=${encodeURIComponent(existing.id)}`, relatedId: existing.id });
 
   return NextResponse.json({ id: existing.id });
 }
@@ -113,6 +114,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!existing) return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
 
   await db.assessment.delete({ where: { id: existing.id } });
-  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant deleted an assessment", description: `deleted ${existing.player.name}’s ${existing.type} assessment.`, actionHref: "/dashboard/coach/assessments" });
+  await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant deleted an assessment", description: `deleted ${(existing.player?.name ?? existing.playerName ?? "a player")}’s ${existing.type} assessment.`, actionHref: "/dashboard/coach/assessments" });
   return NextResponse.json({ ok: true });
 }

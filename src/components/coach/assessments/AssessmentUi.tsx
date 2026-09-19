@@ -25,6 +25,7 @@ export type AssessmentItem = {
 
 export type AssessmentFormState = {
   playerId: string;
+  playerName: string;
   type: AssessmentType;
   date: string;
   score: string;
@@ -35,6 +36,7 @@ const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export const emptyAssessmentForm = (playerId = ""): AssessmentFormState => ({
   playerId,
+  playerName: "",
   type: "Speed",
   date: todayKey(),
   score: "",
@@ -121,7 +123,7 @@ export function AssessmentModal({
             <select
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red disabled:cursor-not-allowed disabled:opacity-70"
               value={form.playerId}
-              onChange={(event) => setForm((current) => ({ ...current, playerId: event.target.value }))}
+              onChange={(event) => setForm((current) => ({ ...current, playerId: event.target.value, playerName: "" }))}
               disabled={lockPlayer}
               required
             >
@@ -135,6 +137,20 @@ export function AssessmentModal({
               ))}
             </select>
           </label>
+
+          {!lockPlayer ? (
+            <label className="space-y-2 text-sm font-semibold text-smoke-2">
+              {t(locale, "coach.assessmentUi.manualPlayer")}
+              <input
+                className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
+                value={form.playerName}
+                onChange={(event) => setForm((current) => ({ ...current, playerName: event.target.value, playerId: "" }))}
+                placeholder={t(locale, "coach.assessmentUi.manualPlayerPlaceholder")}
+                disabled={Boolean(form.playerId)}
+              />
+              <span className="block text-xs font-normal text-smoke-4">{t(locale, "coach.assessmentUi.manualPlayerHint")}</span>
+            </label>
+          ) : null}
 
           <label className="space-y-2 text-sm font-semibold text-smoke-2">
             {t(locale, "coach.assessmentUi.type")}
@@ -191,7 +207,7 @@ export function AssessmentModal({
           <button type="button" className="btn-ghost justify-center !px-4 !py-3 text-sm" onClick={onClose} disabled={busy}>
             {t(locale, "common.cancel")}
           </button>
-          <button type="submit" className="btn-primary justify-center !px-5 !py-3 text-sm" disabled={busy || players.length === 0}>
+          <button type="submit" className="btn-primary justify-center !px-5 !py-3 text-sm" disabled={busy}>
             {busy
               ? t(locale, "common.saving")
               : mode === "create"

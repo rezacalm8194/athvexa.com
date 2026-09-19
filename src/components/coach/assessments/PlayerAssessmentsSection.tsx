@@ -89,6 +89,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
     if (!modal?.item) return emptyAssessmentForm(player.id);
     return {
       playerId: player.id,
+      playerName: "",
       type: modal.item.type,
       date: modal.item.date,
       score: String(modal.item.score),

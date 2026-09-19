@@ -1,14 +1,15 @@
 type AssessmentCursor = {
   id: string;
-  playerId: string;
+  playerId: string | null;
+  playerName?: string | null;
   type: string;
   date: string;
   createdAt: Date;
   score: number;
 };
 
-function historyKey(playerId: string, type: string) {
-  return `${playerId}\0${type}`;
+function historyKey(playerId: string | null, playerName: string | null | undefined, type: string) {
+  return `${playerId ?? `manual:${playerName?.trim().toLocaleLowerCase() ?? ""}`}\0${type}`;
 }
 
 function isBefore(a: AssessmentCursor, b: Pick<AssessmentCursor, "date" | "createdAt">) {
@@ -18,7 +19,7 @@ function isBefore(a: AssessmentCursor, b: Pick<AssessmentCursor, "date" | "creat
 export function previousScoresById(listed: AssessmentCursor[], history: AssessmentCursor[]) {
   const buckets = new Map<string, AssessmentCursor[]>();
   for (const row of history) {
-    const key = historyKey(row.playerId, row.type);
+    const key = historyKey(row.playerId, row.playerName, row.type);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(row);
     else buckets.set(key, [row]);
@@ -33,7 +34,7 @@ export function previousScoresById(listed: AssessmentCursor[], history: Assessme
 
   const previousById = new Map<string, number | null>();
   for (const item of listed) {
-    const bucket = buckets.get(historyKey(item.playerId, item.type)) ?? [];
+    const bucket = buckets.get(historyKey(item.playerId, item.playerName, item.type)) ?? [];
     let previous: number | null = null;
     for (const row of bucket) {
       if (row.id === item.id) continue;

@@ -215,6 +215,7 @@ export async function GET(req: NextRequest) {
   const todayByPlayer = new Map(todayLogs.map((log) => [log.playerId, log]));
   const assessmentsByPlayer = new Map<string, typeof assessments>();
   for (const assessment of assessments) {
+    if (!assessment.playerId) continue;
     assessmentsByPlayer.set(assessment.playerId, [...(assessmentsByPlayer.get(assessment.playerId) ?? []), assessment]);
   }
 
