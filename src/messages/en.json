@@ -625,7 +625,7 @@
       "assistantShort": "Assistant",
       "coach": "Coach",
       "phoneOptional": "Mobile number optional",
-      "phoneHint": "Include the country code.",
+      "phoneHint": "For example 09351108194 or +989351108194.",
       "emailOptional": "Email optional",
       "expiration": "Expiration time",
       "exp24h": "24 hours",

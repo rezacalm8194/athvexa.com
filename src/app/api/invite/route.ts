@@ -12,7 +12,8 @@ import { rosterUsage } from "@/lib/teamWorkspace";
 const schema = z.object({
   role: z.enum(["PLAYER", "ASSISTANT", "COACH"]).default("PLAYER"),
   email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().trim().regex(/^\+?[1-9]\d{7,14}$/, "Enter a valid mobile number with country code").optional().or(z.literal("")),
+  // Normalize local/Persian-digit numbers before validating their E.164 form.
+  phone: z.string().trim().max(32).optional().or(z.literal("")),
   expiresInDays: z.number().int().min(1).max(90).optional(),
   expiresAt: z.string().datetime().optional(),
   maxUses: z.number().int().min(1).max(100).optional(),
@@ -37,8 +38,10 @@ export async function POST(req: NextRequest) {
   if (parsed.data.phone) {
     phone = normalizeInvitePhone(parsed.data.phone);
     if (!phone) {
-      const stripped = parsed.data.phone.replace(/[\s()-]/g, "");
-      phone = stripped || null;
+      return NextResponse.json(
+        { error: "Enter a valid mobile number, for example 09351108194 or +989351108194" },
+        { status: 400 }
+      );
     }
   }
   const expiresAt = parsed.data.expiresAt
