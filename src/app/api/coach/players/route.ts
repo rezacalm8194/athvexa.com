@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
-import { getCurrentTeamMembership } from "@/lib/teamContext";
+import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 import { readinessStatus } from "@/lib/readiness";
 
 export async function GET() {
@@ -14,7 +14,49 @@ export async function GET() {
   const date = new Date().toISOString().slice(0, 10);
   const membership = await getCurrentTeamMembership(session.sub);
   if (!membership) {
-    return NextResponse.json({ players: [], canManageRoles: session.role === "COACH" });
+    // Before the first team exists, players belong directly to their coach.
+    // Keep them visible in the roster instead of presenting an empty state.
+    const teamOwnerId = await getTeamOwnerId(session.sub);
+    const players = await db.user.findMany({
+      where: { coachId: teamOwnerId, role: "PLAYER" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        dailyLogs: {
+          orderBy: { date: "desc" },
+          take: 1,
+          select: { date: true, score: true },
+        },
+        programAssignments: {
+          where: { program: { status: "ACTIVE" } },
+          orderBy: { assignedAt: "desc" },
+          take: 1,
+          include: { program: { select: { id: true, name: true } } },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+    const roster = players.map((player) => {
+      const latest = player.dailyLogs[0];
+      const score = latest?.score ?? 0;
+      return {
+        id: player.id,
+        name: player.name,
+        email: player.email,
+        role: "PLAYER" as const,
+        joinedAt: null,
+        latestReadiness: latest?.score ?? null,
+        latestCheckIn: latest?.date ?? null,
+        activeProgram: player.programAssignments[0]?.program
+          ? { id: player.programAssignments[0].program.id, name: player.programAssignments[0].program.name }
+          : null,
+        score,
+        loggedToday: latest?.date === date,
+        ...readinessStatus(score),
+      };
+    });
+    return NextResponse.json({ players: roster, canManageRoles: session.role === "COACH" });
   }
 
   const members = await db.teamMember.findMany({

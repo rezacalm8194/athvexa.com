@@ -68,12 +68,10 @@ export async function POST(req: NextRequest) {
   const teamOwnerId = await getTeamOwnerId(session.sub);
 
   const membership = await getCurrentTeamMembership(session.sub);
-  if (!membership || membership.team.coachId !== teamOwnerId) {
-    return NextResponse.json(
-      { error: "Set up your team before inviting players or assistants" },
-      { status: 400 }
-    );
-  }
+  // A coach can build their roster before creating the first team.  `teamId`
+  // is intentionally nullable on Invite; when a team is created later,
+  // legacy membership syncing links these coach-owned accounts to it.
+  const team = membership?.team.coachId === teamOwnerId ? membership.team : null;
 
   if (role === "PLAYER") {
     const roster = await rosterUsage(teamOwnerId);
@@ -89,7 +87,7 @@ export async function POST(req: NextRequest) {
     data: {
       token: nanoid(12),
       coachId: teamOwnerId,
-      teamId: membership.teamId,
+      teamId: team?.id ?? null,
       role,
       email,
       phone,
@@ -112,7 +110,7 @@ export async function POST(req: NextRequest) {
     invite,
     actorId: session.sub,
     actorName: session.name,
-    teamName: membership.team.name,
+    teamName: team?.name ?? session.name,
   });
 
   return NextResponse.json({

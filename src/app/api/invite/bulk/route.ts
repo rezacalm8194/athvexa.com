@@ -37,9 +37,10 @@ export async function POST(req: NextRequest) {
 
   const teamOwnerId = await getTeamOwnerId(session.sub);
   const membership = await getCurrentTeamMembership(session.sub);
-  if (!membership || membership.team.coachId !== teamOwnerId) {
-    return NextResponse.json({ error: "Set up your team before inviting players" }, { status: 400 });
-  }
+  // Bulk invitations follow the same pre-team flow as single invitations.
+  const team = membership?.team.coachId === teamOwnerId ? membership.team : null;
+  const teamId = team?.id ?? null;
+  const teamName = team?.name ?? session.name;
 
   const roster = await rosterUsage(teamOwnerId);
   let remaining = roster.remaining;
@@ -68,9 +69,9 @@ export async function POST(req: NextRequest) {
     // A contact that already belongs to this team needs no new invite —
     // handing out another link for them only creates confusion.
     const existingUser = await findUserByInviteContact(contact.email, contact.phone);
-    if (existingUser?.role === "PLAYER") {
+    if (teamId && existingUser?.role === "PLAYER") {
       const alreadyMember = await db.teamMember.findUnique({
-        where: { teamId_userId: { teamId: membership.teamId, userId: existingUser.id } },
+        where: { teamId_userId: { teamId, userId: existingUser.id } },
         select: { id: true },
       });
       if (alreadyMember) {
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     const existing = await db.invite.findFirst({
       where: {
         coachId: teamOwnerId,
-        teamId: membership.teamId,
+        teamId,
         role: "PLAYER",
         revoked: false,
         usedAt: null,
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
       data: {
         token: nanoid(12),
         coachId: teamOwnerId,
-        teamId: membership.teamId,
+        teamId,
         role: "PLAYER",
         email: contact.email,
         phone: contact.phone,
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
       invite,
       actorId: session.sub,
       actorName: session.name,
-      teamName: membership.team.name,
+      teamName,
     });
     if (delivery.joined) {
       // The player was added to the team straight away, which consumes this
