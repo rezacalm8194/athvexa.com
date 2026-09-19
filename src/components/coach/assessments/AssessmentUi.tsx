@@ -13,8 +13,9 @@ export type PlayerOption = {
 
 export type AssessmentItem = {
   id: string;
-  playerId: string;
-  player: PlayerOption;
+  playerId: string | null;
+  player: PlayerOption | null;
+  playerName?: string | null;
   type: AssessmentType;
   date: string;
   score: number;
@@ -90,10 +91,16 @@ export function AssessmentModal({
   onSubmit: (form: AssessmentFormState) => void;
 }) {
   const [form, setForm] = useState<AssessmentFormState>(initial);
+  const [subjectMode, setSubjectMode] = useState<"roster" | "manual">(
+    initial.playerName || players.length === 0 ? "manual" : "roster"
+  );
 
   useEffect(() => {
-    if (open) setForm(initial);
-  }, [initial, open]);
+    if (open) {
+      setForm(initial);
+      setSubjectMode(initial.playerName || players.length === 0 ? "manual" : "roster");
+    }
+  }, [initial, open, players.length]);
 
   if (!open) return null;
 
@@ -118,39 +125,48 @@ export function AssessmentModal({
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="space-y-2 text-sm font-semibold text-smoke-2">
-            {t(locale, "coach.assessmentUi.player")}
-            <select
-              className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red disabled:cursor-not-allowed disabled:opacity-70"
-              value={form.playerId}
-              onChange={(event) => setForm((current) => ({ ...current, playerId: event.target.value, playerName: "" }))}
-              disabled={lockPlayer}
-              required
-            >
-              <option value="" disabled>
-                {t(locale, "coach.assessmentUi.selectPlayer")}
-              </option>
-              {players.map((player) => (
-                <option key={player.id} value={player.id}>
-                  {player.name || player.email}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-2 sm:col-span-2">
+            {!lockPlayer ? (
+              <div className="grid grid-cols-2 gap-2 rounded-md bg-ink-2 p-1" role="group" aria-label={t(locale, "coach.assessmentUi.playerSource")}>
+                <button type="button" className={`rounded px-3 py-2 text-sm font-semibold ${subjectMode === "roster" ? "bg-white/10 text-white" : "text-smoke-3"}`} onClick={() => { setSubjectMode("roster"); setForm((current) => ({ ...current, playerName: "" })); }} disabled={players.length === 0}>
+                  {t(locale, "coach.assessmentUi.rosterPlayer")}
+                </button>
+                <button type="button" className={`rounded px-3 py-2 text-sm font-semibold ${subjectMode === "manual" ? "bg-white/10 text-white" : "text-smoke-3"}`} onClick={() => { setSubjectMode("manual"); setForm((current) => ({ ...current, playerId: "" })); }}>
+                  {t(locale, "coach.assessmentUi.manualPlayer")}
+                </button>
+              </div>
+            ) : null}
 
-          {!lockPlayer ? (
-            <label className="space-y-2 text-sm font-semibold text-smoke-2">
-              {t(locale, "coach.assessmentUi.manualPlayer")}
+            {subjectMode === "roster" ? (
+              <label className="block space-y-2 text-sm font-semibold text-smoke-2">
+                {t(locale, "coach.assessmentUi.player")}
+                <select
+                  className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red disabled:cursor-not-allowed disabled:opacity-70"
+                  value={form.playerId}
+                  onChange={(event) => setForm((current) => ({ ...current, playerId: event.target.value, playerName: "" }))}
+                  disabled={lockPlayer}
+                  required
+                >
+                  <option value="" disabled>{t(locale, "coach.assessmentUi.selectPlayer")}</option>
+                  {players.map((player) => <option key={player.id} value={player.id}>{player.name || player.email}</option>)}
+                </select>
+              </label>
+            ) : (
+              <label className="block space-y-2 text-sm font-semibold text-smoke-2">
+                {t(locale, "coach.assessmentUi.manualPlayerName")}
               <input
                 className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
                 value={form.playerName}
                 onChange={(event) => setForm((current) => ({ ...current, playerName: event.target.value, playerId: "" }))}
                 placeholder={t(locale, "coach.assessmentUi.manualPlayerPlaceholder")}
-                disabled={Boolean(form.playerId)}
+                minLength={2}
+                maxLength={120}
+                required
               />
               <span className="block text-xs font-normal text-smoke-4">{t(locale, "coach.assessmentUi.manualPlayerHint")}</span>
-            </label>
-          ) : null}
+              </label>
+            )}
+          </div>
 
           <label className="space-y-2 text-sm font-semibold text-smoke-2">
             {t(locale, "coach.assessmentUi.type")}

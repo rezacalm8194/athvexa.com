@@ -37,7 +37,10 @@ export async function GET(req: NextRequest) {
   const type = req.nextUrl.searchParams.get("type") ?? "all";
   const range = monthRange(req.nextUrl.searchParams.get("month"));
   const requestedPlayerId = req.nextUrl.searchParams.get("playerId")?.trim();
-  const rows = await db.assessment.findMany({ where: { coachId: auth.teamOwnerId, ...(type !== "all" && ASSESSMENT_TYPES.includes(type as never) ? { type } : {}), ...(range ? { date: range } : {}) }, include: { player: { select: { id: true, name: true, email: true } } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }] });
+  const allRows = await db.assessment.findMany({ where: { coachId: auth.teamOwnerId }, include: { player: { select: { id: true, name: true, email: true } } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }] });
+  const rows = allRows.filter((row) =>
+    (type === "all" || row.type === type) && (!range || (row.date >= range.gte && row.date < range.lt))
+  );
   const roster = await db.user.findMany({ where: { coachId: auth.teamOwnerId, role: "PLAYER" }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } });
   const visibleRows = rows.filter((row) => (!requestedPlayerId || row.playerId === requestedPlayerId) && (!search || labelFor(row).toLocaleLowerCase().includes(search)));
   const history = await db.assessment.findMany({ where: { coachId: auth.teamOwnerId }, select: { id: true, playerId: true, playerName: true, type: true, date: true, createdAt: true, score: true }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] });
@@ -52,8 +55,9 @@ export async function GET(req: NextRequest) {
     summaries.set(key, item);
   }
   const playersSummary = [...summaries.values()].filter((item) => !search || item.name.toLocaleLowerCase().includes(search)).map((item) => ({ id: item.id, name: item.name, email: item.email, manual: item.manual, latestAssessment: item.latest ? { id: item.latest.id, type: item.latest.type, date: item.latest.date, score: item.latest.score, notes: item.latest.notes } : null, count: item.count, neverAssessed: item.count === 0, needsAssessment: item.count === 0 }));
-  const assessed = [...summaries.values()].filter((item) => item.count > 0).length;
-  return NextResponse.json({ players: roster, playersSummary, assessments: visibleRows.map((row) => ({ id: row.id, playerId: row.playerId, playerName: labelFor(row), player: row.player, type: row.type, date: row.date, score: row.score, previousScore: previous.get(row.id) ?? null, change: previous.has(row.id) ? Number((row.score - (previous.get(row.id) ?? 0)).toFixed(2)) : null, notes: row.notes, createdAt: row.createdAt, updatedAt: row.updatedAt })), kpis: { totalPlayers: summaries.size, totalAssessments: rows.length, assessmentsThisMonth: rows.filter((row) => row.date.startsWith(new Date().toISOString().slice(0, 7))).length, playersAssessed: assessed, playersNotAssessed: summaries.size - assessed }, types: ASSESSMENT_TYPES });
+  const allPlayerKeys = new Set([...roster.map((player) => `user:${player.id}`), ...allRows.map(keyFor)]);
+  const assessedKeys = new Set(allRows.map(keyFor));
+  return NextResponse.json({ players: roster, playersSummary, assessments: visibleRows.map((row) => ({ id: row.id, playerId: row.playerId, playerName: labelFor(row), player: row.player, type: row.type, date: row.date, score: row.score, previousScore: previous.get(row.id) ?? null, change: previous.has(row.id) ? Number((row.score - (previous.get(row.id) ?? 0)).toFixed(2)) : null, notes: row.notes, createdAt: row.createdAt, updatedAt: row.updatedAt })), kpis: { totalPlayers: allPlayerKeys.size, totalAssessments: allRows.length, assessmentsThisMonth: allRows.filter((row) => row.date.startsWith(new Date().toISOString().slice(0, 7))).length, playersAssessed: assessedKeys.size, playersNotAssessed: Math.max(allPlayerKeys.size - assessedKeys.size, 0) }, types: ASSESSMENT_TYPES });
 }
 
 export async function POST(req: NextRequest) {

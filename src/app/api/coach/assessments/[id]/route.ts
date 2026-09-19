@@ -6,11 +6,15 @@ import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
 const assessmentSchema = z.object({
-  playerId: z.string().min(1, "Player is required"),
+  playerId: z.string().min(1).optional().or(z.literal("")),
+  playerName: z.string().trim().min(2, "Enter the player's name").max(120).optional(),
   type: z.enum(ASSESSMENT_TYPES),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD"),
   score: z.number({ invalid_type_error: "Score must be a number" }).finite(),
   notes: z.string().max(3000).nullable().optional(),
+}).superRefine((value, context) => {
+  if (!value.playerId && !value.playerName) context.addIssue({ code: z.ZodIssueCode.custom, message: "Select a player or enter their name" });
+  if (value.playerId && value.playerName) context.addIssue({ code: z.ZodIssueCode.custom, message: "Choose either a roster player or a new player" });
 });
 
 async function loadOwnedAssessment(id: string, teamOwnerId: string) {
@@ -42,6 +46,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     where: {
       coachId: auth.teamOwnerId,
       playerId: assessment.playerId,
+      playerName: assessment.playerId ? undefined : assessment.playerName,
       type: assessment.type,
       OR: [
         { date: { lt: assessment.date } },
@@ -86,13 +91,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid assessment data" }, { status: 400 });
   }
 
-  const belongs = await ensurePlayerBelongsToCoach(parsed.data.playerId, auth.teamOwnerId);
-  if (!belongs) return NextResponse.json({ error: "Player is not in your team" }, { status: 403 });
+  const playerId = parsed.data.playerId || null;
+  if (playerId) {
+    const belongs = await ensurePlayerBelongsToCoach(playerId, auth.teamOwnerId);
+    if (!belongs) return NextResponse.json({ error: "Player is not in your team" }, { status: 403 });
+  }
 
   await db.assessment.update({
     where: { id: existing.id },
     data: {
-      playerId: parsed.data.playerId,
+      playerId,
+      playerName: playerId ? null : parsed.data.playerName!.trim(),
       type: parsed.data.type,
       date: parsed.data.date,
       score: parsed.data.score,

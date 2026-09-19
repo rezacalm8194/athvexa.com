@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AssessmentModal, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
+import { AssessmentDetailModal, AssessmentModal, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type AssessmentItem, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
@@ -58,6 +57,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
   const [month, setMonth] = useState("");
   const [createForm, setCreateForm] = useState<AssessmentFormState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [viewing, setViewing] = useState<AssessmentItem | null>(null);
 
   const saveAssessment = async (form: AssessmentFormState) => {
     if (saving) return;
@@ -121,7 +121,11 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
       .then(({ ok, payload }) => {
         if (!active) return;
         if (!ok) throw new Error(payload.error || t(locale, "coach.assessments.openError"));
-        router.replace(`/dashboard/coach/players/${encodeURIComponent(payload.assessment.playerId)}?assessmentId=${encodeURIComponent(deepLinkedAssessmentId)}#assessments`);
+        if (payload.assessment.playerId) {
+          router.replace(`/dashboard/coach/players/${encodeURIComponent(payload.assessment.playerId)}?assessmentId=${encodeURIComponent(deepLinkedAssessmentId)}#assessments`);
+        } else {
+          setViewing(payload.assessment);
+        }
       })
       .catch((redirectError) => {
         if (active) showToast(redirectError instanceof Error ? redirectError.message : t(locale, "coach.assessments.openError"), "error");
@@ -234,8 +238,11 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                         return (
                           <tr
                             key={player.id}
-                            className={`${player.manual ? "" : "cursor-pointer hover:bg-white/[0.03]"} border-b border-white/5 last:border-b-0 [content-visibility:auto]`}
-                            onClick={() => { if (!player.manual) router.push(href); }}
+                            className="cursor-pointer border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] [content-visibility:auto]"
+                            onClick={() => {
+                              if (player.manual && player.latestAssessment) router.replace(`/dashboard/coach/assessments?assessmentId=${encodeURIComponent(player.latestAssessment.id)}`, { scroll: false });
+                              else if (!player.manual) router.push(href);
+                            }}
                           >
                             <td className="px-4 py-2.5">
                               <div className="flex items-center gap-2">
@@ -272,6 +279,14 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
           onSubmit={saveAssessment}
         />
       ) : null}
+      <AssessmentDetailModal
+        assessment={viewing}
+        locale={locale}
+        onClose={() => {
+          setViewing(null);
+          router.replace("/dashboard/coach/assessments", { scroll: false });
+        }}
+      />
     </section>
   );
 }

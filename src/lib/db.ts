@@ -383,8 +383,7 @@ async function ensureSqliteSchema() {
     CREATE TABLE IF NOT EXISTS "DailyLog" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "date" TEXT NOT NULL,
-      "playerId" TEXT,
-      "playerName" TEXT,
+      "playerId" TEXT NOT NULL,
       "score" INTEGER NOT NULL DEFAULT 0,
       "sleepHours" REAL,
       "waterLiters" REAL,
@@ -546,7 +545,8 @@ async function ensureSqliteSchema() {
     CREATE TABLE IF NOT EXISTS "Assessment" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "coachId" TEXT NOT NULL,
-      "playerId" TEXT NOT NULL,
+      "playerId" TEXT,
+      "playerName" TEXT,
       "type" TEXT NOT NULL,
       "date" TEXT NOT NULL,
       "score" REAL NOT NULL,
