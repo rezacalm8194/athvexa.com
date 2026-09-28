@@ -42,13 +42,17 @@ export async function findInviteByToken(rawToken: string) {
   const pending = unique.filter((row) => !row.revoked && !row.usedAt);
   if (pending.length === 1) return pending[0];
 
-  const rawHits = await db.$queryRaw<{ token: string }[]>`
-    SELECT token FROM "Invite"
-    WHERE token = ${token} OR lower(token) = lower(${token}) OR token LIKE ${`${token}%`}
-    LIMIT 5
-  `;
-  if (rawHits.length === 1) {
-    return db.invite.findUnique({ where: { token: rawHits[0].token }, include: inviteInclude });
+  try {
+    const rawHits = await db.$queryRaw<{ token: string }[]>`
+      SELECT token FROM "Invite"
+      WHERE token = ${token} OR lower(token) = lower(${token}) OR token LIKE ${`${token}%`}
+      LIMIT 5
+    `;
+    if (rawHits.length === 1) {
+      return db.invite.findUnique({ where: { token: rawHits[0].token }, include: inviteInclude });
+    }
+  } catch (error) {
+    console.error("[invite] raw lookup failed", error);
   }
   return null;
 }

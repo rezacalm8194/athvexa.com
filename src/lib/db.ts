@@ -2,42 +2,40 @@ import fs from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
-// Prevent hot-reload from spawning a new PrismaClient on every save in dev.
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+  athvexaSqliteUrl?: string;
+};
 
 function resolveSqliteUrl() {
-  const raw = (process.env.DATABASE_URL ?? "").trim();
-  const requested = raw.startsWith("file:") ? raw.slice("file:".length).replace(/^\.\//, "") : "dev.db";
+  if (globalForPrisma.athvexaSqliteUrl) return globalForPrisma.athvexaSqliteUrl;
+
+  const raw = (process.env.DATABASE_URL ?? "file:./dev.db").trim();
+  if (!raw.startsWith("file:")) {
+    globalForPrisma.athvexaSqliteUrl = raw;
+    return raw;
+  }
+
+  const relative = raw.slice("file:".length).replace(/\\/g, "/");
   const cwd = process.cwd();
-  const candidates = [
-    path.resolve(cwd, requested),
-    path.resolve(cwd, "dev.db"),
-    path.resolve(cwd, "prisma", "dev.db"),
-    path.resolve(cwd, "prisma", requested),
-  ];
-  const unique = [...new Set(candidates)];
-  const existing = unique
-    .filter((filePath) => {
-      try {
-        return fs.existsSync(filePath);
-      } catch {
-        return false;
-      }
-    })
-    .sort((a, b) => {
-      try {
-        return fs.statSync(b).size - fs.statSync(a).size;
-      } catch {
-        return 0;
-      }
-    });
-  const chosen = existing[0] ?? path.resolve(cwd, "prisma", "dev.db");
+  // Prisma resolves file:./dev.db from the schema folder (prisma/), not cwd.
+  // Picking "the largest existing file" made /api/invite write one database
+  // while the /invite/[token] page read another — every link looked expired.
+  const chosen = path.isAbsolute(relative)
+    ? relative
+    : relative === "./dev.db" || relative === "dev.db"
+      ? path.resolve(cwd, "prisma", "dev.db")
+      : path.resolve(cwd, relative);
+
   try {
     fs.mkdirSync(path.dirname(chosen), { recursive: true });
   } catch (error) {
     console.error("[db] could not ensure sqlite directory", error);
   }
-  return `file:${chosen.replace(/\\/g, "/")}`;
+
+  const url = `file:${chosen.replace(/\\/g, "/")}`;
+  globalForPrisma.athvexaSqliteUrl = url;
+  return url;
 }
 
 const sqliteUrl = resolveSqliteUrl();
@@ -53,7 +51,7 @@ export const db =
     datasources: { db: { url: sqliteUrl } },
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+globalForPrisma.prisma = db;
 
 let sqliteReady: Promise<void> | null = null;
 
