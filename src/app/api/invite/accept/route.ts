@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { addUserToInvitedTeam, consumeInvite } from "@/lib/inviteActions";
+import { isInviteRedeemable, normalizeInviteToken } from "@/lib/invites";
 import { notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
 
 const schema = z.object({ token: z.string().min(1) });
@@ -15,12 +16,14 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invite token is required" }, { status: 400 });
 
-  const invite = await db.invite.findUnique({
-    where: { token: parsed.data.token },
-    include: { coach: { select: { name: true } }, team: { select: { name: true } } },
-  });
-  const isValid = Boolean(invite && !invite.revoked && invite.useCount < invite.maxUses && invite.expiresAt > new Date());
-  if (!invite || !isValid) {
+  const token = normalizeInviteToken(parsed.data.token);
+  const invite = token
+    ? await db.invite.findUnique({
+        where: { token },
+        include: { coach: { select: { name: true } }, team: { select: { name: true } } },
+      })
+    : null;
+  if (!isInviteRedeemable(invite)) {
     return NextResponse.json({ error: "This invite link has expired or already been used" }, { status: 400 });
   }
 

@@ -1,5 +1,41 @@
 import type { NextRequest } from "next/server";
+import { customAlphabet } from "nanoid";
 import { normalizeEmail, normalizePhone } from "@/lib/contact";
+
+// Underscore and hyphen break autolinks in WhatsApp/Telegram (markdown), so
+// invite tokens are alphanumeric only. 16 chars ≈ 95 bits with this alphabet.
+const inviteTokenAlphabet = customAlphabet(
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  16
+);
+
+export function createInviteToken() {
+  return inviteTokenAlphabet();
+}
+
+/**
+ * Chat apps often wrap invite URLs with bidi marks, punctuation, or a trailing
+ * slash. Strip that noise so the token still matches the database row.
+ */
+export function normalizeInviteToken(raw: string): string {
+  let value = raw.trim();
+  try {
+    value = decodeURIComponent(value);
+  } catch {
+    // Already decoded, or the token contains a literal %.
+  }
+  value = value.replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "").trim();
+  const embedded = value.match(/\/invite\/([^/?#]+)/i);
+  if (embedded) value = embedded[1];
+  value = value.split(/[/?#]/)[0] ?? value;
+  const token = (value.match(/[A-Za-z0-9_-]+/) ?? [""])[0];
+  return token;
+}
+
+/** Put the URL on its own LTR line so RTL captions do not swallow the path. */
+export function shareInviteMessage(caption: string, url: string) {
+  return `${caption.trim()}\n\n\u2066${url}\u2069`;
+}
 
 /**
  * Resolves the public base URL used to build shareable invite links.
@@ -76,29 +112,36 @@ export function shortenUrlForDisplay(url: string, maxLength = 42): string {
 }
 
 export type InviteRow = {
-  usedAt: Date | null;
+  usedAt: Date | string | null;
   revoked: boolean;
-  expiresAt: Date;
-  useCount?: number;
-  maxUses?: number;
+  expiresAt: Date | string;
+  useCount?: number | string | null;
+  maxUses?: number | string | null;
 };
 
 export type InviteStatus = "accepted" | "revoked" | "expired" | "pending";
+
+function asDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
 
 export function inviteStatus(invite: InviteRow): InviteStatus {
   if (invite.usedAt) return "accepted";
   if (invite.revoked) return "revoked";
   // Defensive: a fully-consumed multi-use link must read as accepted even if
   // usedAt was never stamped (e.g. a race between concurrent redemptions).
-  if (
-    typeof invite.useCount === "number" &&
-    typeof invite.maxUses === "number" &&
-    invite.useCount >= invite.maxUses
-  ) {
+  const useCount = Number(invite.useCount ?? 0);
+  const maxUses = Number(invite.maxUses ?? 1);
+  if (Number.isFinite(useCount) && Number.isFinite(maxUses) && useCount >= maxUses) {
     return "accepted";
   }
-  if (invite.expiresAt <= new Date()) return "expired";
+  const expiresAt = asDate(invite.expiresAt);
+  if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) return "expired";
   return "pending";
+}
+
+export function isInviteRedeemable<T extends InviteRow>(invite: T | null | undefined): invite is T {
+  return Boolean(invite && inviteStatus(invite) === "pending");
 }
 
 export function normalizeInviteEmail(value?: string | null) {

@@ -4,7 +4,7 @@ import { db, ensureDatabase } from "@/lib/db";
 import { hashPassword, signSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { normalizeEmail, normalizePhone } from "@/lib/contact";
 import { consumeInvite } from "@/lib/inviteActions";
-import { inviteRoleToTeamRole } from "@/lib/invites";
+import { inviteRoleToTeamRole, isInviteRedeemable, normalizeInviteToken } from "@/lib/invites";
 import { notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
 
 const schema = z.object({
@@ -52,12 +52,14 @@ export async function POST(req: NextRequest) {
     let inviteTeamName = "";
 
     if (inviteToken) {
-      const invite = await db.invite.findUnique({
-        where: { token: inviteToken },
-        include: { coach: { select: { name: true } } },
-      });
-      const isValid = Boolean(invite && !invite.revoked && invite.useCount < invite.maxUses && invite.expiresAt > new Date());
-      if (!invite || !isValid) {
+      const token = normalizeInviteToken(inviteToken);
+      const invite = token
+        ? await db.invite.findUnique({
+            where: { token },
+            include: { coach: { select: { name: true } } },
+          })
+        : null;
+      if (!isInviteRedeemable(invite)) {
         return NextResponse.json(
           { error: "This invite link has expired or already been used" },
           { status: 400 }

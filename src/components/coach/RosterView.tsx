@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { shareInviteMessage } from "@/lib/invites";
 
 type MemberRole = "PLAYER" | "ASSISTANT";
 
@@ -70,9 +71,12 @@ export default function RosterView({ coachName, teamName }: { coachName: string;
   }
 
   function shareMessage() {
-    return inviteRole === "ASSISTANT"
-      ? `${coachName} invited you to join their coaching staff on Athvexa: ${inviteUrl}`
-      : `${coachName} invited you to join their team on Athvexa: ${inviteUrl}`;
+    if (!inviteUrl) return "";
+    const caption =
+      inviteRole === "ASSISTANT"
+        ? `${coachName} invited you to join their coaching staff on Athvexa`
+        : `${coachName} invited you to join their team on Athvexa`;
+    return shareInviteMessage(caption, inviteUrl);
   }
 
   function sendViaWhatsApp() {

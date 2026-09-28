@@ -7,7 +7,7 @@ import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import { useToast } from "@/components/ui/Toast";
-import { shortenUrlForDisplay } from "@/lib/invites";
+import { shareInviteMessage, shortenUrlForDisplay } from "@/lib/invites";
 import {
   AlertIcon,
   CheckCircleIcon,
@@ -270,9 +270,11 @@ export default function InvitationsPageView({
   }
 
   function shareMessage(invite: Invite) {
-    return invite.role === "ASSISTANT" || invite.role === "COACH"
-      ? t(locale, "coach.invite.shareStaff", { name: coachName, url: invite.url })
-      : t(locale, "coach.invite.sharePlayer", { name: coachName, url: invite.url });
+    const caption =
+      invite.role === "ASSISTANT" || invite.role === "COACH"
+        ? t(locale, "coach.invite.shareCaptionStaff", { name: coachName })
+        : t(locale, "coach.invite.shareCaptionPlayer", { name: coachName });
+    return shareInviteMessage(caption, invite.url);
   }
 
   function sendViaWhatsApp(invite: Invite) {

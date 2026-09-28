@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { relativeTime } from "@/lib/format";
-import { shortenUrlForDisplay } from "@/lib/invites";
+import { shareInviteMessage, shortenUrlForDisplay } from "@/lib/invites";
 import { CopyIcon, PlusIcon, RefreshIcon, TrashIcon, WhatsAppIcon, TelegramIcon } from "@/components/icons";
 import { t, type Locale } from "@/lib/i18n";
 
@@ -96,9 +96,11 @@ export default function InvitePanel({
   }
 
   function shareMessage(invite: Invite) {
-    return invite.role === "ASSISTANT"
-      ? t(locale, "coach.invite.shareStaff", { name: coachName, url: invite.url })
-      : t(locale, "coach.invite.sharePlayer", { name: coachName, url: invite.url });
+    const caption =
+      invite.role === "ASSISTANT"
+        ? t(locale, "coach.invite.shareCaptionStaff", { name: coachName })
+        : t(locale, "coach.invite.shareCaptionPlayer", { name: coachName });
+    return shareInviteMessage(caption, invite.url);
   }
 
   function sendViaWhatsApp(invite: Invite) {

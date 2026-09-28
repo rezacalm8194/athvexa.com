@@ -3,22 +3,25 @@ import AcceptInviteCard from "@/components/AcceptInviteCard";
 import RegisterForm from "@/components/RegisterForm";
 import { db, ensureDatabase } from "@/lib/db";
 import { roleLabel, t } from "@/lib/i18n";
+import { isInviteRedeemable, normalizeInviteToken } from "@/lib/invites";
 import { getSession } from "@/lib/session";
 import { getRequestLocale } from "@/lib/userPreferences";
 
+export const dynamic = "force-dynamic";
+
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+  const token = normalizeInviteToken((await params).token);
   const locale = await getRequestLocale();
   const session = await getSession();
   await ensureDatabase();
-  const invite = await db.invite.findUnique({
-    where: { token },
-    include: { coach: { select: { name: true } } },
-  });
+  const invite = token
+    ? await db.invite.findUnique({
+        where: { token },
+        include: { coach: { select: { name: true } } },
+      })
+    : null;
 
-  const isValid = Boolean(invite && !invite.revoked && invite.useCount < invite.maxUses && invite.expiresAt > new Date());
-
-  if (!invite || !isValid) {
+  if (!isInviteRedeemable(invite)) {
     return (
       <AuthShell title={t(locale, "auth.inviteInvalidTitle")} subtitle={t(locale, "auth.inviteInvalidSubtitle")}>
         <a href="/register" className="btn-primary block text-center">

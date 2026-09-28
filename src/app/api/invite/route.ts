@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
-import { buildInviteUrl, normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
+import { buildInviteUrl, createInviteToken, normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 import { deliverInviteToExistingUser } from "@/lib/playerInbox";
@@ -85,7 +84,7 @@ export async function POST(req: NextRequest) {
 
   const invite = await db.invite.create({
     data: {
-      token: nanoid(12),
+      token: createInviteToken(),
       coachId: teamOwnerId,
       teamId: team?.id ?? null,
       role,

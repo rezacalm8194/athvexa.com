@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
-import { buildInviteUrl, inviteStatus } from "@/lib/invites";
+import { buildInviteUrl, createInviteToken, inviteStatus } from "@/lib/invites";
 import { getTeamOwnerId } from "@/lib/teamContext";
 
 const schema = z.object({ action: z.enum(["revoke", "regenerate"]) });
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await db.invite.update({ where: { id: invite.id }, data: { revoked: true } });
   const fresh = await db.invite.create({
     data: {
-      token: nanoid(12),
+      token: createInviteToken(),
       coachId: teamOwnerId,
       teamId: invite.teamId,
       role: invite.role,

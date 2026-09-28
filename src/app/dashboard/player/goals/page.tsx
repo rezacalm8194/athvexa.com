@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ServerDashboardNav from "@/components/ServerDashboardNav";
 import PlayerSubNav from "@/components/player/PlayerSubNav";
-import DailyCheckInForm from "@/components/player/DailyCheckInForm";
+import GoalsList from "@/components/player/GoalsList";
 import { getUserPreferences } from "@/lib/userPreferences";
 
-export default async function CheckInPage() {
+export default async function GoalsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.role !== "PLAYER") redirect("/dashboard/coach");
@@ -15,7 +15,7 @@ export default async function CheckInPage() {
     <main className="min-h-screen bg-ink">
       <ServerDashboardNav name={session.name} locale={preferences.locale} />
       <PlayerSubNav locale={preferences.locale} />
-      <DailyCheckInForm {...preferences} />
+      <GoalsList locale={preferences.locale} timeZone={preferences.timeZone} />
     </main>
   );
 }

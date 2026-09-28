@@ -9,6 +9,7 @@ import StatusFilter from "@/components/coach/shared/StatusFilter";
 import { CopyIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { t, type Locale } from "@/lib/i18n";
+import { shareInviteMessage } from "@/lib/invites";
 
 type PlayerStatus = "all" | "ready" | "attention" | "not_checked_in";
 
@@ -176,7 +177,7 @@ export default function PlayersPageView({
   function shareWhatsApp() {
     if (!createdInvite) return;
     const recipient = createdInvite.phone?.replace(/\D/g, "") ?? "";
-    const message = t(locale, "coach.invite.inviteMessage", { url: createdInvite.url });
+    const message = shareInviteMessage(t(locale, "coach.invite.telegramCaption"), createdInvite.url);
     window.open(`https://wa.me/${recipient}?text=${encodeURIComponent(message)}`, "_blank");
   }
 
