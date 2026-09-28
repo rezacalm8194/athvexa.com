@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, mergeSiblingSqliteDatabases } from "@/lib/db";
 import {
   inviteRoleToTeamRole,
   normalizeInviteEmail,
@@ -24,6 +24,13 @@ export async function findInviteByToken(rawToken: string) {
     include: inviteInclude,
   });
   if (exact) return exact;
+
+  await mergeSiblingSqliteDatabases();
+  const afterMerge = await db.invite.findUnique({
+    where: { token },
+    include: inviteInclude,
+  });
+  if (afterMerge) return afterMerge;
 
   const matches = await db.invite.findMany({
     where: {

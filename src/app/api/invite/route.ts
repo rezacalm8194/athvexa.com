@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
-import { db, ensureDatabase } from "@/lib/db";
+import { db, ensureDatabase, getDatabaseUrl } from "@/lib/db";
 import { buildInviteUrl, createInviteToken, normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
     actorName: session.name,
     teamName: team?.name ?? session.name,
   });
+
+  console.info("[invite] created", { token: invite.token, database: getDatabaseUrl(), id: invite.id });
 
   return NextResponse.json({
     id: invite.id,

@@ -45,6 +45,98 @@ export function getDatabaseUrl() {
   return sqliteUrl;
 }
 
+function sqlitePathFromUrl(url: string) {
+  return url.startsWith("file:") ? url.slice("file:".length) : url;
+}
+
+function existingSqliteFiles() {
+  const canonical = path.normalize(sqlitePathFromUrl(sqliteUrl));
+  const cwd = process.cwd();
+  const unique = new Map<string, string>();
+  for (const filePath of [canonical, path.resolve(cwd, "dev.db"), path.resolve(cwd, "prisma", "dev.db")]) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      unique.set(fs.realpathSync(filePath), filePath);
+    } catch {
+      unique.set(path.normalize(filePath), filePath);
+    }
+  }
+  return { canonical, files: [...unique.values()] };
+}
+
+export async function inspectSqliteFiles() {
+  const { canonical, files } = existingSqliteFiles();
+  const result: Array<{ path: string; canonical: boolean; size: number; users: number; invites: number; tokens: string[] }> =
+    [];
+  for (const filePath of files) {
+    const url = `file:${filePath.replace(/\\/g, "/")}`;
+    const client = url === sqliteUrl ? db : new PrismaClient({ datasources: { db: { url } } });
+    try {
+      const [users, invites, latest] = await Promise.all([
+        client.user.count().catch(() => -1),
+        client.invite.count().catch(() => -1),
+        client.invite
+          .findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { token: true } })
+          .catch(() => [] as Array<{ token: string }>),
+      ]);
+      result.push({
+        path: filePath,
+        canonical: path.normalize(filePath) === path.normalize(canonical),
+        size: fs.statSync(filePath).size,
+        users,
+        invites,
+        tokens: latest.map((row) => row.token),
+      });
+    } catch (error) {
+      result.push({
+        path: filePath,
+        canonical: path.normalize(filePath) === path.normalize(canonical),
+        size: 0,
+        users: -1,
+        invites: -1,
+        tokens: [error instanceof Error ? error.message : "unreadable"],
+      });
+    } finally {
+      if (client !== db) await client.$disconnect().catch(() => undefined);
+    }
+  }
+  return result;
+}
+
+function sqlPath(filePath: string) {
+  return filePath.replace(/\\/g, "/").replace(/'/g, "''");
+}
+
+export async function mergeSiblingSqliteDatabases() {
+  const { canonical, files } = existingSqliteFiles();
+  const others = files.filter((filePath) => path.normalize(filePath) !== path.normalize(canonical));
+  for (const [index, filePath] of others.entries()) {
+    const alias = `alt${index}`;
+    try {
+      await db.$executeRawUnsafe(`ATTACH DATABASE '${sqlPath(filePath)}' AS ${alias}`);
+      const tables = await db.$queryRawUnsafe<{ name: string }[]>(
+        `SELECT name FROM ${alias}.sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> '_prisma_migrations'`
+      );
+      const ordered = [
+        ...tables.filter((table) => table.name === "User"),
+        ...tables.filter((table) => table.name === "Team"),
+        ...tables.filter((table) => table.name !== "User" && table.name !== "Team"),
+      ];
+      for (const table of ordered) {
+        try {
+          await db.$executeRawUnsafe(`INSERT OR IGNORE INTO "${table.name}" SELECT * FROM ${alias}."${table.name}"`);
+        } catch (error) {
+          console.error("[db] merge skip", table.name, error instanceof Error ? error.message : error);
+        }
+      }
+    } catch (error) {
+      console.error("[db] attach failed", filePath, error instanceof Error ? error.message : error);
+    } finally {
+      await db.$executeRawUnsafe(`DETACH DATABASE ${alias}`).catch(() => undefined);
+    }
+  }
+}
+
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
@@ -99,6 +191,7 @@ export function ensureDatabase() {
     await ensureChecklistReportScheduleTable();
     await ensureTeamWorkspaceColumns();
     await ensureAssessmentSchema();
+    await mergeSiblingSqliteDatabases();
   })().catch((error) => {
     sqliteReady = null;
     if (isIgnorableSchemaError(error)) {
