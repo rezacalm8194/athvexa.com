@@ -54,17 +54,40 @@ export function shareInviteMessage(caption: string, url: string) {
  *
  * This never falls back to a hardcoded development URL.
  */
-export function getAppUrl(req?: Pick<NextRequest, "nextUrl">): string {
+type InviteRequest = Pick<NextRequest, "nextUrl" | "headers">;
+
+export function getAppUrl(req?: InviteRequest): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
 
-  const origin = req?.nextUrl.origin?.replace(/\/+$/, "");
-  if (origin && isTrustedInviteOrigin(origin, configured)) {
-    return origin;
+  // `nextUrl.origin` can contain the application's configured/internal host
+  // behind a reverse proxy. Prefer the original public host forwarded by the
+  // proxy so an invite created on athvexa.com does not point at the separate
+  // app.athvexa.com deployment (and therefore its separate SQLite database).
+  for (const origin of requestOrigins(req)) {
+    if (isTrustedInviteOrigin(origin, configured)) return origin;
   }
 
   if (configured) return configured;
 
   return "https://app.athvexa.com";
+}
+
+function requestOrigins(req?: InviteRequest): string[] {
+  if (!req) return [];
+
+  const forwardedHost = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const directHost = req.headers.get("host")?.split(",")[0]?.trim();
+  const forwardedProto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  const protocol = forwardedProto === "http" || forwardedProto === "https"
+    ? forwardedProto
+    : req.nextUrl.protocol.replace(":", "") || "https";
+
+  const origins = [forwardedHost, directHost]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => `${protocol}://${host}`);
+  origins.push(req.nextUrl.origin);
+
+  return [...new Set(origins.map((origin) => origin.replace(/\/+$/, "")))];
 }
 
 function isTrustedInviteOrigin(origin: string, configured?: string): boolean {
@@ -97,7 +120,7 @@ function isTrustedInviteOrigin(origin: string, configured?: string): boolean {
   return false;
 }
 
-export function buildInviteUrl(token: string, req?: Pick<NextRequest, "nextUrl">): string {
+export function buildInviteUrl(token: string, req?: InviteRequest): string {
   return `${getAppUrl(req)}/invite/${token}`;
 }
 

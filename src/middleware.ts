@@ -31,6 +31,15 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/onboarding") ||
     pathname.startsWith("/invite");
 
+  // The apex and app subdomain currently run separate SQLite databases.
+  // Historical invite URLs were incorrectly generated on app.athvexa.com
+  // even when the invite was created on athvexa.com. Keep the token/path and
+  // move only those legacy invite navigations to the deployment that owns it.
+  if (hostname === "app.athvexa.com" && pathname.startsWith("/invite/")) {
+    const dest = new URL(`${pathname}${req.nextUrl.search}`, "https://athvexa.com");
+    return NextResponse.redirect(dest, 307);
+  }
+
   if (isMarketingOnly && isAppPath) {
     const dest = new URL(`${appOrigin()}${pathname}${req.nextUrl.search}`);
     return NextResponse.redirect(dest);
