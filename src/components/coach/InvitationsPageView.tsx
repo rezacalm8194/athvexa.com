@@ -446,6 +446,7 @@ export default function InvitationsPageView({
                 <tbody>
                   {invites.map((invite) => {
                     const accepted = invite.status === "accepted";
+                    const canShare = invite.status === "pending";
                     const canRegenerate = !accepted && (invite.role !== "ASSISTANT" || canManageRoles);
                     return (
                       <tr key={invite.id} className="border-b border-line-1 last:border-b-0">
@@ -486,15 +487,15 @@ export default function InvitationsPageView({
                         </td>
                         <td className="px-3 py-4">
                           <div className="flex justify-end gap-2">
-                            <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => copyInvite(invite)}>
+                            <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => copyInvite(invite)} disabled={!canShare}>
                               <CopyIcon className="h-4 w-4" />
                               {copiedId === invite.id ? t(locale, "coach.invite.copied") : t(locale, "coach.invite.copyLink")}
                             </button>
-                            <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => sendViaWhatsApp(invite)}>
+                            <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => sendViaWhatsApp(invite)} disabled={!canShare}>
                               <WhatsAppIcon className="h-4 w-4" />
                               {t(locale, "coach.invite.whatsapp")}
                             </button>
-                            <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => sendViaTelegram(invite)}>
+                            <button className="btn-ghost !px-2.5 !py-2 text-xs" onClick={() => sendViaTelegram(invite)} disabled={!canShare}>
                               <TelegramIcon className="h-4 w-4" />
                               {t(locale, "coach.invite.telegram")}
                             </button>

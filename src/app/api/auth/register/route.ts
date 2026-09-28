@@ -3,8 +3,8 @@ import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { hashPassword, signSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { normalizeEmail, normalizePhone } from "@/lib/contact";
-import { consumeInvite } from "@/lib/inviteActions";
-import { inviteRoleToTeamRole, isInviteRedeemable, normalizeInviteToken } from "@/lib/invites";
+import { consumeInvite, findInviteByToken } from "@/lib/inviteActions";
+import { inviteRoleToTeamRole, isInviteRedeemable } from "@/lib/invites";
 import { notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
 
 const schema = z.object({
@@ -52,13 +52,7 @@ export async function POST(req: NextRequest) {
     let inviteTeamName = "";
 
     if (inviteToken) {
-      const token = normalizeInviteToken(inviteToken);
-      const invite = token
-        ? await db.invite.findUnique({
-            where: { token },
-            include: { coach: { select: { name: true } } },
-          })
-        : null;
+      const invite = await findInviteByToken(inviteToken);
       if (!isInviteRedeemable(invite)) {
         return NextResponse.json(
           { error: "This invite link has expired or already been used" },

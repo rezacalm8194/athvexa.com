@@ -130,13 +130,17 @@ export function inviteStatus(invite: InviteRow): InviteStatus {
   if (invite.revoked) return "revoked";
   // Defensive: a fully-consumed multi-use link must read as accepted even if
   // usedAt was never stamped (e.g. a race between concurrent redemptions).
-  const useCount = Number(invite.useCount ?? 0);
-  const maxUses = Number(invite.maxUses ?? 1);
-  if (Number.isFinite(useCount) && Number.isFinite(maxUses) && useCount >= maxUses) {
+  const useCountRaw = Number(invite.useCount ?? 0);
+  const maxUsesRaw = Number(invite.maxUses ?? 1);
+  const useCount = Number.isFinite(useCountRaw) && useCountRaw > 0 ? useCountRaw : 0;
+  const maxUses = Number.isFinite(maxUsesRaw) && maxUsesRaw > 0 ? maxUsesRaw : 1;
+  if (useCount >= maxUses) {
     return "accepted";
   }
   const expiresAt = asDate(invite.expiresAt);
-  if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) return "expired";
+  // If the stored datetime cannot be parsed, do not treat the invite as dead —
+  // that was showing every fresh link as "expired" on some SQLite rows.
+  if (!Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() <= Date.now()) return "expired";
   return "pending";
 }
 

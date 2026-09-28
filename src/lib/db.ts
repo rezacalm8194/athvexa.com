@@ -41,6 +41,11 @@ function resolveSqliteUrl() {
 }
 
 const sqliteUrl = resolveSqliteUrl();
+console.info("[db] sqlite", sqliteUrl);
+
+export function getDatabaseUrl() {
+  return sqliteUrl;
+}
 
 export const db =
   globalForPrisma.prisma ??

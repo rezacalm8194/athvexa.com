@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { t, type Locale } from "@/lib/i18n";
-import { addUserToInvitedTeam, consumeInvite, findUserByInviteContact } from "@/lib/inviteActions";
+import { addUserToInvitedTeam, findUserByInviteContact } from "@/lib/inviteActions";
 import { MESSAGE_CONTEXTS, messageContextForRole } from "@/lib/messages";
 import { createNotification } from "@/lib/notifications";
 import { getUserPreferences } from "@/lib/userPreferences";
@@ -187,7 +187,8 @@ export async function deliverInviteToExistingUser({
 
   if (!alreadyMember) {
     await addUserToInvitedTeam(existing.id, invite);
-    await consumeInvite(invite.id, existing.id);
+    // Leave the invite pending so the player can still open the same link
+    // and finish sign-in. Burning it here made a fresh WhatsApp link look expired.
   }
 
   await notifyPlayerOfTeamInvite({

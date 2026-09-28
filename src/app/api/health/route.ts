@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, ensureDatabase } from "@/lib/db";
+import { db, ensureDatabase, getDatabaseUrl } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -7,9 +7,10 @@ export async function GET() {
   try {
     await ensureDatabase();
     await db.$queryRawUnsafe("SELECT 1");
-    return NextResponse.json({ ok: true, cwd: process.cwd() });
+    const invites = await db.invite.count().catch(() => -1);
+    return NextResponse.json({ ok: true, cwd: process.cwd(), database: getDatabaseUrl(), invites });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ ok: false, cwd: process.cwd(), message }, { status: 500 });
+    return NextResponse.json({ ok: false, cwd: process.cwd(), database: getDatabaseUrl(), message }, { status: 500 });
   }
 }

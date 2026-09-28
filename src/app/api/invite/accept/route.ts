@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { addUserToInvitedTeam, consumeInvite } from "@/lib/inviteActions";
-import { isInviteRedeemable, normalizeInviteToken } from "@/lib/invites";
+import { addUserToInvitedTeam, consumeInvite, findInviteByToken } from "@/lib/inviteActions";
+import { isInviteRedeemable } from "@/lib/invites";
 import { notifyPlayerOfTeamInvite } from "@/lib/playerInbox";
 
 const schema = z.object({ token: z.string().min(1) });
@@ -16,13 +16,7 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invite token is required" }, { status: 400 });
 
-  const token = normalizeInviteToken(parsed.data.token);
-  const invite = token
-    ? await db.invite.findUnique({
-        where: { token },
-        include: { coach: { select: { name: true } }, team: { select: { name: true } } },
-      })
-    : null;
+  const invite = await findInviteByToken(parsed.data.token);
   if (!isInviteRedeemable(invite)) {
     return NextResponse.json({ error: "This invite link has expired or already been used" }, { status: 400 });
   }
