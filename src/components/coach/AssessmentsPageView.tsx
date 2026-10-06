@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AssessmentDetailModal, AssessmentModal, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type AssessmentItem, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
+import { AssessmentDetailModal, AssessmentModal, assessmentRequestBody, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type AssessmentItem, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
@@ -71,7 +71,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
       const response = await fetch("/api/coach/assessments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, score }),
+        body: JSON.stringify(assessmentRequestBody(form, score)),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));

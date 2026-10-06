@@ -6,9 +6,12 @@ import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
 import { previousScoresById } from "@/lib/assessmentPrevious";
 import { createNotification, notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
+const blankToUndefined = (value: unknown) =>
+  typeof value === "string" && value.trim() === "" ? undefined : value;
+
 const assessmentSchema = z.object({
-  playerId: z.string().min(1).optional().or(z.literal("")),
-  playerName: z.string().trim().min(2, "Enter the player's name").max(120).optional(),
+  playerId: z.preprocess(blankToUndefined, z.string().min(1).optional()),
+  playerName: z.preprocess(blankToUndefined, z.string().trim().min(2, "Enter the player's name").max(120).optional()),
   type: z.enum(ASSESSMENT_TYPES),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD"),
   score: z.number({ invalid_type_error: "Score must be a number" }).finite(),

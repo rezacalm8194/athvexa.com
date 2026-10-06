@@ -13,6 +13,7 @@ import {
   AssessmentItem,
   AssessmentModal,
   PlayerOption,
+  assessmentRequestBody,
   emptyAssessmentForm,
   formatAssessmentDate,
 } from "@/components/coach/assessments/AssessmentUi";
@@ -122,7 +123,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
       const response = await fetch(isEditing ? `/api/coach/assessments/${modal.item!.id}` : "/api/coach/assessments", {
         method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, playerId: player.id, score }),
+        body: JSON.stringify(assessmentRequestBody({ ...form, playerId: player.id, playerName: "" }, score)),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));

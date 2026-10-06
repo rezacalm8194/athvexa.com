@@ -44,6 +44,17 @@ export const emptyAssessmentForm = (playerId = ""): AssessmentFormState => ({
   notes: "",
 });
 
+export function assessmentRequestBody(form: AssessmentFormState, score: number) {
+  return {
+    playerId: form.playerId || undefined,
+    playerName: form.playerId ? undefined : form.playerName.trim() || undefined,
+    type: form.type,
+    date: form.date,
+    score,
+    notes: form.notes.trim() || null,
+  };
+}
+
 export function formatAssessmentDate(value: string, locale: Locale = "en") {
   return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", {
     month: "short",
