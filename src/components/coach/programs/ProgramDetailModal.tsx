@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
+import ProgramSendModal from "@/components/coach/programs/ProgramSendModal";
 import { useToast } from "@/components/ui/Toast";
 import { t, type Locale } from "@/lib/i18n";
 
@@ -65,11 +66,6 @@ export default function ProgramDetailModal({
   const [error, setError] = useState(false);
   const [savingAssignments, setSavingAssignments] = useState(false);
   const [showSend, setShowSend] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [sendPlayerIds, setSendPlayerIds] = useState<string[]>([]);
-  const [sendTeamId, setSendTeamId] = useState("");
-  const [sendWholeTeam, setSendWholeTeam] = useState(false);
-  const [teams, setTeams] = useState<{ id: string; name: string; playerCount: number }[]>([]);
 
   function loadDetail() {
     setError(false);
@@ -88,66 +84,7 @@ export default function ProgramDetailModal({
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => setPlayers((data.players ?? []).filter((player: PlayerOption) => player.role === "PLAYER")))
       .catch(() => setPlayers([]));
-    fetch("/api/coach/teams")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => {
-        const nextTeams = data.teams ?? [];
-        setTeams(nextTeams);
-        setSendTeamId((current) => current || data.currentTeamId || nextTeams[0]?.id || "");
-      })
-      .catch(() => setTeams([]));
   }, [id]);
-
-  useEffect(() => {
-    if (!showSend) return;
-    setSendPlayerIds((current) =>
-      current.length > 0 ? current : (detail?.assignedPlayers.map((player) => player.id) ?? [])
-    );
-  }, [showSend, detail]);
-
-  function toggleSendPlayer(playerId: string) {
-    setSendWholeTeam(false);
-    setSendPlayerIds((current) =>
-      current.includes(playerId) ? current.filter((id) => id !== playerId) : [...current, playerId]
-    );
-  }
-
-  function toggleWholeTeam() {
-    setSendWholeTeam((current) => {
-      const next = !current;
-      if (next) setSendPlayerIds(players.map((player) => player.id));
-      return next;
-    });
-  }
-
-  async function sendProgram() {
-    if (!detail) return;
-    if (!sendWholeTeam && sendPlayerIds.length === 0) {
-      showToast(t(locale, "coach.programs.selectRecipients"), "error");
-      return;
-    }
-    setSending(true);
-    const res = await fetch(`/api/coach/programs/${detail.id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send",
-        playerIds: sendWholeTeam && sendTeamId ? [] : sendPlayerIds,
-        teamId: sendWholeTeam && sendTeamId ? sendTeamId : undefined,
-      }),
-    });
-    setSending(false);
-    if (res.ok) {
-      const data = await res.json().catch(() => ({ sent: sendPlayerIds.length }));
-      showToast(t(locale, "coach.programs.programSent", { count: data.sent ?? sendPlayerIds.length }), "success");
-      setShowSend(false);
-      loadDetail();
-      onChanged?.();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      showToast(data.error ?? t(locale, "coach.programs.programSendError"), "error");
-    }
-  }
 
   function togglePlayer(playerId: string) {
     setSelectedPlayerIds((current) =>
@@ -197,6 +134,7 @@ export default function ProgramDetailModal({
       selectedPlayerIds.some((playerId) => !detail.assignedPlayers.some((player) => player.id === playerId)));
 
   return (
+    <>
     <div className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8" onClick={onClose}>
       <div className="w-full max-w-xl rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl sm:p-6" onClick={(e) => e.stopPropagation()}>
         {error && <p className="text-sm text-red-glow">{t(locale, "coach.programs.detailLoadError")}</p>}
@@ -301,59 +239,6 @@ export default function ProgramDetailModal({
                 </div>
               )}
             </div>
-
-            {showSend && (
-              <div className="mt-5 rounded-md border border-white/10 bg-ink-2 p-3">
-                <span className="eyebrow">{t(locale, "coach.programs.sendProgram")}</span>
-                <p className="mt-1 text-xs text-smoke-4">{t(locale, "coach.programs.sendProgramHint")}</p>
-
-                {teams.length === 0 ? (
-                  <p className="mt-3 text-xs text-smoke-3">{t(locale, "coach.programs.noTeams")}</p>
-                ) : (
-                  <label className="mt-3 block text-sm text-paper">
-                    <span className="eyebrow">{t(locale, "coach.programs.selectTeam")}</span>
-                    <select
-                      className="input-field mt-1 w-full !py-2 text-sm"
-                      value={sendTeamId}
-                      onChange={(e) => {
-                        setSendTeamId(e.target.value);
-                        setSendWholeTeam(false);
-                      }}
-                    >
-                      {teams.map((team) => (
-                        <option key={team.id} value={team.id}>
-                          {team.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-
-                <label className="mt-3 flex items-center gap-2 rounded px-1 py-1.5 text-sm text-paper">
-                  <input type="checkbox" className="accent-red" checked={sendWholeTeam} onChange={toggleWholeTeam} />
-                  <span>{t(locale, "coach.programs.sendToTeam")}</span>
-                </label>
-
-                {players.length === 0 ? (
-                  <p className="mt-2 text-xs text-smoke-3">{t(locale, "coach.programs.noRoster")}</p>
-                ) : (
-                  <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-line-1 p-2">
-                    {players.map((player) => (
-                      <label key={player.id} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-paper hover:bg-white/5">
-                        <input
-                          type="checkbox"
-                          className="accent-red"
-                          checked={sendPlayerIds.includes(player.id)}
-                          onChange={() => toggleSendPlayer(player.id)}
-                        />
-                        <span>{player.name}</span>
-                        <span className="text-xs text-smoke-4">{player.email}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </>
         )}
 
@@ -361,24 +246,26 @@ export default function ProgramDetailModal({
           <button onClick={onClose} className="btn-ghost !px-4 !py-2.5 text-sm">
             {t(locale, "coach.programs.close")}
           </button>
-          {showSend && (
-            <button type="button" onClick={() => setShowSend(false)} className="btn-ghost !px-4 !py-2.5 text-sm" disabled={sending}>
-              {t(locale, "common.cancel")}
-            </button>
-          )}
           {detail && (
-            <button
-              onClick={() => (showSend ? sendProgram() : setShowSend(true))}
-              className="btn-primary !px-4 !py-2.5 text-sm"
-              disabled={sending}
-            >
-              {sending
-                ? t(locale, "coach.programs.sendingProgram")
-                : t(locale, "coach.programs.sendProgram")}
+            <button onClick={() => setShowSend(true)} className="btn-primary !px-4 !py-2.5 text-sm">
+              {t(locale, "coach.programs.sendProgram")}
             </button>
           )}
         </div>
       </div>
     </div>
+      {showSend && detail && (
+        <ProgramSendModal
+          programId={detail.id}
+          programName={detail.name}
+          locale={locale}
+          onClose={() => setShowSend(false)}
+          onSent={() => {
+            loadDetail();
+            onChanged?.();
+          }}
+        />
+      )}
+    </>
   );
 }

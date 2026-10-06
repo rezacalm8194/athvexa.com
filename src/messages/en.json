@@ -507,6 +507,8 @@
       "sendProgram": "Send program",
       "sendingProgram": "Sending…",
       "sendProgramHint": "Choose players or a team so the program appears in their messages and training.",
+      "sendToPlayers": "Send to players",
+      "teamPlayerCount": "{count} players",
       "sendToTeam": "Send to entire team",
       "selectTeam": "Select team",
       "noTeams": "No team yet. You can still pick individual players.",

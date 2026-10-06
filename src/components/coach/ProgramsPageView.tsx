@@ -11,6 +11,7 @@ import { SkeletonCards, SkeletonRows } from "@/components/coach/shared/LoadingSk
 import ConfirmModal from "@/components/coach/shared/ConfirmModal";
 import ProgramFormModal, { emptyProgramForm, type ProgramFormValues } from "@/components/coach/programs/ProgramFormModal";
 import ProgramDetailModal from "@/components/coach/programs/ProgramDetailModal";
+import ProgramSendModal from "@/components/coach/programs/ProgramSendModal";
 import { useToast } from "@/components/ui/Toast";
 import { t, type Locale } from "@/lib/i18n";
 import {
@@ -64,6 +65,7 @@ export default function ProgramsPageView({ locale }: { locale: Locale }) {
 
   const [formModal, setFormModal] = useState<{ mode: "create" | "edit"; id?: string; values: ProgramFormValues } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [sendTarget, setSendTarget] = useState<{ id: string; name: string } | null>(null);
   const [pendingAction, setPendingAction] = useState<{ id: string; name: string; kind: "archive" | "delete" | "restore" } | null>(null);
   const [busyAction, setBusyAction] = useState(false);
 
@@ -260,6 +262,12 @@ export default function ProgramsPageView({ locale }: { locale: Locale }) {
                 </div>
 
                 <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                  <button
+                    onClick={() => setSendTarget({ id: p.id, name: p.name })}
+                    className="btn-primary !px-3 !py-1.5 text-xs"
+                  >
+                    {t(locale, "coach.programs.sendProgram")}
+                  </button>
                   <button onClick={() => setDetailId(p.id)} className="btn-ghost !px-3 !py-1.5 text-xs">
                     {t(locale, "coach.programs.view")}
                   </button>
@@ -312,6 +320,16 @@ export default function ProgramsPageView({ locale }: { locale: Locale }) {
 
       {detailId && (
         <ProgramDetailModal id={detailId} locale={locale} onClose={() => setDetailId(null)} onChanged={load} />
+      )}
+
+      {sendTarget && (
+        <ProgramSendModal
+          programId={sendTarget.id}
+          programName={sendTarget.name}
+          locale={locale}
+          onClose={() => setSendTarget(null)}
+          onSent={load}
+        />
       )}
 
       <ConfirmModal
