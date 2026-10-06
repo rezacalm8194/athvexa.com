@@ -3,7 +3,9 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
-import { notifyPlayerOfProgramAssignment } from "@/lib/playerInbox";
+import { notifyPlayerOfProgramAssignment, notifyPlayerOfProgramSend } from "@/lib/playerInbox";
+import { listRosterPlayers, requireTeamMembership } from "@/lib/teamContext";
+import { normalizeProgramDate, publishedProgramStatus } from "@/lib/playerProgram";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -26,7 +28,11 @@ const updateSchema = z.object({
   sessions: z.array(sessionSchema).default([]),
 });
 
-const actionSchema = z.object({ action: z.enum(["duplicate", "archive", "restore"]) });
+const actionSchema = z.object({
+  action: z.enum(["duplicate", "archive", "restore", "send"]),
+  playerIds: z.array(z.string()).optional(),
+  teamId: z.string().optional(),
+});
 
 async function loadOwnedProgram(id: string, teamOwnerId: string) {
   const program = await db.program.findUnique({ where: { id } });
@@ -121,9 +127,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         goal: data.goal ?? null,
         durationWeeks: data.durationWeeks,
         sessionsPerWeek: data.sessionsPerWeek,
-        startDate: data.startDate ?? null,
-        endDate: data.endDate ?? null,
-        status: data.status,
+        startDate: normalizeProgramDate(data.startDate),
+        endDate: normalizeProgramDate(data.endDate),
+        status: publishedProgramStatus(data.status, validPlayerIds.length),
         sessions: {
           create: sessions.map((s, i) => ({
             title: s.title,
@@ -180,6 +186,86 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => ({}));
   const parsed = actionSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+
+  if (parsed.data.action === "send") {
+    const requestedPlayerIds = parsed.data.playerIds ?? [];
+    const teamId = parsed.data.teamId;
+    if (requestedPlayerIds.length === 0 && !teamId) {
+      return NextResponse.json({ error: "Select players or a team" }, { status: 400 });
+    }
+
+    let teamPlayerIds: string[] = [];
+    if (teamId) {
+      const membership = await requireTeamMembership(auth.session.sub, teamId);
+      if (!membership) return NextResponse.json({ error: "Team not found" }, { status: 404 });
+      const members = await db.teamMember.findMany({
+        where: { teamId, role: "PLAYER" },
+        select: { userId: true },
+      });
+      teamPlayerIds =
+        members.length > 0
+          ? members.map((member) => member.userId)
+          : (await listRosterPlayers(teamOwnerId, teamId)).map((player) => player.id);
+    }
+
+    const requested = [...new Set([...requestedPlayerIds, ...teamPlayerIds])];
+    const validPlayers = requested.length
+      ? await db.user.findMany({
+          where: { id: { in: requested }, coachId: teamOwnerId, role: "PLAYER" },
+          select: { id: true },
+        })
+      : [];
+    const recipientIds = validPlayers.map((player) => player.id);
+    if (recipientIds.length === 0) {
+      return NextResponse.json({ error: "No players to send to" }, { status: 400 });
+    }
+
+    const existingAssignments = await db.programAssignment.findMany({
+      where: { programId: existing.id, playerId: { in: recipientIds } },
+      select: { playerId: true },
+    });
+    const alreadyAssigned = new Set(existingAssignments.map((assignment) => assignment.playerId));
+    const toCreate = recipientIds.filter((playerId) => !alreadyAssigned.has(playerId));
+
+    const writes = [
+      ...(toCreate.length > 0
+        ? [
+            db.programAssignment.createMany({
+              data: toCreate.map((playerId) => ({ programId: existing.id, playerId })),
+            }),
+          ]
+        : []),
+      ...(existing.status === "DRAFT"
+        ? [db.program.update({ where: { id: existing.id }, data: { status: "ACTIVE" } })]
+        : []),
+    ];
+    if (writes.length > 0) await db.$transaction(writes);
+
+    await Promise.all(
+      recipientIds.map((playerId) =>
+        notifyPlayerOfProgramSend({
+          playerId,
+          coachId: auth.session.sub,
+          senderId: auth.session.sub,
+          coachName: auth.session.name,
+          programId: existing.id,
+          programName: existing.name,
+        })
+      )
+    );
+
+    await notifyOwnerOfAssistantAction({
+      actorRole: auth.session.role,
+      actorName: auth.session.name,
+      ownerId: teamOwnerId,
+      title: "Assistant sent a program",
+      description: `sent “${existing.name}” to ${recipientIds.length} player${recipientIds.length === 1 ? "" : "s"}.`,
+      actionHref: "/dashboard/coach/programs",
+      relatedId: existing.id,
+    });
+
+    return NextResponse.json({ id: existing.id, sent: recipientIds.length });
+  }
 
   if (parsed.data.action === "archive") {
     await db.program.update({ where: { id: existing.id }, data: { status: "ARCHIVED" } });

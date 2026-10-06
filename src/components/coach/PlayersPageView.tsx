@@ -16,7 +16,9 @@ type PlayerStatus = "all" | "ready" | "attention" | "not_checked_in";
 type Player = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
+  managedByCoach: boolean;
   joinedAt: string;
   latestReadiness: number | null;
   latestCheckIn: string | null;
@@ -61,6 +63,12 @@ export default function PlayersPageView({
   const [status, setStatus] = useState<PlayerStatus>("all");
   const [error, setError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addName, setAddName] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addPhone, setAddPhone] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [inviteRole, setInviteRole] = useState<"PLAYER" | "ASSISTANT" | "COACH">("PLAYER");
@@ -105,9 +113,8 @@ export default function PlayersPageView({
   }, [locale]);
 
   useEffect(() => {
-    if (window.location.hash === "#invite-panel") {
-      openInvite();
-    }
+    if (window.location.hash === "#invite-panel") openInvite();
+    if (window.location.hash === "#add-player-panel") openAdd();
   }, []);
 
   function openInvite() {
@@ -127,6 +134,45 @@ export default function PlayersPageView({
     if (window.location.hash === "#invite-panel") {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
+  }
+
+  function openAdd() {
+    setAddOpen(true);
+    setAddError(null);
+  }
+
+  function closeAdd() {
+    setAddOpen(false);
+    setAddError(null);
+    if (window.location.hash === "#add-player-panel") {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }
+
+  async function addPlayer(event: FormEvent) {
+    event.preventDefault();
+    setAdding(true);
+    setAddError(null);
+    const res = await fetch("/api/coach/players", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: addName.trim(),
+        email: addEmail.trim() || undefined,
+        phone: addPhone.trim() || undefined,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setAdding(false);
+    if (!res.ok) {
+      setAddError(data.error || t(locale, "coach.players.addError"));
+      return;
+    }
+    setAddName("");
+    setAddEmail("");
+    setAddPhone("");
+    closeAdd();
+    loadPlayers();
   }
 
   async function createInvite(event: FormEvent) {
@@ -193,7 +239,11 @@ export default function PlayersPageView({
     if (!players) return null;
     const q = query.trim().toLowerCase();
     return players.filter((player) => {
-      const matchesSearch = !q || player.name.toLowerCase().includes(q) || player.email.toLowerCase().includes(q);
+      const matchesSearch =
+        !q ||
+        player.name.toLowerCase().includes(q) ||
+        (player.email ?? "").toLowerCase().includes(q) ||
+        (player.phone ?? "").toLowerCase().includes(q);
       const matchesStatus = status === "all" || playerStatus(player) === status;
       return matchesSearch && matchesStatus;
     });
@@ -223,7 +273,7 @@ export default function PlayersPageView({
   return (
     <>
       {players.length === 0 ? (
-        <EmptyRosterState teamName={null} locale={locale} onInvite={openInvite} />
+        <EmptyRosterState teamName={null} locale={locale} onInvite={openInvite} onAdd={openAdd} />
       ) : (
         <div className="card p-5">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -238,6 +288,9 @@ export default function PlayersPageView({
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-semibold text-white">{t(locale, "coach.players.count", { count: players.length })}</span>
+              <button type="button" onClick={openAdd} className="btn-ghost !px-4 !py-2.5 text-xs">
+                {t(locale, "coach.players.addManually")}
+              </button>
               <button type="button" onClick={openInvite} className="btn-primary !px-4 !py-2.5 text-xs">
                 {t(locale, "coach.players.invitePlayer")}
               </button>
@@ -263,8 +316,15 @@ export default function PlayersPageView({
                           {player.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <h2 className="truncate font-display text-lg font-bold text-white">{player.name}</h2>
-                          <p className="truncate text-xs text-smoke-3">{player.email}</p>
+                          <div className="flex items-center gap-2">
+                            <h2 className="truncate font-display text-lg font-bold text-white">{player.name}</h2>
+                            {player.managedByCoach ? (
+                              <StatusBadge label={t(locale, "coach.players.managedBadge")} tone="neutral" />
+                            ) : null}
+                          </div>
+                          <p className="truncate text-xs text-smoke-3">
+                            {player.email || player.phone || t(locale, "coach.players.noContact")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -292,6 +352,70 @@ export default function PlayersPageView({
           ) : null}
         </div>
       )}
+
+      {addOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-player-title"
+            className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-xl shadow-black/50"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <div className="eyebrow">{t(locale, "coach.players.addEyebrow")}</div>
+                <h2 id="add-player-title" className="mt-1 font-display text-2xl font-bold text-white">
+                  {t(locale, "coach.players.addTitle")}
+                </h2>
+                <p className="mt-2 text-sm text-smoke-3">{t(locale, "coach.players.addBody")}</p>
+              </div>
+              <button type="button" onClick={closeAdd} className="btn-ghost !px-3 !py-2 text-xs">
+                {t(locale, "coach.invite.close")}
+              </button>
+            </div>
+            <form onSubmit={addPlayer} className="space-y-4">
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.players.addName")}</span>
+                <input
+                  className="input-field mt-1"
+                  value={addName}
+                  onChange={(event) => setAddName(event.target.value)}
+                  autoComplete="name"
+                  required
+                  minLength={2}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.players.addPhoneOptional")}</span>
+                <input
+                  className="input-field mt-1"
+                  type="tel"
+                  inputMode="tel"
+                  value={addPhone}
+                  onChange={(event) => setAddPhone(event.target.value)}
+                  placeholder="+989121234567"
+                  autoComplete="tel"
+                />
+                <span className="mt-1 block text-xs text-smoke-4">{t(locale, "coach.players.addPhoneHint")}</span>
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-smoke-3">{t(locale, "coach.players.addEmailOptional")}</span>
+                <input
+                  className="input-field mt-1"
+                  type="email"
+                  value={addEmail}
+                  onChange={(event) => setAddEmail(event.target.value)}
+                  placeholder="player@example.com"
+                />
+              </label>
+              {addError ? <p className="text-sm text-red-glow">{addError}</p> : null}
+              <button type="submit" className="btn-primary w-full !py-3 text-sm" disabled={adding}>
+                {adding ? t(locale, "coach.players.adding") : t(locale, "coach.players.addSubmit")}
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {inviteOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">

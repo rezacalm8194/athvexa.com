@@ -89,12 +89,14 @@ export default function TodayDashboard({ playerName, locale, timeZone }: { playe
   }, []);
 
   async function patch(field: string, value: number) {
+    if (!Number.isFinite(value)) return;
     const res = await fetch("/api/player/today", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [field]: value }),
     });
     const data = await res.json();
+    if (!res.ok || !data.log) return;
     setLog(data.log);
     setCheckInCompleted(true);
   }

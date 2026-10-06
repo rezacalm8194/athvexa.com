@@ -1,8 +1,20 @@
-import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { hashPassword } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { db, ensureDatabase } from "@/lib/db";
+import { normalizeInviteEmail, normalizeInvitePhone } from "@/lib/invites";
+import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 import { getCurrentTeamMembership, getTeamOwnerId } from "@/lib/teamContext";
+import { rosterUsage } from "@/lib/teamWorkspace";
 import { readinessStatus } from "@/lib/readiness";
+
+const createSchema = z.object({
+  name: z.string().trim().min(2, "Name is too short").max(80),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().trim().max(32).optional().or(z.literal("")),
+});
 
 export async function GET() {
   const session = await getSession();
@@ -23,6 +35,8 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        phone: true,
+        managedByCoach: true,
         dailyLogs: {
           orderBy: { date: "desc" },
           take: 1,
@@ -44,6 +58,8 @@ export async function GET() {
         id: player.id,
         name: player.name,
         email: player.email,
+        phone: player.phone,
+        managedByCoach: Boolean(player.managedByCoach),
         role: "PLAYER" as const,
         joinedAt: null,
         latestReadiness: latest?.score ?? null,
@@ -67,7 +83,9 @@ export async function GET() {
           id: true,
           name: true,
           email: true,
+          phone: true,
           role: true,
+          managedByCoach: true,
           dailyLogs: {
             orderBy: { date: "desc" },
             take: 1,
@@ -93,6 +111,8 @@ export async function GET() {
       id: p.id,
       name: p.name,
       email: p.email,
+      phone: p.phone,
+      managedByCoach: Boolean(p.managedByCoach),
       role: "PLAYER" as const,
       joinedAt: member.createdAt,
       latestReadiness: today?.score ?? null,
@@ -111,4 +131,99 @@ export async function GET() {
 
   // Only the head coach can reassign roles — keeps assistants from promoting themselves or others.
   return NextResponse.json({ players: roster, canManageRoles: session.role === "COACH" });
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getSession();
+  if (!session || (session.role !== "COACH" && session.role !== "ASSISTANT")) {
+    return NextResponse.json({ error: "Coaches only" }, { status: 403 });
+  }
+
+  await ensureDatabase();
+
+  const body = await req.json().catch(() => ({}));
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid player details" }, { status: 400 });
+  }
+
+  const name = parsed.data.name;
+  const email = normalizeInviteEmail(parsed.data.email);
+  let phone: string | null = null;
+  if (parsed.data.phone) {
+    phone = normalizeInvitePhone(parsed.data.phone);
+    if (!phone) {
+      return NextResponse.json(
+        { error: "Enter a valid mobile number, for example 09351108194 or +989351108194" },
+        { status: 400 }
+      );
+    }
+  }
+
+  const teamOwnerId = await getTeamOwnerId(session.sub);
+  const membership = await getCurrentTeamMembership(session.sub);
+  const team = membership?.team.coachId === teamOwnerId ? membership.team : null;
+
+  const roster = await rosterUsage(teamOwnerId);
+  if (roster.remaining < 1) {
+    return NextResponse.json(
+      { error: `Roster is full (${roster.used}/${roster.capacity} players).` },
+      { status: 400 }
+    );
+  }
+
+  if (email) {
+    const existingEmail = await db.user.findUnique({ where: { email }, select: { id: true } });
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Invite that player instead." },
+        { status: 409 }
+      );
+    }
+  }
+  if (phone) {
+    const existingPhone = await db.user.findUnique({ where: { phone }, select: { id: true } });
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: "An account with this phone number already exists. Invite that player instead." },
+        { status: 409 }
+      );
+    }
+  }
+
+  const locale = team?.defaultLanguage === "fa" ? "fa" : "en";
+  const player = await db.user.create({
+    data: {
+      name,
+      email,
+      phone,
+      passwordHash: await hashPassword(randomBytes(32).toString("hex")),
+      role: "PLAYER",
+      coachId: teamOwnerId,
+      locale,
+      timeZone: team?.timeZone ?? null,
+      managedByCoach: true,
+    },
+    select: { id: true, name: true, email: true, phone: true, managedByCoach: true },
+  });
+
+  if (team) {
+    await db.teamMember.upsert({
+      where: { teamId_userId: { teamId: team.id, userId: player.id } },
+      update: { role: "PLAYER" },
+      create: { teamId: team.id, userId: player.id, role: "PLAYER" },
+    });
+  }
+
+  await notifyOwnerOfAssistantAction({
+    actorRole: session.role,
+    actorName: session.name,
+    ownerId: teamOwnerId,
+    title: "Assistant added a player",
+    description: `added ${player.name} to the roster.`,
+    actionHref: "/dashboard/coach/players",
+    relatedId: player.id,
+  });
+
+  return NextResponse.json({ player }, { status: 201 });
 }

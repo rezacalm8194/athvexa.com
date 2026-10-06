@@ -118,10 +118,14 @@ export default function ProgramFormModal({
   }
 
   function togglePlayer(id: string) {
-    set(
-      "playerIds",
-      values.playerIds.includes(id) ? values.playerIds.filter((p) => p !== id) : [...values.playerIds, id]
-    );
+    setValues((v) => {
+      const playerIds = v.playerIds.includes(id) ? v.playerIds.filter((p) => p !== id) : [...v.playerIds, id];
+      return {
+        ...v,
+        playerIds,
+        status: playerIds.length > 0 && v.status === "DRAFT" ? "ACTIVE" : v.status,
+      };
+    });
   }
 
   async function save() {

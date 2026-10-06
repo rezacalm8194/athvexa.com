@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDate as formatAppDate } from "@/lib/format";
 import { t, type Locale } from "@/lib/i18n";
 
@@ -72,13 +73,13 @@ function Field({
 }
 
 export default function DailyCheckInForm({ locale, timeZone }: { locale: Locale; timeZone: string | null }) {
+  const router = useRouter();
   const [date, setDate] = useState<string | null>(null);
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/player/check-in", { cache: "no-store" })
@@ -105,7 +106,6 @@ export default function DailyCheckInForm({ locale, timeZone }: { locale: Locale;
     event.preventDefault();
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     const payload = {
       readiness: Number(form.readiness),
@@ -125,9 +125,9 @@ export default function DailyCheckInForm({ locale, timeZone }: { locale: Locale;
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || t(locale, "player.checkIn.saveError"));
-      setCheckIn(data.checkIn);
-      setForm(formFromCheckIn(data.checkIn));
-      setSuccess(data.message || t(locale, "player.checkIn.saved"));
+      router.push("/dashboard/player");
+      router.refresh();
+      return;
     } catch (err) {
       setError(err instanceof Error ? err.message : t(locale, "player.checkIn.saveError"));
     } finally {
@@ -218,7 +218,6 @@ export default function DailyCheckInForm({ locale, timeZone }: { locale: Locale;
           </Field>
 
           {error ? <p className="rounded-md border border-red/30 bg-red/10 px-4 py-3 text-sm text-red-glow">{error}</p> : null}
-          {success ? <p className="rounded-md border border-[#4CAF50]/30 bg-[#4CAF50]/10 px-4 py-3 text-sm text-[#80D987]">{success}</p> : null}
 
           <button className="btn-primary !px-5 !py-3 text-sm" type="submit" disabled={saving}>
             {saving ? t(locale, "player.checkIn.saving") : t(locale, "player.checkIn.save")}

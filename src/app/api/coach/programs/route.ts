@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 import { notifyPlayerOfProgramAssignment } from "@/lib/playerInbox";
+import { normalizeProgramDate, publishedProgramStatus } from "@/lib/playerProgram";
 
 const sessionSchema = z.object({
   title: z.string().min(1).max(120),
@@ -127,9 +128,9 @@ export async function POST(req: NextRequest) {
       goal: data.goal ?? null,
       durationWeeks: data.durationWeeks,
       sessionsPerWeek: data.sessionsPerWeek,
-      startDate: data.startDate ?? null,
-      endDate: data.endDate ?? null,
-      status: data.status,
+      startDate: normalizeProgramDate(data.startDate),
+      endDate: normalizeProgramDate(data.endDate),
+      status: publishedProgramStatus(data.status, validPlayerIds.length),
       sessions: {
         create: sessions.map((s, i) => ({
           title: s.title,

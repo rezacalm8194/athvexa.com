@@ -2,11 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 
+function toWesternDigits(raw: string) {
+  return raw
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/٫/g, ".")
+    .replace(",", ".");
+}
+
+function parseStat(raw: string): number | null {
+  const normalized = toWesternDigits(raw).trim();
+  if (!normalized || normalized === "." || normalized === "-") return null;
+  const next = Number(normalized);
+  return Number.isFinite(next) ? next : null;
+}
+
+function displayValue(value: number | null) {
+  return value == null ? "" : String(value);
+}
+
 export default function StatInput({
   label,
   unit,
   value,
-  step = 0.1,
   max,
   accent,
   onCommit,
@@ -19,16 +37,29 @@ export default function StatInput({
   accent: string;
   onCommit: (value: number) => void;
 }) {
-  const [local, setLocal] = useState(value ?? 0);
+  const [text, setText] = useState(displayValue(value));
+  const focused = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => setLocal(value ?? 0), [value]);
+  useEffect(() => {
+    if (!focused.current) setText(displayValue(value));
+  }, [value]);
 
-  function handleChange(next: number) {
-    setLocal(next);
+  function clamp(next: number) {
+    return Math.min(max ?? next, Math.max(0, next));
+  }
+
+  function commit(raw: string) {
+    const parsed = parseStat(raw);
+    if (parsed == null) return;
+    onCommit(clamp(parsed));
+  }
+
+  function handleChange(raw: string) {
+    setText(raw);
     if (timer.current) clearTimeout(timer.current);
-    // Auto-save on input, debounced 500ms.
-    timer.current = setTimeout(() => onCommit(next), 500);
+    if (parseStat(raw) == null) return;
+    timer.current = setTimeout(() => commit(raw), 500);
   }
 
   return (
@@ -36,13 +67,31 @@ export default function StatInput({
       <div className="eyebrow">{label}</div>
       <div className="mt-1 flex items-baseline gap-2">
         <input
-          type="number"
-          step={step}
-          min={0}
-          max={max}
-          value={local}
-          onChange={(e) => handleChange(Number(e.target.value))}
-          className="w-16 bg-transparent text-xl font-bold outline-none"
+          type="text"
+          inputMode="decimal"
+          enterKeyHint="done"
+          autoComplete="off"
+          dir="ltr"
+          value={text}
+          placeholder="0"
+          onFocus={(event) => {
+            focused.current = true;
+            event.target.select();
+          }}
+          onBlur={() => {
+            focused.current = false;
+            if (timer.current) clearTimeout(timer.current);
+            const parsed = parseStat(text);
+            if (parsed == null) {
+              setText(displayValue(value));
+              return;
+            }
+            const next = clamp(parsed);
+            setText(String(next));
+            onCommit(next);
+          }}
+          onChange={(event) => handleChange(event.target.value)}
+          className="w-20 bg-transparent text-xl font-bold outline-none"
           style={{ color: accent }}
           aria-label={label}
         />

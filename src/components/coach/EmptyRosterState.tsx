@@ -7,10 +7,12 @@ export default function EmptyRosterState({
   teamName,
   locale,
   onInvite,
+  onAdd,
 }: {
   teamName: string | null;
   locale: Locale;
   onInvite?: () => void;
+  onAdd?: () => void;
 }) {
   const title = teamName
     ? t(locale, "coach.dashboard.emptyRosterTitleNamed", { team: teamName })
@@ -25,15 +27,26 @@ export default function EmptyRosterState({
         <h2 className="font-display text-xl font-bold tracking-wide text-white">{title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-smoke-3">{t(locale, "coach.dashboard.emptyRosterBody")}</p>
       </div>
-      {onInvite ? (
-        <button type="button" onClick={onInvite} className="btn-primary !px-5 !py-3 text-sm">
-          {t(locale, "coach.dashboard.inviteFirstPlayer")}
-        </button>
-      ) : (
-        <a href="/dashboard/coach/players#invite-panel" className="btn-primary !px-5 !py-3 text-sm">
-          {t(locale, "coach.dashboard.inviteFirstPlayer")}
-        </a>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {onInvite ? (
+          <button type="button" onClick={onInvite} className="btn-primary !px-5 !py-3 text-sm">
+            {t(locale, "coach.dashboard.inviteFirstPlayer")}
+          </button>
+        ) : (
+          <a href="/dashboard/coach/players#invite-panel" className="btn-primary !px-5 !py-3 text-sm">
+            {t(locale, "coach.dashboard.inviteFirstPlayer")}
+          </a>
+        )}
+        {onAdd ? (
+          <button type="button" onClick={onAdd} className="btn-ghost !px-5 !py-3 text-sm">
+            {t(locale, "coach.dashboard.addFirstPlayer")}
+          </button>
+        ) : (
+          <a href="/dashboard/coach/players#add-player-panel" className="btn-ghost !px-5 !py-3 text-sm">
+            {t(locale, "coach.dashboard.addFirstPlayer")}
+          </a>
+        )}
+      </div>
     </div>
   );
 }

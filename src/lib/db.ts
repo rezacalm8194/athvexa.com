@@ -340,6 +340,9 @@ async function ensureUserPreferenceColumns() {
   if (!columns.some((column) => column.name === "notifyWeeklyEmail")) {
     await sqliteExec(`ALTER TABLE "User" ADD COLUMN "notifyWeeklyEmail" BOOLEAN NOT NULL DEFAULT 0;`);
   }
+  if (!columns.some((column) => column.name === "managedByCoach")) {
+    await sqliteExec(`ALTER TABLE "User" ADD COLUMN "managedByCoach" BOOLEAN NOT NULL DEFAULT 0;`);
+  }
 }
 
 async function ensureTeamWorkspaceColumns() {
@@ -460,6 +463,7 @@ async function ensureSqliteSchema() {
       "locale" TEXT NOT NULL DEFAULT 'en',
       "timeZone" TEXT,
       "onboardingCompletedAt" DATETIME,
+      "managedByCoach" BOOLEAN NOT NULL DEFAULT 0,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "coachId" TEXT,
       CONSTRAINT "User_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE

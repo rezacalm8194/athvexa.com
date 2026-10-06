@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
             email: true,
             phone: true,
             passwordHash: true,
+            managedByCoach: true,
             role: true,
             locale: true,
             timeZone: true,
@@ -63,6 +64,9 @@ export async function POST(req: NextRequest) {
     );
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return NextResponse.json({ error: "Incorrect email, phone number, or password" }, { status: 401 });
+    }
+    if (user.managedByCoach) {
+      return NextResponse.json({ error: "This player is managed by a coach and cannot sign in" }, { status: 403 });
     }
     const role = parseRole(user.role);
     if (!role) {

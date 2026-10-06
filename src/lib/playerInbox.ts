@@ -154,6 +154,43 @@ export async function notifyPlayerOfProgramAssignment({
   });
 }
 
+export async function notifyPlayerOfProgramSend({
+  playerId,
+  coachId,
+  senderId,
+  coachName,
+  programId,
+  programName,
+}: {
+  playerId: string;
+  coachId: string;
+  senderId: string;
+  coachName: string;
+  programId: string;
+  programName: string;
+}) {
+  const locale = await playerLocale(playerId);
+  const title = t(locale, "notifications.types.programAssigned.title");
+  const description = t(locale, "notifications.types.programAssigned.body", { program: programName, coach: coachName });
+
+  const { conversation } = await sendCoachToPlayerMessage({
+    coachId,
+    playerId,
+    senderId,
+    body: description,
+    contextType: "PROGRAM",
+  });
+
+  await createNotification({
+    userId: playerId,
+    title,
+    description,
+    type: "PROGRAM_ASSIGNED",
+    actionHref: `/dashboard/messages?conversationId=${conversation.id}`,
+    relatedId: programId,
+  });
+}
+
 export async function deliverInviteToExistingUser({
   invite,
   actorId,

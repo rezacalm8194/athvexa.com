@@ -22,6 +22,8 @@ model User {
   locale       String   @default("en") // en | fa
   timeZone     String?
   onboardingCompletedAt DateTime?
+  // Coach-created roster row with no login. The player can still be invited later.
+  managedByCoach Boolean @default(false)
   notifyCheckIns          Boolean @default(true)
   notifyLowReadiness      Boolean @default(true)
   notifySessionComplete   Boolean @default(true)

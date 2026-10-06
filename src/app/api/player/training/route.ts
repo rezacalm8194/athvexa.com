@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { db, ensureDatabase } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { playerProgramStatusFilter } from "@/lib/playerProgram";
 import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export async function GET() {
   const session = await getSession();
@@ -18,25 +15,12 @@ export async function GET() {
   await ensureDatabase();
   const player = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
   const workspace = await getTeamWorkspaceByCoachId(player?.coachId);
-  const today = todayKey();
 
   const assignment = await db.programAssignment.findFirst({
     where: {
       playerId: session.sub,
       program: {
-        status: workspace.programVisibility === "ALL" ? { in: ["ACTIVE", "ARCHIVED"] } : "ACTIVE",
-        OR: [
-          { startDate: null },
-          { startDate: { lte: today } },
-        ],
-        AND: [
-          {
-            OR: [
-              { endDate: null },
-              { endDate: { gte: today } },
-            ],
-          },
-        ],
+        status: playerProgramStatusFilter(workspace.programVisibility),
       },
     },
     include: {

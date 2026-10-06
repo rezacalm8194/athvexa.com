@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createNotification } from "@/lib/notifications";
 import { db, ensureDatabase } from "@/lib/db";
+import { playerProgramStatusFilter } from "@/lib/playerProgram";
+import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -64,6 +66,8 @@ export async function GET() {
   await ensureDatabase();
   const date = todayKey();
   const weekday = todayName();
+  const player = await db.user.findUnique({ where: { id: session.sub }, select: { coachId: true } });
+  const workspace = await getTeamWorkspaceByCoachId(player?.coachId);
 
   let log = await db.dailyLog.findUnique({
     where: { playerId_date: { playerId: session.sub, date } },
@@ -111,9 +115,7 @@ export async function GET() {
       where: {
         playerId: session.sub,
         program: {
-          status: "ACTIVE",
-          OR: [{ startDate: null }, { startDate: { lte: date } }],
-          AND: [{ OR: [{ endDate: null }, { endDate: { gte: date } }] }],
+          status: playerProgramStatusFilter(workspace.programVisibility),
         },
       },
       include: {
@@ -183,7 +185,9 @@ export async function PATCH(req: NextRequest) {
   const allowed = ["sleepHours", "waterLiters", "energy", "fatigue", "soreness", "mood", "stress", "sleepQuality"] as const;
   const data: Record<string, number> = {};
   for (const key of allowed) {
-    if (typeof body[key] === "number") data[key] = body[key];
+    const raw = body[key];
+    const next = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
+    if (Number.isFinite(next)) data[key] = next;
   }
 
   const existing = await db.dailyLog.upsert({
