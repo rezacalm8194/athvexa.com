@@ -58,7 +58,8 @@ export default function StatInput({
   function handleChange(raw: string) {
     setText(raw);
     if (timer.current) clearTimeout(timer.current);
-    if (parseStat(raw) == null) return;
+    const normalized = toWesternDigits(raw).trim();
+    if (parseStat(raw) == null || /[.-]$/.test(normalized)) return;
     timer.current = setTimeout(() => commit(raw), 500);
   }
 

@@ -398,7 +398,7 @@
       "addName": "Name",
       "addEmailOptional": "Email optional",
       "addPhoneOptional": "Mobile number optional",
-      "addPhoneHint": "For example 09351108194 or +989351108194.",
+      "addPhoneHint": "For example 09120000000 or +989120000000.",
       "addSubmit": "Add to roster",
       "adding": "Adding…",
       "addError": "Could not add player",

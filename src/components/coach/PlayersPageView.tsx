@@ -393,7 +393,7 @@ export default function PlayersPageView({
                   inputMode="tel"
                   value={addPhone}
                   onChange={(event) => setAddPhone(event.target.value)}
-                  placeholder="+989121234567"
+                  placeholder="09120000000"
                   autoComplete="tel"
                 />
                 <span className="mt-1 block text-xs text-smoke-4">{t(locale, "coach.players.addPhoneHint")}</span>
