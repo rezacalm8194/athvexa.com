@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AssessmentDetailModal, AssessmentModal, assessmentRequestBody, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type AssessmentItem, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
+import ConfirmModal from "@/components/coach/shared/ConfirmModal";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
@@ -44,6 +45,34 @@ type AssessmentResponse = {
   };
 };
 
+function formFromAssessment(item: AssessmentItem): AssessmentFormState {
+  return {
+    playerId: item.playerId ?? "",
+    playerName: item.playerId ? "" : (item.playerName ?? item.player?.name ?? ""),
+    type: item.type,
+    date: item.date,
+    score: String(item.score),
+    notes: item.notes ?? "",
+  };
+}
+
+function summaryToAssessmentItem(player: PlayerSummary): AssessmentItem | null {
+  const latest = player.latestAssessment;
+  if (!latest) return null;
+  return {
+    id: latest.id,
+    playerId: player.manual ? null : player.id,
+    player: player.manual ? null : { id: player.id, name: player.name, email: player.email },
+    playerName: player.name,
+    type: latest.type,
+    date: latest.date,
+    score: latest.score,
+    previousScore: null,
+    change: null,
+    notes: latest.notes,
+  };
+}
+
 export default function AssessmentsPageView({ locale }: { locale: Locale }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,9 +84,21 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<AssessmentType | "all">("all");
   const [month, setMonth] = useState("");
-  const [createForm, setCreateForm] = useState<AssessmentFormState | null>(null);
+  const [editor, setEditor] = useState<{ mode: "create" | "edit"; item?: AssessmentItem; form: AssessmentFormState } | null>(null);
   const [saving, setSaving] = useState(false);
   const [viewing, setViewing] = useState<AssessmentItem | null>(null);
+  const [deleting, setDeleting] = useState<AssessmentItem | null>(null);
+
+  const openEditor = (mode: "create" | "edit", item?: AssessmentItem, form?: AssessmentFormState) => {
+    if (mode === "edit" && item) {
+      setEditor({ mode, item, form: form ?? formFromAssessment(item) });
+      return;
+    }
+    setEditor({
+      mode: "create",
+      form: form ?? emptyAssessmentForm(data?.players.length === 1 ? data.players[0].id : ""),
+    });
+  };
 
   const saveAssessment = async (form: AssessmentFormState) => {
     if (saving) return;
@@ -67,20 +108,41 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
       return;
     }
     setSaving(true);
+    const isEditing = editor?.mode === "edit" && editor.item;
     try {
-      const response = await fetch("/api/coach/assessments", {
-        method: "POST",
+      const response = await fetch(isEditing ? `/api/coach/assessments/${editor.item!.id}` : "/api/coach/assessments", {
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(assessmentRequestBody(form, score)),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));
-      showToast(t(locale, "coach.assessmentUi.created"));
-      setCreateForm(null);
+      showToast(isEditing ? t(locale, "coach.assessmentUi.updated") : t(locale, "coach.assessmentUi.created"));
+      setEditor(null);
       await loadPlayers();
       router.refresh();
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : t(locale, "coach.assessmentUi.saveError"), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteAssessment = async () => {
+    if (!deleting || saving) return;
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/coach/assessments/${deleting.id}`, { method: "DELETE" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.deleteError"));
+      showToast(t(locale, "coach.assessmentUi.deleted"));
+      setDeleting(null);
+      setViewing(null);
+      await loadPlayers();
+      router.replace("/dashboard/coach/assessments", { scroll: false });
+      router.refresh();
+    } catch (deleteError) {
+      showToast(deleteError instanceof Error ? deleteError.message : t(locale, "coach.assessmentUi.deleteError"), "error");
     } finally {
       setSaving(false);
     }
@@ -163,7 +225,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
             type="button"
             className="btn-primary inline-flex items-center justify-center gap-2 !px-4 !py-2.5 text-sm disabled:opacity-50"
             disabled={loading || Boolean(error)}
-            onClick={() => setCreateForm(emptyAssessmentForm(data?.players.length === 1 ? data.players[0].id : ""))}
+            onClick={() => openEditor("create")}
           >
             <PlusIcon className="h-4 w-4" />
             {t(locale, "coach.assessmentUi.newAssessment")}
@@ -230,11 +292,13 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                         <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colScore")}</th>
                         <th className="hidden px-4 py-2 font-semibold sm:table-cell">{t(locale, "coach.assessments.colDate")}</th>
                         <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">{t(locale, "coach.assessments.colTests")}</th>
+                        <th className="px-4 py-2 text-right font-semibold">{t(locale, "coach.assessmentUi.edit")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {players.map((player) => {
                         const href = `/dashboard/coach/players/${encodeURIComponent(player.id)}#assessments`;
+                        const latestItem = summaryToAssessmentItem(player);
                         return (
                           <tr
                             key={player.id}
@@ -257,6 +321,20 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                             <td className="px-4 py-2.5 font-semibold text-white">{player.latestAssessment ? formatScore(player.latestAssessment.score) : "—"}</td>
                             <td className="hidden px-4 py-2.5 text-smoke-3 sm:table-cell">{player.latestAssessment ? formatAssessmentDate(player.latestAssessment.date, locale) : "—"}</td>
                             <td className="hidden px-4 py-2.5 text-right tabular-nums text-smoke-3 sm:table-cell">{player.count}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              {latestItem ? (
+                                <button
+                                  type="button"
+                                  className="text-xs font-semibold text-smoke-3 hover:text-white"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    openEditor("edit", latestItem);
+                                  }}
+                                >
+                                  {t(locale, "coach.assessmentUi.edit")}
+                                </button>
+                              ) : null}
+                            </td>
                           </tr>
                         );
                       })}
@@ -267,15 +345,15 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
             </div>
           </div>
       </>
-      {createForm ? (
+      {editor ? (
         <AssessmentModal
           open
-          mode="create"
+          mode={editor.mode}
           players={data?.players ?? []}
-          initial={createForm}
+          initial={editor.form}
           busy={saving}
           locale={locale}
-          onClose={() => { if (!saving) setCreateForm(null); }}
+          onClose={() => { if (!saving) setEditor(null); }}
           onSubmit={saveAssessment}
         />
       ) : null}
@@ -286,6 +364,33 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
           setViewing(null);
           router.replace("/dashboard/coach/assessments", { scroll: false });
         }}
+        onEdit={
+          viewing
+            ? () => {
+                openEditor("edit", viewing);
+                setViewing(null);
+                router.replace("/dashboard/coach/assessments", { scroll: false });
+              }
+            : undefined
+        }
+        onDelete={
+          viewing
+            ? () => {
+                setDeleting(viewing);
+                setViewing(null);
+              }
+            : undefined
+        }
+      />
+      <ConfirmModal
+        open={Boolean(deleting)}
+        title={t(locale, "coach.assessmentUi.deleteTitle")}
+        description={t(locale, "coach.assessmentUi.deleteBody")}
+        confirmLabel={t(locale, "coach.assessmentUi.delete")}
+        cancelLabel={t(locale, "common.cancel")}
+        busy={saving}
+        onCancel={() => setDeleting(null)}
+        onConfirm={deleteAssessment}
       />
     </section>
   );
