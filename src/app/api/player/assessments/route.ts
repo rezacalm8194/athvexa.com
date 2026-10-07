@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { previousScoresById } from "@/lib/assessmentPrevious";
+import { parseStoredMetrics } from "@/lib/assessmentTemplates";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -23,10 +24,12 @@ export async function GET() {
         playerId: row.playerId,
         player: null,
         type: row.type,
+        templateId: row.templateId,
         date: row.date,
         score: row.score,
         previousScore,
         change: previousScore == null ? null : Number((row.score - previousScore).toFixed(2)),
+        metrics: parseStoredMetrics(row.metrics),
         notes: row.notes,
       };
     }),

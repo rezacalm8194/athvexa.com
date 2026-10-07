@@ -6,6 +6,7 @@ import PlayerAssessmentsSection from "@/components/coach/assessments/PlayerAsses
 import StatusBadge from "@/components/coach/shared/StatusBadge";
 import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon } from "@/components/icons";
 import { db, ensureDatabase } from "@/lib/db";
+import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
 import { t, teamRoleLabel, type Locale } from "@/lib/i18n";
 import { getSession } from "@/lib/session";
@@ -223,7 +224,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
             icon={ClipboardCheckIcon}
             label={t(locale, "coach.playerProfile.latestAssessment")}
             value={latestAssessment ? formatScore(latestAssessment.score) : noData}
-            detail={latestAssessment ? latestAssessment.type : t(locale, "coach.playerProfile.noAssessments")}
+            detail={latestAssessment ? assessmentLabel(latestAssessment, locale) : t(locale, "coach.playerProfile.noAssessments")}
           />
           <StatCard
             icon={ClipboardListIcon}

@@ -191,6 +191,7 @@ export function ensureDatabase() {
     await ensureChecklistReportScheduleTable();
     await ensureTeamWorkspaceColumns();
     await ensureAssessmentSchema();
+    await ensureAssessmentTemplateColumns();
     await mergeSiblingSqliteDatabases();
   })().catch((error) => {
     sqliteReady = null;
@@ -403,6 +404,20 @@ async function ensureAssessmentScoreIsReal() {
     await sqliteExec(`CREATE INDEX IF NOT EXISTS "Assessment_playerId_idx" ON "Assessment"("playerId");`);
   } finally {
     await db.$queryRawUnsafe(`PRAGMA foreign_keys = ON`);
+  }
+}
+
+async function ensureAssessmentTemplateColumns() {
+  const tables = await db.$queryRawUnsafe<{ name: string }[]>(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Assessment' LIMIT 1`
+  );
+  if (tables.length === 0) return;
+  const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("Assessment");`);
+  if (!columns.some((column) => column.name === "templateId")) {
+    await sqliteExec(`ALTER TABLE "Assessment" ADD COLUMN "templateId" TEXT;`);
+  }
+  if (!columns.some((column) => column.name === "metrics")) {
+    await sqliteExec(`ALTER TABLE "Assessment" ADD COLUMN "metrics" TEXT;`);
   }
 }
 
@@ -648,8 +663,10 @@ async function ensureSqliteSchema() {
       "playerId" TEXT,
       "playerName" TEXT,
       "type" TEXT NOT NULL,
+      "templateId" TEXT,
       "date" TEXT NOT NULL,
       "score" REAL NOT NULL,
+      "metrics" TEXT,
       "notes" TEXT,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

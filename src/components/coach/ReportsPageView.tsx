@@ -7,6 +7,7 @@ import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import { AlertIcon, BarChartIcon, CalendarIcon, ClipboardCheckIcon, CopyIcon, LinkIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
+import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
 import { t, type Locale } from "@/lib/i18n";
 import { useToast } from "@/components/ui/Toast";
@@ -41,8 +42,8 @@ type PlayerProgress = {
   soreness: number | null;
   averageReadiness: number | null;
   averageSleep: number | null;
-  latestAssessment: { id: string; type: string; score: number; date: string } | null;
-  previousAssessment: { id: string; type: string; score: number; date: string } | null;
+  latestAssessment: { id: string; type: string; templateId?: string | null; score: number; date: string } | null;
+  previousAssessment: { id: string; type: string; templateId?: string | null; score: number; date: string } | null;
   assessmentChange: number | null;
   activeProgram: {
     id: string;
@@ -515,7 +516,7 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
                         <td className="px-3 py-4 text-smoke-2">
                           {player.latestAssessment && player.assessmentHref ? (
                             <Link className="font-semibold text-red hover:text-red-glow" href={player.assessmentHref}>
-                              {player.latestAssessment.type}
+                              {assessmentLabel(player.latestAssessment, locale)}
                             </Link>
                           ) : (
                             t(locale, "coach.reports.noAssessment")

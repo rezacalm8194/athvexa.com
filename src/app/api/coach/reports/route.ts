@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
     }),
     db.assessment.findMany({
       where: { coachId: teamOwnerId, playerId: { in: playerIds } },
-      select: { id: true, playerId: true, type: true, score: true, date: true, createdAt: true },
+      select: { id: true, playerId: true, type: true, templateId: true, score: true, date: true, createdAt: true },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     }),
     db.programAssignment.findMany({
@@ -293,6 +293,7 @@ export async function GET(req: NextRequest) {
         ? {
             id: latestAssessment.id,
             type: latestAssessment.type,
+            templateId: latestAssessment.templateId,
             score: latestAssessment.score,
             date: latestAssessment.date,
           }
@@ -301,6 +302,7 @@ export async function GET(req: NextRequest) {
         ? {
             id: previousAssessment.id,
             type: previousAssessment.type,
+            templateId: previousAssessment.templateId,
             score: previousAssessment.score,
             date: previousAssessment.date,
           }

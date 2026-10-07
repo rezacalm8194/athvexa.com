@@ -7,6 +7,7 @@ import {
   formatAssessmentDate,
   type AssessmentItem,
 } from "@/components/coach/assessments/AssessmentUi";
+import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
 import { t, type Locale } from "@/lib/i18n";
 
@@ -55,7 +56,7 @@ export default function PlayerAssessmentsView({ locale }: { locale: Locale }) {
               onClick={() => setViewing(assessment)}
             >
               <div className="min-w-0">
-                <div className="font-display text-base font-bold text-white">{assessment.type}</div>
+                <div className="font-display text-base font-bold text-white">{assessmentLabel(assessment, locale)}</div>
                 <p className="mt-1 text-xs text-smoke-3">
                   {formatAssessmentDate(assessment.date, locale)}
                   {assessment.notes?.trim() ? ` · ${assessment.notes.trim()}` : ""}

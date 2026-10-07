@@ -15,10 +15,12 @@ import {
   PlayerOption,
   assessmentRequestBody,
   emptyAssessmentForm,
+  formFromAssessmentItem,
   formatAssessmentDate,
 } from "@/components/coach/assessments/AssessmentUi";
 import { ClipboardCheckIcon, PlusIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/Toast";
+import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
 import { t, type Locale } from "@/lib/i18n";
 
@@ -88,14 +90,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
   const assessments = data?.assessments ?? [];
   const initialForm = useMemo<AssessmentFormState>(() => {
     if (!modal?.item) return emptyAssessmentForm(player.id);
-    return {
-      playerId: player.id,
-      playerName: "",
-      type: modal.item.type,
-      date: modal.item.date,
-      score: String(modal.item.score),
-      notes: modal.item.notes ?? "",
-    };
+    return formFromAssessmentItem({ ...modal.item, playerId: player.id, playerName: "" });
   }, [modal, player.id]);
 
   const closeQueryModal = () => {
@@ -111,9 +106,9 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
   };
 
   const saveAssessment = async (form: AssessmentFormState) => {
-    const score = Number(form.score);
-    if (form.score.trim() === "" || !Number.isFinite(score)) {
-      showToast(t(locale, "coach.assessmentUi.invalidScore"), "error");
+    const request = assessmentRequestBody({ ...form, playerId: player.id, playerIds: [player.id], playerName: "" });
+    if ("error" in request) {
+      showToast(t(locale, `coach.assessmentUi.${request.error}`), "error");
       return;
     }
 
@@ -123,7 +118,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
       const response = await fetch(isEditing ? `/api/coach/assessments/${modal.item!.id}` : "/api/coach/assessments", {
         method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(assessmentRequestBody({ ...form, playerId: player.id, playerName: "" }, score)),
+        body: JSON.stringify(request.body),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));
@@ -214,7 +209,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
                   }}
                   tabIndex={0}
                 >
-                  <td className="py-2.5 pr-3 font-semibold text-white">{assessment.type}</td>
+                  <td className="py-2.5 pr-3 font-semibold text-white">{assessmentLabel(assessment, locale)}</td>
                   <td className="min-w-[160px] max-w-xs whitespace-pre-wrap break-words px-3 py-2.5 text-smoke-3 [overflow-wrap:anywhere]">{assessment.notes?.trim() || "—"}</td>
                   <td className="px-3 py-2.5 text-smoke-3">{formatAssessmentDate(assessment.date, locale)}</td>
                   <td className="px-3 py-2.5 font-semibold tabular-nums text-white">{formatScore(assessment.score)}</td>

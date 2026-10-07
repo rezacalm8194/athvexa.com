@@ -6,6 +6,7 @@ import ScoreCard from "./ScoreCard";
 import StatInput from "./StatInput";
 import WellnessSlider from "./WellnessSlider";
 import { formatDate } from "@/lib/format";
+import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { t, type Locale } from "@/lib/i18n";
 
 type Task = { id: string; label: string; done: boolean };
@@ -31,7 +32,7 @@ type TrainingSession = {
   notes: string | null;
   status: string;
 };
-type Assessment = { id: string; type: string; score: number; date: string } | null;
+type Assessment = { id: string; type: string; templateId?: string | null; score: number; date: string } | null;
 type ActiveProgram = {
   id: string;
   name: string;
@@ -170,7 +171,7 @@ export default function TodayDashboard({ playerName, locale, timeZone }: { playe
               <div className="font-display text-3xl font-black text-white">{currentAssessment.score}</div>
               <p className="mt-1 text-sm text-smoke-3">
                 {t(locale, "player.today.assessmentOn", {
-                  type: currentAssessment.type,
+                  type: assessmentLabel(currentAssessment, locale),
                   date: formatShortDate(currentAssessment.date, locale, timeZone),
                 })}
               </p>

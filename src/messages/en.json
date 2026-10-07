@@ -996,6 +996,17 @@
       "formCreateTitle": "New assessment",
       "formEditTitle": "Edit assessment",
       "formSubtitle": "Track one performance checkpoint for this player.",
+      "source": "Assessment source",
+      "sourceCustom": "Custom",
+      "sourceTemplate": "Default tests",
+      "template": "Default test",
+      "selectTemplate": "Select a default test",
+      "metrics": "Metrics",
+      "selectPlayers": "Players",
+      "selectPlayersHint": "Choose one or more roster players for this test.",
+      "createdMany": "{count} assessments created.",
+      "invalidTemplate": "Select a default test.",
+      "invalidMetrics": "Enter a valid value for every metric.",
       "player": "Player",
       "selectPlayer": "Select player",
       "playerSource": "Player source",
@@ -1013,6 +1024,28 @@
       "create": "Create assessment",
       "saveChanges": "Save changes",
       "previous": "Previous {score}"
+    },
+    "assessmentTemplates": {
+      "barbellVelocity": {
+        "title": "Barbell velocity",
+        "description": "Velocity-based barbell metrics from a lift or jump with the bar."
+      },
+      "metrics": {
+        "averageVelocity": "Average Velocity",
+        "averageVelocityHint": "Mean barbell speed, in m/s",
+        "peakVelocity": "Peak Velocity",
+        "peakVelocityHint": "Highest barbell speed in the rep",
+        "rangeOfMotion": "Range of Motion",
+        "rangeOfMotionHint": "Distance the barbell traveled",
+        "averagePower": "Average Power",
+        "averagePowerHint": "Mean power produced, in W",
+        "peakPower": "Peak Power",
+        "peakPowerHint": "Highest power produced",
+        "timeToPeakVelocity": "Time to Peak Velocity",
+        "timeToPeakVelocityHint": "Time from the start of the movement to peak speed",
+        "elasticAccelerationIndex": "Elastic Acceleration Index",
+        "elasticAccelerationIndexHint": "Peak velocity divided by time to peak"
+      }
     },
     "teams": {
       "eyebrow": "Coach tools",

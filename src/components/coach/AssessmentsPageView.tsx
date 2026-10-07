@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AssessmentDetailModal, AssessmentModal, assessmentRequestBody, emptyAssessmentForm, formatAssessmentDate, type AssessmentFormState, type AssessmentItem, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
+import { AssessmentDetailModal, AssessmentModal, assessmentRequestBody, emptyAssessmentForm, formFromAssessmentItem, formatAssessmentDate, type AssessmentFormState, type AssessmentItem, type PlayerOption } from "@/components/coach/assessments/AssessmentUi";
 import ConfirmModal from "@/components/coach/shared/ConfirmModal";
 import EmptyState from "@/components/coach/shared/EmptyState";
 import ErrorState from "@/components/coach/shared/ErrorState";
@@ -11,14 +11,17 @@ import SearchInput from "@/components/coach/shared/SearchInput";
 import { PlusIcon, UsersIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/Toast";
 import { ASSESSMENT_TYPES, AssessmentType } from "@/lib/assessmentTypes";
+import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
 import { t, type Locale } from "@/lib/i18n";
 
 type LatestAssessment = {
   id: string;
   type: AssessmentType;
+  templateId?: string | null;
   date: string;
   score: number;
+  metrics?: Record<string, number> | null;
   notes: string | null;
 };
 
@@ -45,17 +48,6 @@ type AssessmentResponse = {
   };
 };
 
-function formFromAssessment(item: AssessmentItem): AssessmentFormState {
-  return {
-    playerId: item.playerId ?? "",
-    playerName: item.playerId ? "" : (item.playerName ?? item.player?.name ?? ""),
-    type: item.type,
-    date: item.date,
-    score: String(item.score),
-    notes: item.notes ?? "",
-  };
-}
-
 function summaryToAssessmentItem(player: PlayerSummary): AssessmentItem | null {
   const latest = player.latestAssessment;
   if (!latest) return null;
@@ -65,10 +57,12 @@ function summaryToAssessmentItem(player: PlayerSummary): AssessmentItem | null {
     player: player.manual ? null : { id: player.id, name: player.name, email: player.email },
     playerName: player.name,
     type: latest.type,
+    templateId: latest.templateId ?? null,
     date: latest.date,
     score: latest.score,
     previousScore: null,
     change: null,
+    metrics: latest.metrics ?? null,
     notes: latest.notes,
   };
 }
@@ -91,7 +85,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
 
   const openEditor = (mode: "create" | "edit", item?: AssessmentItem, form?: AssessmentFormState) => {
     if (mode === "edit" && item) {
-      setEditor({ mode, item, form: form ?? formFromAssessment(item) });
+      setEditor({ mode, item, form: form ?? formFromAssessmentItem(item) });
       return;
     }
     setEditor({
@@ -102,9 +96,9 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
 
   const saveAssessment = async (form: AssessmentFormState) => {
     if (saving) return;
-    const score = Number(form.score);
-    if (form.score.trim() === "" || !Number.isFinite(score)) {
-      showToast(t(locale, "coach.assessmentUi.invalidScore"), "error");
+    const request = assessmentRequestBody(form);
+    if ("error" in request) {
+      showToast(t(locale, `coach.assessmentUi.${request.error}`), "error");
       return;
     }
     setSaving(true);
@@ -113,11 +107,18 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
       const response = await fetch(isEditing ? `/api/coach/assessments/${editor.item!.id}` : "/api/coach/assessments", {
         method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(assessmentRequestBody(form, score)),
+        body: JSON.stringify(request.body),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || t(locale, "coach.assessmentUi.saveError"));
-      showToast(isEditing ? t(locale, "coach.assessmentUi.updated") : t(locale, "coach.assessmentUi.created"));
+      const createdCount = typeof payload.count === "number" ? payload.count : 1;
+      showToast(
+        isEditing
+          ? t(locale, "coach.assessmentUi.updated")
+          : createdCount > 1
+            ? t(locale, "coach.assessmentUi.createdMany", { count: createdCount })
+            : t(locale, "coach.assessmentUi.created")
+      );
       setEditor(null);
       await loadPlayers();
       router.refresh();
@@ -314,7 +315,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                                 {player.needsAssessment ? <span className="rounded bg-red/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-glow">{t(locale, "coach.assessments.dueBadge")}</span> : null}
                               </div>
                             </td>
-                            <td className="px-4 py-2.5 text-smoke-2">{player.latestAssessment?.type ?? "—"}</td>
+                            <td className="px-4 py-2.5 text-smoke-2">{player.latestAssessment ? assessmentLabel(player.latestAssessment, locale) : "—"}</td>
                             <td className="max-w-[220px] truncate px-4 py-2.5 text-smoke-3" title={player.latestAssessment?.notes?.trim() || undefined}>
                               {player.latestAssessment?.notes?.trim() || "—"}
                             </td>

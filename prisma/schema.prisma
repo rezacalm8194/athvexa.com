@@ -358,8 +358,10 @@ model Assessment {
   player    User?    @relation("PlayerAssessments", fields: [playerId], references: [id])
   playerName String?
   type      String   // Speed | Strength | Endurance | Agility | Mobility | Body composition | General
+  templateId String? // catalog id such as barbellVelocity; null = custom single-score test
   date      String   // "YYYY-MM-DD"
-  score     Float    // any numeric value, decimals allowed
+  score     Float    // any numeric value, decimals allowed; for templates this is the primary metric
+  metrics   String?  // JSON object of metric key -> number for default templates
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

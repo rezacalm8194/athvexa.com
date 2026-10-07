@@ -996,6 +996,17 @@
       "formCreateTitle": "ارزیابی جدید",
       "formEditTitle": "ویرایش ارزیابی",
       "formSubtitle": "یک نقطه کنترل عملکرد برای این بازیکن ثبت کنید.",
+      "source": "منبع ارزیابی",
+      "sourceCustom": "سفارشی",
+      "sourceTemplate": "ارزیابی‌های پیش‌فرض",
+      "template": "ارزیابی پیش‌فرض",
+      "selectTemplate": "یک ارزیابی پیش‌فرض انتخاب کنید",
+      "metrics": "متریک‌ها",
+      "selectPlayers": "بازیکنان",
+      "selectPlayersHint": "یک یا چند بازیکن تیم را برای این تست انتخاب کنید.",
+      "createdMany": "{count} ارزیابی ایجاد شد.",
+      "invalidTemplate": "یک ارزیابی پیش‌فرض انتخاب کنید.",
+      "invalidMetrics": "برای هر متریک یک مقدار معتبر وارد کنید.",
       "player": "بازیکن",
       "selectPlayer": "انتخاب بازیکن",
       "playerSource": "روش انتخاب بازیکن",
@@ -1013,6 +1024,28 @@
       "create": "ایجاد ارزیابی",
       "saveChanges": "ذخیره تغییرات",
       "previous": "قبلی {score}"
+    },
+    "assessmentTemplates": {
+      "barbellVelocity": {
+        "title": "سرعت هالتر",
+        "description": "متریک‌های سرعت‌محور هالتر در یک تکرار یا حرکت."
+      },
+      "metrics": {
+        "averageVelocity": "Average Velocity",
+        "averageVelocityHint": "میانگین سرعت حرکت هالتر، بر حسب m/s",
+        "peakVelocity": "Peak Velocity",
+        "peakVelocityHint": "بیشترین سرعت هالتر در تکرار",
+        "rangeOfMotion": "Range of Motion",
+        "rangeOfMotionHint": "مسافت طی‌شده توسط هالتر",
+        "averagePower": "Average Power",
+        "averagePowerHint": "میانگین توان تولیدشده، بر حسب W",
+        "peakPower": "Peak Power",
+        "peakPowerHint": "بیشترین توان تولیدشده",
+        "timeToPeakVelocity": "Time to Peak Velocity",
+        "timeToPeakVelocityHint": "زمان رسیدن از شروع حرکت تا بیشترین سرعت",
+        "elasticAccelerationIndex": "Elastic Acceleration Index",
+        "elasticAccelerationIndexHint": "سرعت اوج تقسیم بر زمان رسیدن به آن"
+      }
     },
     "teams": {
       "eyebrow": "ابزار مربی",
