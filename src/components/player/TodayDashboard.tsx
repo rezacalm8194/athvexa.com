@@ -223,9 +223,9 @@ export default function TodayDashboard({ playerName, locale, timeZone }: { playe
           <Link href="/dashboard/player/check-in" className="btn-ghost !px-3.5 !py-2 text-xs">
             {t(locale, "player.today.completeCheckIn")}
           </Link>
-          <a href="#current-assessment" className="btn-ghost !px-3.5 !py-2 text-xs">
+          <Link href="/dashboard/player/assessments" className="btn-ghost !px-3.5 !py-2 text-xs">
             {t(locale, "player.today.viewAssessments")}
-          </a>
+          </Link>
         </div>
       </section>
 

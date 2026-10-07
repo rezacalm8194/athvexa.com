@@ -83,6 +83,7 @@
     "player": {
       "today": "Today",
       "training": "Training",
+      "assessments": "Assessments",
       "planner": "Planner",
       "habits": "Habits",
       "goals": "Goals",
@@ -261,6 +262,14 @@
       "saved": "Today's check-in has been saved.",
       "loadError": "Could not load today's check-in.",
       "saveError": "Could not save today's check-in."
+    },
+    "assessments": {
+      "eyebrow": "Assessments",
+      "title": "Your assessments",
+      "subtitle": "Tests recorded by your coach, with score changes over time.",
+      "loading": "Loading assessments…",
+      "loadError": "Could not load assessments.",
+      "empty": "No assessments have been recorded yet."
     },
     "goals": {
       "title": "Goals",
@@ -978,6 +987,7 @@
       "colDate": "Date",
       "colScore": "Score",
       "colChange": "Change",
+      "colActions": "Actions",
       "deleteTitle": "Delete assessment?",
       "deleteBody": "This assessment will be permanently removed from the player record.",
       "delete": "Delete",

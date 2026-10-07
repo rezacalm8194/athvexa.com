@@ -7,6 +7,7 @@ import { t, type Locale } from "@/lib/i18n";
 const TABS = [
   { href: "/dashboard/player", key: "nav.player.today" },
   { href: "/dashboard/player/training", key: "nav.player.training" },
+  { href: "/dashboard/player/assessments", key: "nav.player.assessments" },
   { href: "/dashboard/player/planner", key: "nav.player.planner" },
   { href: "/dashboard/player/habits", key: "nav.player.habits" },
   { href: "/dashboard/player/goals", key: "nav.player.goals" },

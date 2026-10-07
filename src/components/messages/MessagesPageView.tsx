@@ -51,7 +51,7 @@ const CONTEXT_KEYS: Record<(typeof CONTEXT_TYPES)[number], string> = {
 
 const PLAYER_CONTEXT_HREF: Record<string, string> = {
   TRAINING_SESSION: "/dashboard/player/training",
-  ASSESSMENT: "/dashboard/player",
+  ASSESSMENT: "/dashboard/player/assessments",
   DAILY_CHECK_IN: "/dashboard/player/check-in",
   PROGRAM: "/dashboard/player/training",
   REPORT: "/dashboard/player",

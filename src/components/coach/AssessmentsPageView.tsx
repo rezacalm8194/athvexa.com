@@ -292,7 +292,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                         <th className="px-4 py-2 font-semibold">{t(locale, "coach.assessments.colScore")}</th>
                         <th className="hidden px-4 py-2 font-semibold sm:table-cell">{t(locale, "coach.assessments.colDate")}</th>
                         <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">{t(locale, "coach.assessments.colTests")}</th>
-                        <th className="px-4 py-2 text-right font-semibold">{t(locale, "coach.assessmentUi.edit")}</th>
+                        <th className="px-4 py-2 text-right font-semibold">{t(locale, "coach.assessmentUi.colActions")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -323,16 +323,28 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                             <td className="hidden px-4 py-2.5 text-right tabular-nums text-smoke-3 sm:table-cell">{player.count}</td>
                             <td className="px-4 py-2.5 text-right">
                               {latestItem ? (
-                                <button
-                                  type="button"
-                                  className="text-xs font-semibold text-smoke-3 hover:text-white"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    openEditor("edit", latestItem);
-                                  }}
-                                >
-                                  {t(locale, "coach.assessmentUi.edit")}
-                                </button>
+                                <div className="flex items-center justify-end gap-3">
+                                  <button
+                                    type="button"
+                                    className="text-xs font-semibold text-smoke-3 hover:text-white"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      openEditor("edit", latestItem);
+                                    }}
+                                  >
+                                    {t(locale, "coach.assessmentUi.edit")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-xs font-semibold text-red-glow hover:text-red"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setDeleting(latestItem);
+                                    }}
+                                  >
+                                    {t(locale, "coach.assessmentUi.delete")}
+                                  </button>
+                                </div>
                               ) : null}
                             </td>
                           </tr>

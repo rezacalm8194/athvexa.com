@@ -197,7 +197,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
                 <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colDate")}</th>
                 <th className="px-3 py-2 font-semibold">{t(locale, "coach.assessmentUi.colScore")}</th>
                 <th className="py-2 pl-3 text-right font-semibold">{t(locale, "coach.assessmentUi.colChange")}</th>
-                <th className="py-2 pl-3 text-right font-semibold">{t(locale, "coach.assessmentUi.edit")}</th>
+                <th className="py-2 pl-3 text-right font-semibold">{t(locale, "coach.assessmentUi.colActions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -220,16 +220,28 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
                   <td className="px-3 py-2.5 font-semibold tabular-nums text-white">{formatScore(assessment.score)}</td>
                   <td className="py-2.5 pl-3 text-right"><AssessmentChangeBadge value={assessment.change} /></td>
                   <td className="py-2.5 pl-3 text-right">
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-smoke-3 hover:text-white"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setModal({ mode: "edit", item: assessment });
-                      }}
-                    >
-                      {t(locale, "coach.assessmentUi.edit")}
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-smoke-3 hover:text-white"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setModal({ mode: "edit", item: assessment });
+                        }}
+                      >
+                        {t(locale, "coach.assessmentUi.edit")}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-red-glow hover:text-red"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleting(assessment);
+                        }}
+                      >
+                        {t(locale, "coach.assessmentUi.delete")}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -275,6 +287,7 @@ export default function PlayerAssessmentsSection({ player, locale }: { player: P
         title={t(locale, "coach.assessmentUi.deleteTitle")}
         description={t(locale, "coach.assessmentUi.deleteBody")}
         confirmLabel={t(locale, "coach.assessmentUi.delete")}
+        cancelLabel={t(locale, "common.cancel")}
         busy={busy}
         onCancel={() => setDeleting(null)}
         onConfirm={deleteAssessment}

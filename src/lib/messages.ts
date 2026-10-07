@@ -15,7 +15,7 @@ export const MESSAGE_CONTEXTS = {
   },
   ASSESSMENT: {
     labelKey: "messages.contextAssessment",
-    playerHref: "/dashboard/player",
+    playerHref: "/dashboard/player/assessments",
     coachHref: "/dashboard/coach/assessments",
   },
   DAILY_CHECK_IN: {

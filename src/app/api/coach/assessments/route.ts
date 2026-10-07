@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   const playerId = parsed.data.playerId || null;
   if (playerId && !(await isRosterPlayer(playerId, auth.teamOwnerId))) return NextResponse.json({ error: "Player is not in your team" }, { status: 403 });
   const assessment = await db.assessment.create({ data: { coachId: auth.teamOwnerId, playerId, playerName: playerId ? null : parsed.data.playerName!.trim(), type: parsed.data.type, date: parsed.data.date, score: parsed.data.score, notes: parsed.data.notes?.trim() || null } });
-  if (playerId) await createNotification({ userId: playerId, title: "New assessment added", description: `${parsed.data.type} assessment recorded: ${parsed.data.score}.`, type: "ASSESSMENT_ADDED", actionHref: "/dashboard/player", relatedId: assessment.id });
+  if (playerId) await createNotification({ userId: playerId, title: "New assessment added", description: `${parsed.data.type} assessment recorded: ${parsed.data.score}.`, type: "ASSESSMENT_ADDED", actionHref: "/dashboard/player/assessments", relatedId: assessment.id });
   await notifyOwnerOfAssistantAction({ actorRole: auth.session.role, actorName: auth.session.name, ownerId: auth.teamOwnerId, title: "Assistant added an assessment", description: `recorded a ${parsed.data.type} assessment (${parsed.data.score}).`, actionHref: `/dashboard/coach/assessments?assessmentId=${encodeURIComponent(assessment.id)}`, relatedId: assessment.id });
   return NextResponse.json({ id: assessment.id }, { status: 201 });
 }
