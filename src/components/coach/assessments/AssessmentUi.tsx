@@ -55,8 +55,8 @@ export const emptyAssessmentForm = (playerId = ""): AssessmentFormState => ({
   playerId,
   playerIds: playerId ? [playerId] : [],
   playerName: "",
-  type: getAssessmentTemplate(firstTemplateId)?.type ?? "Speed",
-  templateId: firstTemplateId,
+  type: "Speed",
+  templateId: "",
   date: todayKey(),
   score: "",
   metrics: {},
@@ -269,6 +269,16 @@ export function AssessmentModal({
             <div className="grid grid-cols-2 gap-2 rounded-md bg-ink-2 p-1" role="group" aria-label={t(locale, "coach.assessmentUi.source")}>
               <button
                 type="button"
+                className={`rounded px-3 py-2 text-sm font-semibold ${source === "custom" ? "bg-white/10 text-white" : "text-smoke-3"}`}
+                onClick={() => {
+                  setSource("custom");
+                  setForm((current) => ({ ...current, templateId: "", metrics: {} }));
+                }}
+              >
+                {t(locale, "coach.assessmentUi.sourceCustom")}
+              </button>
+              <button
+                type="button"
                 className={`rounded px-3 py-2 text-sm font-semibold ${source === "template" ? "bg-white/10 text-white" : "text-smoke-3"}`}
                 onClick={() => {
                   setSource("template");
@@ -281,16 +291,6 @@ export function AssessmentModal({
                 }}
               >
                 {t(locale, "coach.assessmentUi.sourceTemplate")}
-              </button>
-              <button
-                type="button"
-                className={`rounded px-3 py-2 text-sm font-semibold ${source === "custom" ? "bg-white/10 text-white" : "text-smoke-3"}`}
-                onClick={() => {
-                  setSource("custom");
-                  setForm((current) => ({ ...current, templateId: "", metrics: {} }));
-                }}
-              >
-                {t(locale, "coach.assessmentUi.sourceCustom")}
               </button>
             </div>
           </div>
