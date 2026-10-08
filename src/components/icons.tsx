@@ -165,6 +165,26 @@ export const LogOutIcon = ({ className }: IconProps) =>
     className
   );
 
+export const EyeIcon = ({ className }: IconProps) =>
+  wrap(
+    <>
+      <path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>,
+    className
+  );
+
+export const EyeOffIcon = ({ className }: IconProps) =>
+  wrap(
+    <>
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4" />
+      <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6 0 9.5 7 9.5 7a16.7 16.7 0 0 1-3.2 3.9" />
+      <path d="M6.1 6.1C4 7.8 2.5 12 2.5 12S6 19 12 19c1.3 0 2.5-.3 3.6-.8" />
+    </>,
+    className
+  );
+
 export const GridIcon = ({ className }: IconProps) =>
   wrap(
     <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PasswordInput from "@/components/PasswordInput";
 import { roleLabel, t, type Locale } from "@/lib/i18n";
 
 type Role = "PLAYER" | "COACH" | "ASSISTANT";
@@ -118,10 +119,13 @@ export default function RegisterForm({
           required
         />
       </Field>
-      <Field label={t(locale, "auth.password")}>
-        <input
-          className="input-field"
-          type="password"
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="register-password" className="text-xs font-medium text-smoke-4">
+          {t(locale, "auth.password")}
+        </label>
+        <PasswordInput
+          id="register-password"
+          locale={locale}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={t(locale, "auth.minPassword")}
@@ -129,7 +133,7 @@ export default function RegisterForm({
           minLength={8}
           required
         />
-      </Field>
+      </div>
 
       {error && <p className="text-sm text-red-glow">{error}</p>}
 

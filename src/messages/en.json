@@ -23,6 +23,8 @@
     "phone": "Phone number",
     "emailAddress": "Email address",
     "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "remember": "Keep me signed in",
     "signingIn": "Signing in…",
     "signInToAthvexa": "Sign in to Athvexa",

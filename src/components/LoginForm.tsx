@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import PasswordInput from "@/components/PasswordInput";
 import { t, type Locale } from "@/lib/i18n";
 
 export default function LoginForm({ locale }: { locale: Locale }) {
@@ -65,19 +66,21 @@ export default function LoginForm({ locale }: { locale: Locale }) {
           required
         />
       </label>
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-smoke-4">{t(locale, "auth.password")}</span>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="login-password" className="text-xs font-medium text-smoke-4">
+          {t(locale, "auth.password")}
+        </label>
+        <PasswordInput
+          id="login-password"
           ref={passwordRef}
-          className="input-field"
-          type="password"
+          locale={locale}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
           autoComplete="current-password"
           required
         />
-      </label>
+      </div>
 
       <label className="flex items-center gap-2 text-sm text-smoke-4">
         <input

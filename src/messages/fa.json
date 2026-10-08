@@ -23,6 +23,8 @@
     "phone": "شماره تلفن",
     "emailAddress": "آدرس ایمیل",
     "password": "رمز عبور",
+    "showPassword": "نمایش رمز عبور",
+    "hidePassword": "پنهان کردن رمز عبور",
     "remember": "مرا وارد نگه دار",
     "signingIn": "در حال ورود…",
     "signInToAthvexa": "ورود به اَت‌وِکسا",
