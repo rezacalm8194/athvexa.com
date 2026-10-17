@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatDate } from "@/lib/format";
+import DateInput from "@/components/ui/DateInput";
 import { t, type Locale } from "@/lib/i18n";
 
 type Goal = {
@@ -128,10 +129,10 @@ export default function GoalsList({ locale, timeZone }: { locale: Locale; timeZo
             </div>
             <div>
               <div className="eyebrow mb-1.5">{t(locale, "player.goals.targetDate")}</div>
-              <input
-                type="date"
+              <DateInput
+                locale={locale}
                 value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
+                onChange={setTargetDate}
                 className="rounded-md border border-line-1 bg-ink px-2 py-1.5 text-xs text-white outline-none"
               />
             </div>

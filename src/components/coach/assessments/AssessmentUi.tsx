@@ -13,6 +13,7 @@ import {
   type AssessmentTemplate,
 } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
+import DateInput from "@/components/ui/DateInput";
 import { t, type Locale } from "@/lib/i18n";
 
 export type PlayerOption = {
@@ -118,7 +119,7 @@ export function assessmentRequestBody(form: AssessmentFormState) {
 }
 
 export function formatAssessmentDate(value: string, locale: Locale = "en") {
-  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", {
+  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR-u-ca-persian" : "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -415,11 +416,11 @@ export function AssessmentModal({
 
           <label className={`space-y-2 text-sm font-semibold text-smoke-2 ${source === "template" ? "sm:col-span-2" : ""}`}>
             {t(locale, "coach.assessmentUi.date")}
-            <input
+            <DateInput
+              locale={locale}
               className="w-full rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-white outline-none focus:border-red"
-              type="date"
               value={form.date}
-              onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+              onChange={(value) => setForm((current) => ({ ...current, date: value }))}
               required
             />
           </label>

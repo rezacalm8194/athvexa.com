@@ -8,6 +8,7 @@ import { CalendarIcon, CheckCircleIcon, ClipboardCheckIcon, ClipboardListIcon } 
 import { db, ensureDatabase } from "@/lib/db";
 import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
+import { dailyTaskLabel } from "@/lib/dailyTasks";
 import { t, teamRoleLabel, type Locale } from "@/lib/i18n";
 import { getSession } from "@/lib/session";
 import { ensureLegacyTeamMemberships } from "@/lib/teamContext";
@@ -363,7 +364,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                               >
                                 ✓
                               </span>
-                              <span className="min-w-0 flex-1 text-smoke-2">{task.label}</span>
+                              <span className="min-w-0 flex-1 text-smoke-2">{dailyTaskLabel(task.label, locale)}</span>
                               <span className="shrink-0 text-xs font-semibold text-smoke-4">
                                 {task.done ? t(locale, "coach.playerProfile.done") : t(locale, "coach.playerProfile.notDone")}
                               </span>

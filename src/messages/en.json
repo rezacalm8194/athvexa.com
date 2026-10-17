@@ -114,7 +114,10 @@
     "cancel": "Cancel",
     "tryAgain": "Try again",
     "defaultError": "Something went wrong while loading this data.",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "dateDay": "Day",
+    "dateMonth": "Month",
+    "dateYear": "Year"
   },
   "messages": {
     "eyebrow": "Messages",
@@ -236,6 +239,16 @@
       "stress": "Stress",
       "sleepQuality": "Sleep quality",
       "todaysTasks": "Today's tasks",
+      "tasksHint": "Habits you add in Habits also appear here for today.",
+      "noTasks": "No tasks yet. Add a habit to include it in today's checklist.",
+      "openHabits": "Open habits",
+      "tasks": {
+        "weighIn": "Weigh-in",
+        "breakfast": "Breakfast + supplements",
+        "football": "Football training",
+        "gym": "Gym session",
+        "recovery": "Recovery & stretch"
+      },
       "coachMessage": "Coach message"
     },
     "checkIn": {

@@ -3,7 +3,13 @@ export const DEFAULT_LOCALE: UserLocale = "en";
 export function intlLocale(locale: string | null | undefined = DEFAULT_LOCALE) { return locale === "fa" ? "fa-IR" : "en-US"; }
 
 export function formatDate(input: string | Date, options: Intl.DateTimeFormatOptions = {}, locale?: UserLocale | string | null, timeZone?: string | null) {
-  return new Intl.DateTimeFormat(intlLocale(locale), { timeZone: timeZone || undefined, ...options }).format(typeof input === "string" ? new Date(input) : input);
+  const tag = locale === "fa" ? "fa-IR-u-ca-persian" : intlLocale(locale);
+  return new Intl.DateTimeFormat(tag, { timeZone: timeZone || undefined, ...options }).format(typeof input === "string" ? new Date(input) : input);
+}
+
+export function formatCivilDate(ymd: string | null | undefined, locale?: UserLocale | string | null, empty = "—") {
+  if (!ymd) return empty;
+  return formatDate(`${ymd}T12:00:00`, { year: "numeric", month: "short", day: "numeric" }, locale);
 }
 
 export function relativeTime(input: string | Date, locale: UserLocale | string | null = DEFAULT_LOCALE): string {

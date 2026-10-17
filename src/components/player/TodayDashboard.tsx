@@ -7,9 +7,10 @@ import StatInput from "./StatInput";
 import WellnessSlider from "./WellnessSlider";
 import { formatDate } from "@/lib/format";
 import { assessmentLabel } from "@/lib/assessmentTemplates";
+import { dailyTaskLabel } from "@/lib/dailyTasks";
 import { t, type Locale } from "@/lib/i18n";
 
-type Task = { id: string; label: string; done: boolean };
+type Task = { id: string; label: string; done: boolean; source?: "task" | "habit" };
 type Log = {
   id: string;
   score: number;
@@ -98,7 +99,7 @@ export default function TodayDashboard({ playerName, locale, timeZone }: { playe
     });
     const data = await res.json();
     if (!res.ok || !data.log) return;
-    setLog(data.log);
+    setLog((prev) => (prev ? { ...data.log, tasks: prev.tasks } : data.log));
     setCheckInCompleted(true);
   }
 
@@ -106,9 +107,17 @@ export default function TodayDashboard({ playerName, locale, timeZone }: { playe
     // Optimistic update so the checklist feels instant.
     setLog((prev) =>
       prev
-        ? { ...prev, tasks: prev.tasks.map((t) => (t.id === task.id ? { ...t, done: !t.done } : t)) }
+        ? { ...prev, tasks: prev.tasks.map((item) => (item.id === task.id ? { ...item, done: !item.done } : item)) }
         : prev
     );
+    if (task.source === "habit") {
+      await fetch(`/api/player/habits/${task.id}/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: todayDate }),
+      });
+      return;
+    }
     await fetch(`/api/player/tasks/${task.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -275,34 +284,41 @@ export default function TodayDashboard({ playerName, locale, timeZone }: { playe
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 font-display text-lg font-bold tracking-wide text-white">
+        <h2 className="mb-1 font-display text-lg font-bold tracking-wide text-white">
           {t(locale, "player.today.todaysTasks")}
         </h2>
+        <p className="mb-3 text-xs text-smoke-3">{t(locale, "player.today.tasksHint")}</p>
         <div className="flex flex-col gap-2">
-          {log.tasks.map((task) => (
-            <button
-              key={task.id}
-              onClick={() => toggleTask(task)}
-              className="flex items-center gap-3 rounded-md border border-white/5 bg-ink-3 p-3 text-left transition-colors hover:border-line-2"
-            >
-              <span
-                className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] text-[10px]"
-                style={{
-                  background: task.done ? "#E02020" : "transparent",
-                  border: task.done ? "none" : "1.5px solid #444444",
-                }}
+          {log.tasks.length === 0 ? (
+            <p className="rounded-md border border-white/5 bg-ink-3 p-3 text-sm text-smoke-3">
+              {t(locale, "player.today.noTasks")}
+            </p>
+          ) : (
+            log.tasks.map((task) => (
+              <button
+                key={`${task.source ?? "task"}-${task.id}`}
+                onClick={() => toggleTask(task)}
+                className="flex items-center gap-3 rounded-md border border-white/5 bg-ink-3 p-3 text-start transition-colors hover:border-line-2"
               >
-                {task.done ? "✓" : ""}
-              </span>
-              <span
-                className={`text-sm ${task.done ? "text-white" : "text-smoke-3"}`}
-                style={{ textDecoration: task.done ? "none" : "none" }}
-              >
-                {task.label}
-              </span>
-            </button>
-          ))}
+                <span
+                  className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] text-[10px]"
+                  style={{
+                    background: task.done ? "#E02020" : "transparent",
+                    border: task.done ? "none" : "1.5px solid #444444",
+                  }}
+                >
+                  {task.done ? "✓" : ""}
+                </span>
+                <span className={`text-sm ${task.done ? "text-white" : "text-smoke-3"}`}>
+                  {task.source === "habit" ? task.label : dailyTaskLabel(task.label, locale)}
+                </span>
+              </button>
+            ))
+          )}
         </div>
+        <Link href="/dashboard/player/habits" className="mt-3 inline-flex text-xs font-semibold text-red-glow hover:underline">
+          {t(locale, "player.today.openHabits")}
+        </Link>
       </section>
 
       {coachMessage && (

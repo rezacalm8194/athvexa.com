@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import StatusBadge from "@/components/coach/shared/StatusBadge";
 import ProgramSendModal from "@/components/coach/programs/ProgramSendModal";
 import { useToast } from "@/components/ui/Toast";
+import { formatCivilDate } from "@/lib/format";
 import { t, type Locale } from "@/lib/i18n";
 
 type Detail = {
@@ -161,11 +162,11 @@ export default function ProgramDetailModal({
               </div>
               <div>
                 <div className="eyebrow">{t(locale, "coach.programs.start")}</div>
-                <div className="mt-0.5 text-white">{detail.startDate ?? "—"}</div>
+                <div className="mt-0.5 text-white">{formatCivilDate(detail.startDate, locale)}</div>
               </div>
               <div>
                 <div className="eyebrow">{t(locale, "coach.programs.end")}</div>
-                <div className="mt-0.5 text-white">{detail.endDate ?? "—"}</div>
+                <div className="mt-0.5 text-white">{formatCivilDate(detail.endDate, locale)}</div>
               </div>
             </div>
 

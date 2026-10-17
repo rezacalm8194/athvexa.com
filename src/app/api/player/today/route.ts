@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createNotification } from "@/lib/notifications";
 import { db, ensureDatabase } from "@/lib/db";
+import { defaultDailyTasks } from "@/lib/dailyTasks";
 import { playerProgramStatusFilter } from "@/lib/playerProgram";
 import { getTeamWorkspaceByCoachId } from "@/lib/teamWorkspace";
 
@@ -79,19 +80,26 @@ export async function GET() {
       data: {
         playerId: session.sub,
         date,
-        tasks: {
-          create: [
-            { label: "Weigh-in", order: 0 },
-            { label: "Breakfast + supplements", order: 1 },
-            { label: "Football training", order: 2 },
-            { label: "Gym session", order: 3 },
-            { label: "Recovery & stretch", order: 4 },
-          ],
-        },
+        tasks: { create: defaultDailyTasks() },
       },
       include: { tasks: { orderBy: { order: "asc" } } },
     });
+  } else if (log.tasks.length === 0) {
+    await db.task.createMany({
+      data: defaultDailyTasks().map((task) => ({ ...task, dailyLogId: log!.id })),
+    });
+    log = await db.dailyLog.findUnique({
+      where: { id: log.id },
+      include: { tasks: { orderBy: { order: "asc" } } },
+    });
+    if (!log) return NextResponse.json({ error: "Could not load today" }, { status: 500 });
   }
+
+  const habits = await db.habit.findMany({
+    where: { playerId: session.sub, active: true },
+    orderBy: { createdAt: "asc" },
+    include: { logs: { where: { date } } },
+  });
 
   const note = await db.coachNote.findUnique({ where: { playerId_date: { playerId: session.sub, date } } });
   if (note) {
@@ -153,7 +161,20 @@ export async function GET() {
     : null;
 
   return NextResponse.json({
-    log,
+    log: log
+      ? {
+          ...log,
+          tasks: [
+            ...log.tasks.map((task) => ({ ...task, source: "task" as const })),
+            ...habits.map((habit) => ({
+              id: habit.id,
+              label: `${habit.icon} ${habit.name}`.trim(),
+              done: habit.logs.length > 0,
+              source: "habit" as const,
+            })),
+          ],
+        }
+      : log,
     coachMessage: note?.message ?? null,
     checkInCompleted: isCheckInCompleted(log),
     todayDate: date,

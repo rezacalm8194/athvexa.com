@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { dailyTaskLabel } from "@/lib/dailyTasks";
 import { createNotification } from "@/lib/notifications";
 
 type Schedule = { enabled: boolean; everyDays: number; lastSentAt: Date | null };
@@ -31,7 +32,7 @@ export async function deliverDueChecklistReport(coachId: string) {
     const done = tasks.filter((task) => task.done);
     const sleep = logs.filter((log) => log.sleepHours != null).map((log) => log.sleepHours as number);
     const water = logs.filter((log) => log.waterLiters != null).map((log) => log.waterLiters as number);
-    const body = `گزارش خودکار چک‌لیست ${player.name}\nبازه: ${key(from)} تا ${key(now)}\nتکمیل چک‌لیست: ${done.length} از ${tasks.length}\nموارد انجام‌شده: ${done.map((task) => task.label).join("، ") || "ثبت نشده"}\nخواب: ${sleep.length ? (sleep.reduce((a,b) => a+b,0) / sleep.length).toFixed(1) + " ساعت" : "ثبت نشده"}\nآب: ${water.length ? water.reduce((a,b) => a+b,0).toFixed(1) + " لیتر" : "ثبت نشده"}`;
+    const body = `گزارش خودکار چک‌لیست ${player.name}\nبازه: ${key(from)} تا ${key(now)}\nتکمیل چک‌لیست: ${done.length} از ${tasks.length}\nموارد انجام‌شده: ${done.map((task) => dailyTaskLabel(task.label, "fa")).join("، ") || "ثبت نشده"}\nخواب: ${sleep.length ? (sleep.reduce((a,b) => a+b,0) / sleep.length).toFixed(1) + " ساعت" : "ثبت نشده"}\nآب: ${water.length ? water.reduce((a,b) => a+b,0).toFixed(1) + " لیتر" : "ثبت نشده"}`;
     const conversation = await db.messageConversation.upsert({ where: { coachId_playerId: { coachId, playerId: player.id } }, update: { updatedAt: now }, create: { coachId, playerId: player.id } });
     const message = await db.message.create({ data: { conversationId: conversation.id, senderId: player.id, body, contextType: "DAILY_CHECK_IN", contextLabel: "Checklist report", contextHref: "/dashboard/coach/reports" } });
     await createNotification({ userId: coachId, title: `Checklist report: ${player.name}`, description: `${done.length}/${tasks.length} tasks completed.`, type: "CHECKLIST_REPORT", actionHref: `/dashboard/messages?conversationId=${conversation.id}`, relatedId: message.id, dedupeKey: `checklist-report:${coachId}:${player.id}:${key(now)}` });

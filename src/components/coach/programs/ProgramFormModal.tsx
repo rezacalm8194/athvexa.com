@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PlusIcon, TrashIcon } from "@/components/icons";
+import DateInput from "@/components/ui/DateInput";
 import { useToast } from "@/components/ui/Toast";
 import { t, type Locale } from "@/lib/i18n";
 
@@ -223,11 +224,11 @@ export default function ProgramFormModal({
           </label>
           <label className="text-xs font-medium text-smoke-3">
             {t(locale, "coach.programs.startDate")}
-            <input type="date" value={values.startDate} onChange={(e) => set("startDate", e.target.value)} className="input-field mt-1" />
+            <DateInput locale={locale} value={values.startDate} onChange={(value) => set("startDate", value)} className="input-field mt-1" />
           </label>
           <label className="text-xs font-medium text-smoke-3">
             {t(locale, "coach.programs.endDate")}
-            <input type="date" value={values.endDate} onChange={(e) => set("endDate", e.target.value)} className="input-field mt-1" />
+            <DateInput locale={locale} value={values.endDate} onChange={(value) => set("endDate", value)} className="input-field mt-1" />
           </label>
         </div>
 

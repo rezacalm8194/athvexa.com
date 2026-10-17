@@ -9,6 +9,7 @@ import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import { AlertIcon, BarChartIcon, CalendarIcon, ClipboardCheckIcon, CopyIcon, LinkIcon, TelegramIcon, UsersIcon, WhatsAppIcon } from "@/components/icons";
 import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
+import DateInput from "@/components/ui/DateInput";
 import { t, type Locale } from "@/lib/i18n";
 import { useToast } from "@/components/ui/Toast";
 
@@ -342,19 +343,19 @@ export default function ReportsPageView({ locale }: { locale: Locale }) {
             <option value="month">{t(locale, "coach.reports.rangeMonth")}</option>
             <option value="custom">{t(locale, "coach.reports.rangeCustom")}</option>
           </select>
-          <input
+          <DateInput
+            locale={locale}
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red disabled:opacity-50"
-            type="date"
             value={from}
-            onChange={(event) => setFrom(event.target.value)}
+            onChange={setFrom}
             disabled={range !== "custom"}
             aria-label={t(locale, "coach.reports.fromAria")}
           />
-          <input
+          <DateInput
+            locale={locale}
             className="rounded-md border border-line-1 bg-ink-2 px-3 py-3 text-sm text-smoke-2 outline-none focus:border-red disabled:opacity-50"
-            type="date"
             value={to}
-            onChange={(event) => setTo(event.target.value)}
+            onChange={setTo}
             disabled={range !== "custom"}
             aria-label={t(locale, "coach.reports.toAria")}
           />
