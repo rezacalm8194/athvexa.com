@@ -173,6 +173,20 @@ async function sqliteExec(sql: string) {
  * SQLite table bootstrap. Runs at most once per process — not on every query.
  * If the User table already exists, skip full DDL and only add missing columns.
  */
+/**
+ * Login/register only need User columns. The full bootstrap also rebuilds
+ * Assessment and merges sibling SQLite files — that can lock the DB and
+ * make /api/auth/login time out with a generic "database" error.
+ */
+export async function ensureUserTableForAuth() {
+  const tables = await db.$queryRawUnsafe<{ name: string }[]>(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'User' LIMIT 1`
+  );
+  if (tables.length === 0) return;
+  await ensureExistingUserColumns();
+  await ensureUserPreferenceColumns();
+}
+
 export function ensureDatabase() {
   sqliteReady ??= (async () => {
     const tables = await db.$queryRawUnsafe<{ name: string }[]>(

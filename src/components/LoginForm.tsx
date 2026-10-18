@@ -31,7 +31,9 @@ export default function LoginForm({ locale }: { locale: Locale }) {
         const message =
           res.status === 401
             ? t(locale, "auth.invalidLogin")
-            : data.error ?? t(locale, "auth.genericError");
+            : res.status >= 500
+              ? t(locale, "auth.loginFailed")
+              : data.error ?? t(locale, "auth.genericError");
         setError(message);
         if (res.status === 401) {
           setPassword("");

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { db, ensureDatabase } from "@/lib/db";
+import { db, ensureUserTableForAuth } from "@/lib/db";
 import { verifyPassword, signSession, SESSION_COOKIE, parseRole, sessionCookieOptions } from "@/lib/auth";
 import { parseContact } from "@/lib/contact";
 
@@ -12,6 +13,72 @@ const schema = z.object({
   password: z.string().min(1),
   remember: z.boolean().optional().default(true),
 });
+
+type LoginUser = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  passwordHash: string;
+  managedByCoach: boolean;
+  role: string;
+  locale: string | null;
+  timeZone: string | null;
+  onboardingCompletedAt: Date | string | null;
+};
+
+const LOGIN_COLUMNS = [
+  "id",
+  "name",
+  "email",
+  "phone",
+  "passwordHash",
+  "managedByCoach",
+  "role",
+  "locale",
+  "timeZone",
+  "onboardingCompletedAt",
+] as const;
+
+function sqliteBool(value: unknown) {
+  return value === true || value === 1 || value === "1";
+}
+
+function mapLoginUser(row: Record<string, unknown> | null | undefined): LoginUser | null {
+  if (!row || typeof row.id !== "string" || typeof row.passwordHash !== "string") return null;
+  return {
+    id: row.id,
+    name: typeof row.name === "string" ? row.name : "",
+    email: typeof row.email === "string" ? row.email : null,
+    phone: typeof row.phone === "string" ? row.phone : null,
+    passwordHash: row.passwordHash,
+    managedByCoach: sqliteBool(row.managedByCoach),
+    role: typeof row.role === "string" ? row.role : "PLAYER",
+    locale: typeof row.locale === "string" ? row.locale : null,
+    timeZone: typeof row.timeZone === "string" ? row.timeZone : null,
+    onboardingCompletedAt:
+      row.onboardingCompletedAt instanceof Date || typeof row.onboardingCompletedAt === "string"
+        ? row.onboardingCompletedAt
+        : null,
+  };
+}
+
+async function findUserForLogin(contact: { type: "email" | "phone"; value: string }): Promise<LoginUser | null> {
+  const columns = await db.$queryRawUnsafe<{ name: string }[]>(`PRAGMA table_info("User");`);
+  const names = new Set(columns.map((column) => column.name));
+  if (!names.has("id") || !names.has("passwordHash")) return null;
+  if (contact.type === "phone" && !names.has("phone")) return null;
+  if (contact.type === "email" && !names.has("email")) return null;
+
+  const select = LOGIN_COLUMNS.filter((name) => names.has(name))
+    .map((name) => `"${name}"`)
+    .join(", ");
+  const whereCol = contact.type === "email" ? "email" : "phone";
+  const rows = await db.$queryRaw<Record<string, unknown>[]>(
+    Prisma.sql`SELECT ${Prisma.raw(select)} FROM "User" WHERE ${Prisma.raw(`"${whereCol}"`)} = ${contact.value} LIMIT 1`
+  );
+  return mapLoginUser(rows[0]);
+}
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -40,28 +107,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Enter a valid email or phone number" }, { status: 400 });
     }
 
-    const user = await withTimeout(
-      (async () => {
-        await ensureDatabase();
-        return db.user.findFirst({
-          where: contact.type === "email" ? { email: contact.value } : { phone: contact.value },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            passwordHash: true,
-            managedByCoach: true,
-            role: true,
-            locale: true,
-            timeZone: true,
-            onboardingCompletedAt: true,
-          },
-        });
-      })(),
-      8000,
-      "Database timed out while signing in"
-    );
+    void ensureUserTableForAuth().catch((error) => {
+      console.error("Login schema patch skipped", error);
+    });
+    const user = await withTimeout(findUserForLogin(contact), 15000, "Database timed out while signing in");
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return NextResponse.json({ error: "Incorrect email, phone number, or password" }, { status: 401 });
     }
