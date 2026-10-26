@@ -9,11 +9,13 @@ import ErrorState from "@/components/coach/shared/ErrorState";
 import { SkeletonRows } from "@/components/coach/shared/LoadingSkeleton";
 import SearchInput from "@/components/coach/shared/SearchInput";
 import { PlusIcon, UsersIcon } from "@/components/icons";
+import MonthInput from "@/components/ui/MonthInput";
 import { useToast } from "@/components/ui/Toast";
 import { ASSESSMENT_TYPES, AssessmentType } from "@/lib/assessmentTypes";
 import { assessmentLabel } from "@/lib/assessmentTemplates";
 import { formatScore } from "@/lib/formatScore";
 import { t, type Locale } from "@/lib/i18n";
+import { jalaliMonthGregorianRange } from "@/lib/jalali";
 
 type LatestAssessment = {
   id: string;
@@ -153,9 +155,20 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
     const params = new URLSearchParams();
     if (search.trim()) params.set("search", search.trim());
     if (type !== "all") params.set("type", type);
-    if (month) params.set("month", month);
+    if (month) {
+      if (locale === "fa") {
+        const [year, monthNum] = month.split("-").map(Number);
+        const range = jalaliMonthGregorianRange(year, monthNum);
+        if (range.gte && range.lt) {
+          params.set("from", range.gte);
+          params.set("to", range.lt);
+        }
+      } else {
+        params.set("month", month);
+      }
+    }
     return params.toString();
-  }, [month, search, type]);
+  }, [locale, month, search, type]);
 
   const loadPlayers = async () => {
     setLoading(true);
@@ -246,7 +259,7 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
       </div>
 
       <>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_150px]">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_minmax(180px,220px)]">
             <div className="col-span-2 sm:col-span-1">
               <SearchInput value={search} onChange={setSearch} placeholder={t(locale, "coach.assessments.search")} />
             </div>
@@ -258,7 +271,13 @@ export default function AssessmentsPageView({ locale }: { locale: Locale }) {
                 </option>
               ))}
             </select>
-            <input className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red" type="month" value={month} onChange={(event) => setMonth(event.target.value)} aria-label={t(locale, "coach.assessments.monthAria")} />
+            <MonthInput
+              locale={locale}
+              value={month}
+              onChange={setMonth}
+              className="rounded-md border border-line-1 bg-ink-2 px-3 py-2 text-sm text-smoke-2 outline-none focus:border-red"
+              aria-label={t(locale, "coach.assessments.monthAria")}
+            />
           </div>
 
           <div className="mt-4 overflow-hidden rounded-lg border border-line-1 bg-ink-3">

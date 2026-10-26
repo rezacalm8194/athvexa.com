@@ -30,7 +30,10 @@ function uniqueIds(ids: string[]) {
   return [...new Set(ids)];
 }
 
-function monthRange(month: string | null) {
+function monthRange(month: string | null, from: string | null, to: string | null) {
+  if (from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to) && from < to) {
+    return { gte: from, lt: to };
+  }
   if (!month || !/^\d{4}-\d{2}$/.test(month)) return null;
   const [year, monthNum] = month.split("-").map(Number);
   return { gte: month, lt: monthNum === 12 ? `${year + 1}-01` : `${year}-${String(monthNum + 1).padStart(2, "0")}` };
@@ -96,7 +99,7 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
   const search = req.nextUrl.searchParams.get("search")?.trim().toLocaleLowerCase() ?? "";
   const type = req.nextUrl.searchParams.get("type") ?? "all";
-  const range = monthRange(req.nextUrl.searchParams.get("month"));
+  const range = monthRange(req.nextUrl.searchParams.get("month"), req.nextUrl.searchParams.get("from"), req.nextUrl.searchParams.get("to"));
   const requestedPlayerId = req.nextUrl.searchParams.get("playerId")?.trim();
   const allRows = await db.assessment.findMany({ where: { coachId: auth.teamOwnerId }, include: { player: { select: { id: true, name: true, email: true } } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }] });
   const rows = allRows.filter((row) =>

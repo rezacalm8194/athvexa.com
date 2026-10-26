@@ -64,3 +64,13 @@ export function jalaliToGregorianIso(jy: number, jm: number, jd: number) {
   if (!g) return "";
   return `${g.gy}-${String(g.gm).padStart(2, "0")}-${String(g.gd).padStart(2, "0")}`;
 }
+
+/** Inclusive start / exclusive end as Gregorian YYYY-MM-DD. */
+export function jalaliMonthGregorianRange(jy: number, jm: number) {
+  const nextJm = jm === 12 ? 1 : jm + 1;
+  const nextJy = jm === 12 ? jy + 1 : jy;
+  return {
+    gte: jalaliToGregorianIso(jy, jm, 1),
+    lt: jalaliToGregorianIso(nextJy, nextJm, 1),
+  };
+}

@@ -270,7 +270,9 @@ export async function GET(req: NextRequest) {
     const avgSleep = average(logs.map((log) => log.sleepHours));
     const playerAssessments = assessmentsByPlayer.get(player.id) ?? [];
     const latestAssessment = playerAssessments[0] ?? null;
-    const previousAssessment = playerAssessments[1] ?? null;
+    const previousAssessment = latestAssessment
+      ? playerAssessments.find((row) => row.id !== latestAssessment.id && row.type === latestAssessment.type) ?? null
+      : null;
     const assessmentChange = latestAssessment && previousAssessment ? Number((latestAssessment.score - previousAssessment.score).toFixed(2)) : null;
     const hasData = logs.length > 0 || latestAssessment != null;
     const activeProgram = activeProgramByPlayer.get(player.id);
