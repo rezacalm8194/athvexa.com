@@ -528,14 +528,18 @@ export function AssessmentDetailModal({
   if (!assessment) return null;
   const template = getAssessmentTemplate(assessment.templateId);
   const primaryMetric = template?.metrics.find((metric) => metric.key === template.primaryMetric);
+  const name = assessment.notes?.trim() || "";
+  const typeLabel = assessmentLabel(assessment, locale);
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-white/10 bg-ink-3 p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-xl font-black text-white">{assessmentLabel(assessment, locale)}</h2>
-            <p className="mt-1 text-sm text-smoke-3">{formatAssessmentDate(assessment.date, locale)}</p>
+            <h2 className="font-display text-xl font-black text-white">{name || typeLabel}</h2>
+            <p className="mt-1 text-sm text-smoke-3">
+              {name ? `${typeLabel} · ${formatAssessmentDate(assessment.date, locale)}` : formatAssessmentDate(assessment.date, locale)}
+            </p>
           </div>
           <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={onClose}>
             {t(locale, "coach.assessmentUi.close")}
@@ -565,10 +569,6 @@ export function AssessmentDetailModal({
         </div>
 
         <MetricsTable assessment={assessment} locale={locale} />
-
-        {assessment.notes?.trim() ? (
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-smoke-2">{assessment.notes.trim()}</p>
-        ) : null}
 
         {onEdit || onDelete ? (
           <div className="mt-5 flex justify-end gap-2">

@@ -56,10 +56,12 @@ export default function PlayerAssessmentsView({ locale }: { locale: Locale }) {
               onClick={() => setViewing(assessment)}
             >
               <div className="min-w-0">
-                <div className="font-display text-base font-bold text-white">{assessmentLabel(assessment, locale)}</div>
+                <div className="font-display text-base font-bold text-white">
+                  {assessment.notes?.trim() || assessmentLabel(assessment, locale)}
+                </div>
                 <p className="mt-1 text-xs text-smoke-3">
+                  {assessment.notes?.trim() ? `${assessmentLabel(assessment, locale)} · ` : ""}
                   {formatAssessmentDate(assessment.date, locale)}
-                  {assessment.notes?.trim() ? ` · ${assessment.notes.trim()}` : ""}
                 </p>
               </div>
               <div className="shrink-0 text-right">
