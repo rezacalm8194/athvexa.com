@@ -1035,7 +1035,7 @@
       "score": "امتیاز",
       "scorePlaceholder": "مثلاً ۳٫۲۰",
       "notes": "توضیحات",
-      "notesPlaceholder": "توضیحات اختیاری مربی",
+      "notesPlaceholder": "نام همین تست؛ مثلاً قدرت چهارسر یا قدرت بالاتنه",
       "create": "ایجاد ارزیابی",
       "saveChanges": "ذخیره تغییرات",
       "previous": "قبلی {score}"

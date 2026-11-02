@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireCoachApi } from "@/lib/apiAuth";
 import { ASSESSMENT_TYPES } from "@/lib/assessmentTypes";
+import { previousScoresById } from "@/lib/assessmentPrevious";
 import { getAssessmentTemplate, parseStoredMetrics, resolveTemplateMetrics, serializeMetrics } from "@/lib/assessmentTemplates";
 import { notifyOwnerOfAssistantAction } from "@/lib/notifications";
 
@@ -62,22 +63,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const assessment = await loadOwnedAssessment(id, auth.teamOwnerId);
   if (!assessment) return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
 
-  const previous = await db.assessment.findFirst({
+  const history = await db.assessment.findMany({
     where: {
       coachId: auth.teamOwnerId,
       playerId: assessment.playerId,
       playerName: assessment.playerId ? undefined : assessment.playerName,
-      ...(assessment.templateId ? { templateId: assessment.templateId } : { templateId: null, type: assessment.type }),
-      OR: [
-        { date: { lt: assessment.date } },
-        { date: assessment.date, createdAt: { lt: assessment.createdAt } },
-      ],
-      NOT: { id: assessment.id },
     },
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    select: { score: true },
+    select: { id: true, playerId: true, playerName: true, type: true, templateId: true, notes: true, date: true, createdAt: true, score: true },
   });
-  const previousScore = previous?.score ?? null;
+  const previousScore = previousScoresById([assessment], history).get(assessment.id) ?? null;
 
   return NextResponse.json({
     assessment: {

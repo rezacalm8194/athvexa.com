@@ -1035,7 +1035,7 @@
       "score": "Score",
       "scorePlaceholder": "e.g. 3.20",
       "notes": "Description",
-      "notesPlaceholder": "Optional coaching description",
+      "notesPlaceholder": "Name this exact test, e.g. quadriceps strength or upper-body strength",
       "create": "Create assessment",
       "saveChanges": "Save changes",
       "previous": "Previous {score}"

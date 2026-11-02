@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
   );
   const roster = await db.user.findMany({ where: { coachId: auth.teamOwnerId, role: "PLAYER" }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } });
   const visibleRows = rows.filter((row) => (!requestedPlayerId || row.playerId === requestedPlayerId) && (!search || labelFor(row).toLocaleLowerCase().includes(search)));
-  const history = await db.assessment.findMany({ where: { coachId: auth.teamOwnerId }, select: { id: true, playerId: true, playerName: true, type: true, templateId: true, date: true, createdAt: true, score: true }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] });
+  const history = await db.assessment.findMany({ where: { coachId: auth.teamOwnerId }, select: { id: true, playerId: true, playerName: true, type: true, templateId: true, notes: true, date: true, createdAt: true, score: true }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] });
   const previous = previousScoresById(visibleRows, history);
   const summaries = new Map<string, { id: string; name: string; email: string; manual: boolean; latest: typeof rows[number] | null; count: number }>();
   for (const player of roster) summaries.set(`user:${player.id}`, { id: player.id, name: player.name, email: player.email ?? "", manual: false, latest: null, count: 0 });

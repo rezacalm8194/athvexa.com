@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCoachApi } from "@/lib/apiAuth";
+import { previousRecordsById } from "@/lib/assessmentPrevious";
 import { coachPlayerProfileHref } from "@/lib/coachRoutes";
 import { db } from "@/lib/db";
 import { getCurrentTeamMembership, listRosterPlayers } from "@/lib/teamContext";
@@ -179,7 +180,7 @@ export async function GET(req: NextRequest) {
     }),
     db.assessment.findMany({
       where: { coachId: teamOwnerId, playerId: { in: playerIds } },
-      select: { id: true, playerId: true, type: true, templateId: true, score: true, date: true, createdAt: true },
+      select: { id: true, playerId: true, playerName: true, type: true, templateId: true, notes: true, score: true, date: true, createdAt: true },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     }),
     db.programAssignment.findMany({
@@ -271,7 +272,7 @@ export async function GET(req: NextRequest) {
     const playerAssessments = assessmentsByPlayer.get(player.id) ?? [];
     const latestAssessment = playerAssessments[0] ?? null;
     const previousAssessment = latestAssessment
-      ? playerAssessments.find((row) => row.id !== latestAssessment.id && row.type === latestAssessment.type) ?? null
+      ? previousRecordsById([latestAssessment], playerAssessments).get(latestAssessment.id) ?? null
       : null;
     const assessmentChange = latestAssessment && previousAssessment ? Number((latestAssessment.score - previousAssessment.score).toFixed(2)) : null;
     const hasData = logs.length > 0 || latestAssessment != null;
